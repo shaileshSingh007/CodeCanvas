@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Playground | Dev & Shayar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                    colors: {
+                        bgMain: '#030308',
+                        panel: '#0a0a14',
+                        neonPurple: '#a855f7',
+                        neonCyan: '#06b6d4',
+                        neonBlue: '#3b82f6',
+                    },
+                    backgroundImage: {
+                        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+                        'hero-gradient': 'linear-gradient(to right, #a855f7, #3b82f6)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #030308;
+            color: #ffffff;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Hide Scrollbar but keep functionality */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+        /* Section Transitions */
+        .page-section {
+            display: none;
+            opacity: 0;
+            animation: fadeUp 0.4s ease-out forwards;
+        }
+        .page-section.active {
+            display: block;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Glowing AI Sphere Animation */
+        .sphere-container {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            animation: rotate 10s linear infinite;
+        }
+        .ring:nth-child(1) { width: 100%; height: 100%; border-top-color: #a855f7; border-bottom-color: #3b82f6; animation-duration: 8s; }
+        .ring:nth-child(2) { width: 85%; height: 85%; border-left-color: #06b6d4; border-right-color: #a855f7; animation-duration: 12s; animation-direction: reverse; }
+        .ring:nth-child(3) { width: 70%; height: 70%; border-top-color: #3b82f6; border-left-color: #06b6d4; animation-duration: 6s; }
+        .grid-globe {
+            position: absolute;
+            width: 90%; height: 90%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(6,182,212,0.1) 0%, rgba(0,0,0,0) 70%);
+            box-shadow: 0 0 40px rgba(59, 130, 246, 0.3), inset 0 0 20px rgba(168, 85, 247, 0.3);
+            border: 1px dashed rgba(255,255,255,0.1);
+        }
+        @keyframes rotate {
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Nav Tab active states */
+        .nav-item {
+            color: #6b7280;
+            transition: all 0.3s ease;
+        }
+        .nav-item:hover { color: #ffffff; }
+        .nav-item.active-tab {
+            color: #a855f7;
+        }
+        .desktop-nav-item {
+            position: relative;
+        }
+        .desktop-nav-item::after {
+            content: ''; position: absolute; bottom: -4px; left: 0; width: 0%; height: 2px;
+            background: linear-gradient(90deg, #a855f7, #06b6d4); transition: width 0.3s ease;
+        }
+        .desktop-nav-item.active-tab::after { width: 100%; }
+        .desktop-nav-item.active-tab { color: #fff; }
+
+        /* Custom Cards */
+        .glass-panel {
+            background: rgba(15, 15, 25, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Game Iframe Overlay */
+        .game-overlay {
+            position: fixed; inset: 0; background: rgba(3, 3, 8, 0.98);
+            z-index: 9999; display: flex; flex-direction: column;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        }
+        .game-overlay.active { opacity: 1; pointer-events: all; }
+        
+        /* Audio Pulse */
+        .audio-playing {
+            animation: pulse-border 1.5s infinite;
+            color: #a855f7;
+            border-color: #a855f7;
+        }
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(168, 85, 247, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); }
+        }
+
+        /* Base padding for mobile bottom nav */
+        .content-wrapper { padding-bottom: 80px; }
+        @media (min-width: 768px) { .content-wrapper { padding-bottom: 0; } }
+    </style>
+</head>
+<body class="antialiased relative bg-[#030308] text-white">
+
+    <!-- Ambient Background Glows -->
+    <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+        <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-neonPurple/10 blur-[120px]"></div>
+        <div class="absolute bottom-[20%] right-[-10%] w-[30%] h-[40%] rounded-full bg-neonBlue/10 blur-[100px]"></div>
+    </div>
+
+    <!-- Desktop Header (Hidden on Mobile) -->
+    <header class="hidden md:flex w-full items-center justify-between px-8 py-6 max-w-7xl mx-auto z-50">
+        <div class="flex items-center gap-3 cursor-pointer group" onclick="switchTab('home')">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+                <i class="fa-solid fa-code text-white"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-xl tracking-wide">DEV<span class="text-neonPurple">&</span>SHAYAR</h1>
+                <p class="text-[10px] text-gray-400 tracking-[0.2em]">CREATE. PLAY. INSPIRE.</p>
+            </div>
+        </div>
+        <nav class="flex items-center gap-8 font-medium text-sm">
+            <button onclick="switchTab('home')" class="desktop-nav-item active-tab nav-item text-gray-400 hover:text-white transition-colors" data-tab="home">Home</button>
+            <button onclick="switchTab('games')" class="desktop-nav-item nav-item text-gray-400 hover:text-white transition-colors" data-tab="games">Games</button>
+            <button onclick="switchTab('poetry')" class="desktop-nav-item nav-item text-gray-400 hover:text-white transition-colors" data-tab="poetry">Poetry</button>
+            <button onclick="switchTab('about')" class="desktop-nav-item nav-item text-gray-400 hover:text-white transition-colors" data-tab="about">About Me</button>
+        </nav>
+    </header>
+
+    <!-- Mobile Header (Logo Only) -->
+    <header class="md:hidden w-full flex items-center justify-between px-5 py-5 z-50">
+        <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('home')">
+            <div class="w-8 h-8 rounded-md bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+                <i class="fa-solid fa-code text-white text-sm"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg tracking-wide leading-none">DEV<span class="text-neonPurple">&</span>SHAYAR</h1>
+                <p class="text-[8px] text-gray-400 tracking-[0.15em] mt-1">CREATE. PLAY. INSPIRE.</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT AREA -->
+    <div class="content-wrapper min-h-screen">
+
+        <!-- ==================== HOME SECTION ==================== -->
+        <main id="home" class="page-section active max-w-7xl mx-auto px-5 md:px-8">
+            
+            <!-- Hero Section -->
+            <div class="flex flex-col lg:flex-row items-center justify-between gap-12 py-10 lg:py-20 border-b border-white/5">
+                <div class="w-full lg:w-1/2 text-left z-10">
+                    <h2 class="text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] mb-6">
+                        Where<br>
+                        <span class="bg-gradient-to-r from-purple-400 via-fuchsia-500 to-purple-600 bg-clip-text text-transparent">Imagination</span><br>
+                        Meets<br>
+                        <span class="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Intelligence</span>
+                    </h2>
+                    <div class="w-16 h-1 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full mb-6"></div>
+                    <p class="text-gray-400 text-lg mb-10 max-w-md font-light leading-relaxed">
+                        Interactive AI-generated games, thought-provoking poetry, and experiments where creativity and technology become one.
+                    </p>
+                </div>
+                
+                <div class="w-full lg:w-1/2 flex justify-center py-10">
+                    <div class="sphere-container">
+                        <div class="ring"></div>
+                        <div class="ring"></div>
+                        <div class="ring"></div>
+                        <div class="grid-globe flex items-center justify-center backdrop-blur-sm">
+                            <span class="text-6xl font-bold bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent tracking-tighter">AI</span>
+                        </div>
+                        <div class="absolute -bottom-12 w-64 h-8 bg-blue-500/20 blur-xl rounded-[100%]"></div>
+                        <div class="absolute -bottom-10 w-48 h-2 border-t border-cyan-500/50 rounded-[100%] shadow-[0_-5px_20px_rgba(6,182,212,0.5)]"></div>
+                        <div class="absolute -bottom-8 w-32 h-1 border-t border-purple-500/50 rounded-[100%] shadow-[0_-5px_15px_rgba(168,85,247,0.5)]"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Featured Games (Native Scroll) -->
+            <div class="py-12 border-b border-white/5 relative w-full overflow-hidden">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold flex items-center gap-3">
+                        <i class="fa-solid fa-gamepad text-blue-500"></i> FEATURED GAMES
+                    </h3>
+                    <button onclick="switchTab('games')" class="text-purple-400 text-sm hover:text-purple-300 font-medium flex items-center gap-1">
+                        View All <i class="fa-solid fa-chevron-right text-xs"></i>
+                    </button>
+                </div>
+                
+                <!-- Native smooth horizontal scrolling for touch devices -->
+                <div id="featuredGamesContainer" class="flex overflow-x-auto gap-5 pb-6 no-scrollbar snap-x snap-mandatory w-full" style="-webkit-overflow-scrolling: touch; scroll-behavior: smooth;">
+                    <!-- Cards will be injected here via JavaScript -->
+                </div>
+            </div>
+
+            <!-- Featured Poems -->
+            <div class="py-12 mb-10">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold flex items-center gap-3">
+                        <i class="fa-solid fa-feather-pointed text-purple-500"></i> FEATURED POEMS
+                    </h3>
+                    <button onclick="switchTab('poetry')" class="text-cyan-400 text-sm hover:text-cyan-300 font-medium flex items-center gap-1">
+                        View All <i class="fa-solid fa-chevron-right text-xs"></i>
+                    </button>
+                </div>
+                
+                <div class="glass-panel rounded-2xl p-6 relative overflow-hidden cursor-pointer group" onclick="switchTab('poetry')">
+                    <div class="absolute right-0 bottom-0 opacity-20 transform translate-x-1/4 translate-y-1/4 group-hover:scale-110 transition-transform duration-500">
+                        <i class="fa-solid fa-feather text-9xl text-purple-500"></i>
+                    </div>
+                    <div class="relative z-10 flex gap-4">
+                        <i class="fa-solid fa-quote-left text-3xl text-purple-500/50 mt-2"></i>
+                        <div>
+                            <p class="font-serif text-xl md:text-2xl text-gray-200 leading-relaxed mb-4">
+                                दिन भर मशीनों से बातें करता हूँ,<br>
+                                रात को ये खामोश कीबोर्ड चुभता है।
+                            </p>
+                            <p class="text-sm text-cyan-400 font-medium tracking-wide">— Silent Keyboard</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- ==================== GAMES SECTION (FULL PAGE) ==================== -->
+        <main id="games" class="page-section max-w-7xl mx-auto px-5 md:px-8 py-10">
+            <div class="mb-10 text-center md:text-left">
+                <h2 class="text-3xl md:text-4xl font-bold mb-3 flex items-center justify-center md:justify-start gap-3">
+                    <i class="fa-solid fa-gamepad text-blue-500"></i> The Grid
+                </h2>
+                <p class="text-gray-400 max-w-2xl">Select an executable to load the AI-generated simulation environment. Zero manual coding involved.</p>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6" id="gameGrid">
+                <!-- Injected via JS -->
+            </div>
+        </main>
+
+        <!-- ==================== POETRY SECTION (FULL PAGE) ==================== -->
+        <main id="poetry" class="page-section max-w-7xl mx-auto px-5 md:px-8 py-10">
+            <div class="mb-10 text-center md:text-left">
+                <h2 class="text-3xl md:text-4xl font-bold mb-3 font-serif flex items-center justify-center md:justify-start gap-3">
+                    <i class="fa-solid fa-feather-pointed text-purple-500"></i> Shayar's Canvas
+                </h2>
+                <p class="text-gray-400 max-w-2xl">Emotions written in the syntax of the soul. Tap the audio icon to listen in a natural voice.</p>
+            </div>
+
+            <div class="flex flex-col lg:flex-row gap-6 lg:gap-10 h-full">
+                <!-- List -->
+                <div class="w-full lg:w-1/3 flex flex-col gap-3" id="poetryList">
+                    <!-- Injected via JS -->
+                </div>
+
+                <!-- Display -->
+                <div class="w-full lg:w-2/3 glass-panel rounded-3xl p-6 md:p-10 relative border-t border-purple-500/20 shadow-[0_0_30px_rgba(168,85,247,0.05)]">
+                    <div class="absolute top-6 right-6 z-10">
+                        <button id="ttsButton" onclick="togglePoetryAudio()" class="w-12 h-12 rounded-full glass-panel flex items-center justify-center text-xl text-gray-300 hover:text-purple-400 hover:border-purple-500/50 transition-all" aria-label="Listen">
+                            <i class="fa-solid fa-play" id="ttsIcon"></i>
+                        </button>
+                    </div>
+                    
+                    <div id="poetryContentContainer" class="mt-4 relative z-0">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- ==================== ABOUT ME SECTION (FULL PAGE) ==================== -->
+        <main id="about" class="page-section max-w-5xl mx-auto px-5 md:px-8 py-10">
+            <div class="glass-panel rounded-3xl overflow-hidden flex flex-col md:flex-row relative">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 blur-[80px] rounded-full"></div>
+                
+                <div class="w-full md:w-2/5 p-10 flex flex-col justify-center items-center relative border-b md:border-b-0 md:border-r border-white/10 bg-black/40">
+                    <div class="w-32 h-32 md:w-48 md:h-48 rounded-full bg-gradient-to-br from-cyan-400 to-purple-600 p-[2px] mb-6 shadow-[0_0_30px_rgba(6,182,212,0.3)]">
+                        <div class="w-full h-full bg-[#0a0a14] rounded-full flex items-center justify-center">
+                            <i class="fa-solid fa-user-astronaut text-6xl text-white/70"></i>
+                        </div>
+                    </div>
+                    <h3 class="text-2xl font-bold tracking-wide">The Architect</h3>
+                    <p class="text-cyan-400 font-mono text-sm mt-1">&lt;coder /&gt; | ✍️ shayar</p>
+                </div>
+                
+                <div class="w-full md:w-3/5 p-8 md:p-12 relative z-10">
+                    <h2 class="text-3xl md:text-4xl font-bold mb-6 font-serif leading-tight">
+                        Developer by <span class="text-cyan-400">Profession</span>,<br>
+                        Shayar by <span class="text-purple-400">Passion</span>.
+                    </h2>
+                    
+                    <div class="space-y-4 text-gray-300 font-light">
+                        <p>During the day, I build systems. I speak in the strict, unforgiving languages of logic and algorithms to solve complex problems.</p>
+                        <p>But when the screen dims, the keyboard becomes a canvas. I speak in rhythms and emotions. As a Shayar, I find the logic in human emotion and the art in everyday chaos.</p>
+                        <blockquote class="border-l-2 border-purple-500 pl-4 py-2 italic text-gray-400 my-6 font-serif">
+                            "Compiling code to build the future,<br>
+                            Composing words to heal the soul."
+                        </blockquote>
+                        <p>This AI Playground is a collision of both worlds. The games here were orchestrated purely through AI prompting. The poetry is pure human heart.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Mobile Bottom Navigation (Hidden on Desktop) -->
+    <nav class="md:hidden fixed bottom-0 left-0 w-full glass-panel border-t border-white/10 z-50 px-2 py-3 flex justify-around items-center pb-safe">
+        <button onclick="switchTab('home')" class="nav-item active-tab flex flex-col items-center gap-1 w-16" data-tab="home">
+            <i class="fa-solid fa-house text-lg"></i>
+            <span class="text-[10px] font-semibold tracking-wide">HOME</span>
+        </button>
+        <button onclick="switchTab('games')" class="nav-item flex flex-col items-center gap-1 w-16" data-tab="games">
+            <i class="fa-solid fa-gamepad text-lg"></i>
+            <span class="text-[10px] font-semibold tracking-wide">GAMES</span>
+        </button>
+        <button onclick="switchTab('poetry')" class="nav-item flex flex-col items-center gap-1 w-16" data-tab="poetry">
+            <i class="fa-solid fa-feather text-lg"></i>
+            <span class="text-[10px] font-semibold tracking-wide">POETRY</span>
+        </button>
+        <button onclick="switchTab('about')" class="nav-item flex flex-col items-center gap-1 w-16" data-tab="about">
+            <i class="fa-regular fa-user text-lg"></i>
+            <span class="text-[10px] font-semibold tracking-wide">ABOUT</span>
+        </button>
+    </nav>
+
+    <!-- GAME IFRAME OVERLAY -->
+    <div class="game-overlay" id="gameOverlay">
+        <div class="h-14 bg-[#05050A] border-b border-white/10 flex justify-between items-center px-4">
+            <div class="font-mono text-cyan-400 text-sm font-semibold tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-terminal text-xs"></i> <span id="activeGameTitle">Executing.exe</span>
+            </div>
+            <button onclick="closeGame()" class="w-8 h-8 rounded-full bg-white/5 text-gray-400 hover:bg-red-500/20 hover:text-red-400 transition-colors flex items-center justify-center">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="flex-1 bg-black flex items-center justify-center relative">
+            <div id="gameLoader" class="absolute flex flex-col items-center justify-center gap-4">
+                <div class="w-10 h-10 border-2 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin"></div>
+                <p class="font-mono text-cyan-500/50 text-xs animate-pulse tracking-widest">LOADING MODULE...</p>
+            </div>
+            <iframe id="gameIframe" src="" title="Game Session" class="w-full h-full border-none opacity-0 transition-opacity duration-500"></iframe>
+        </div>
+    </div>
+
+    <!-- MAIN SCRIPT -->
+    <script>
+        // --- NAVIGATION LOGIC ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.page-section').forEach(sec => sec.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+
+            document.querySelectorAll('.nav-item').forEach(link => {
+                link.classList.remove('active-tab');
+                if(link.getAttribute('data-tab') === tabId) link.classList.add('active-tab');
+            });
+
+            if(tabId !== 'poetry') stopTTS();
+            window.scrollTo({ top: 0, behavior: 'instant' });
+        }
+
+        // --- GAME HUB LOGIC ---
+        const GAME_FILES = [
+            'atomArtifact.html', 'bubblepop.html', 'chromaticMixerMaze.html', 'curcuit.html', 
+            'EarthDefender.html', 'Echo Shot.html', 'fraction-cutter.html', 'FractorBreak.html',
+            'Glitch Twins.html', 'gravity Architech.html', 'kindnessRipple.html', 'Light Hunter.html',
+            'memory.html', 'pendulam.html', 'Shape Switch.html', 'SliceNinja.html',
+            'SpaceShoot.html', 'StoichiometryChef.html', 'synapse-lab.html', 'walk3D.html', 'whack-a-mole.html'
+        ];
+
+        function getDisplayName(name) {
+            return name.replace(/\.html$/i, '').replace(/[-_]/g, ' ').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()).trim();
+        }
+
+        function getIconData(name) {
+            const n = name.toLowerCase();
+            if (n.includes('space') || n.includes('gravity')) return { icon: 'fa-meteor', color: 'text-purple-400' };
+            if (n.includes('circuit') || n.includes('synapse') || n.includes('atom')) return { icon: 'fa-microchip', color: 'text-cyan-400' };
+            if (n.includes('bubble') || n.includes('chromatic')) return { icon: 'fa-soap', color: 'text-pink-400' };
+            if (n.includes('slice') || n.includes('ninja') || n.includes('hunter')) return { icon: 'fa-khanda', color: 'text-red-400' };
+            return { icon: 'fa-gamepad', color: 'text-blue-400' };
+        }
+
+        function renderGames() {
+            const grid = document.getElementById('gameGrid');
+            grid.innerHTML = GAME_FILES.map((file) => {
+                const title = getDisplayName(file);
+                const { icon, color } = getIconData(file);
+                return `
+                    <div class="glass-panel rounded-2xl p-5 flex flex-col items-center justify-center text-center group cursor-pointer hover:-translate-y-1 transition-transform" 
+                         onclick="openGame('${file}', '${title}')">
+                        <div class="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-white/10 transition-all">
+                            <i class="fa-solid ${icon} text-xl ${color}"></i>
+                        </div>
+                        <h3 class="font-semibold text-sm text-gray-200 group-hover:text-white">${title}</h3>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // --- DYNAMIC FEATURED GAMES LOGIC ---
+        function renderFeaturedGames() {
+            const container = document.getElementById('featuredGamesContainer');
+            if (!container) return;
+
+            const shuffledGames = [...GAME_FILES].sort(() => 0.5 - Math.random());
+            const selectedGames = shuffledGames.slice(0, 5);
+            
+            const categories = ['PUZZLE', 'ARCADE', 'ACTION', 'STRATEGY', 'SIMULATION'];
+            const difficulties = ['Easy', 'Medium', 'Hard'];
+            const gradients = [
+                'from-blue-900/40 to-purple-900/40',
+                'from-purple-900/30 to-pink-900/20',
+                'from-cyan-900/40 to-blue-900/30',
+                'from-red-900/30 to-orange-900/20',
+                'from-emerald-900/30 to-teal-900/20'
+            ];
+
+            container.innerHTML = selectedGames.map(file => {
+                const title = getDisplayName(file);
+                const rating = (Math.random() * (5.0 - 4.2) + 4.2).toFixed(1); 
+                const cat = categories[Math.floor(Math.random() * categories.length)];
+                const diff = difficulties[Math.floor(Math.random() * difficulties.length)];
+                const bg = gradients[Math.floor(Math.random() * gradients.length)];
+
+                return `
+                    <div class="snap-start flex-none w-[300px] md:w-[380px] glass-panel rounded-2xl p-1 relative overflow-hidden group cursor-pointer" onclick="openGame('${file}', '${title}')">
+                        <div class="absolute inset-0 bg-gradient-to-br ${bg} z-0"></div>
+                        <div class="relative z-10 p-5 flex flex-col h-full justify-between">
+                            <div>
+                                <div class="flex justify-between items-start mb-16">
+                                    <span class="text-[10px] font-bold px-3 py-1 rounded-full border border-white/20 text-white bg-white/5">${cat}</span>
+                                    <span class="text-yellow-400 text-sm font-bold flex items-center gap-1"><i class="fa-solid fa-star"></i> ${rating}</span>
+                                </div>
+                                <h4 class="text-2xl font-bold mb-2 group-hover:text-cyan-400 transition-colors">${title}</h4>
+                                <p class="text-sm text-gray-400 mb-4">Zero-code AI generated interactive experience.</p>
+                            </div>
+                            <div class="flex items-center justify-between mt-4">
+                                <div class="flex gap-2">
+                                    <span class="text-[10px] px-2 py-1 bg-white/5 rounded text-gray-400"><i class="fa-solid fa-signal mr-1"></i> ${diff}</span>
+                                    <span class="text-[10px] px-2 py-1 bg-white/5 rounded text-gray-400">&lt;/&gt; HTML5</span>
+                                </div>
+                                <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-blue-500 transition-colors">
+                                    <i class="fa-solid fa-play ml-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Iframe Handling
+        const gameOverlay = document.getElementById('gameOverlay');
+        const gameIframe = document.getElementById('gameIframe');
+        const gameLoader = document.getElementById('gameLoader');
+
+        function openGame(file, title) {
+            document.getElementById('activeGameTitle').innerText = title.toUpperCase() + '.EXE';
+            gameOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            gameLoader.style.display = 'flex';
+            gameIframe.style.opacity = '0';
+            gameIframe.src = file;
+        }
+
+        gameIframe.addEventListener('load', function() {
+            if(gameIframe.src && !gameIframe.src.endsWith(window.location.pathname)) {
+                gameLoader.style.display = 'none';
+                gameIframe.style.opacity = '1';
+                gameIframe.focus();
+            }
+        });
+
+        function closeGame() {
+            gameOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+            setTimeout(() => { gameIframe.src = ''; gameIframe.style.opacity = '0'; }, 300);
+        }
+
+        // --- POETRY & GEMINI TTS LOGIC ---
+        const POEMS = [
+            { id: 0, title: "एरर और इश्क (Error and Love)", text: `मेरी जिंदगी के कोड में, तू वो बग है,\nजिसे मैं फिक्स नहीं करना चाहता।\n\nतेरी यादों का लूप इनफाइनाइट है,\nमैं इसे ब्रेक नहीं करना चाहता।\n\nदुनिया कहती है सिंटैक्स गलत है हमारा,\nपर मैं इस प्रोग्राम को, कभी बंद नहीं करना चाहता।` },
+            { id: 1, title: "खामोश कीबोर्ड (Silent Keyboard)", text: `दिन भर मशीनों से बातें करता हूँ,\nरात को ये खामोश कीबोर्ड चुभता है।\n\nलॉजिक से तो दुनिया जीत ली मैंने,\nपर दिल के अल्गोरिदम में, अक्सर एरर आता है।\n\nसॉफ्टवेयर तो अपडेट कर लिए सारे,\nजाने रूह का वर्ज़न, कब बदल जाता है।` },
+            { id: 2, title: "एआई का दौर (Era of AI)", text: `कहते हैं मशीनें अब जज़्बात लिखेंगी,\nमेरे शेरों की वो औकात लिखेंगी।\n\nडेटा से तो निकाल लोगे तुम शब्द सारे,\nपर टूटे दिल की वो धड़कन, क्या वो मशीनें लिखेंगी?\n\nकोडिंग के बिना गेम तो बना लिया मैंने,\nपर इश्क का खेल, क्या वो बिना रूह के खेलेंगी?` }
+        ];
+
+        let currentPoemId = 0, isSpeaking = false, isLoadingAudio = false, currentAudio = null;
+
+        function renderPoetryList() {
+            document.getElementById('poetryList').innerHTML = POEMS.map(poem => `
+                <div class="p-4 rounded-2xl glass-panel border border-transparent cursor-pointer transition-all ${poem.id === 0 ? 'bg-white/10 border-purple-500/50' : 'hover:bg-white/5'}" 
+                     onclick="selectPoem(${poem.id})" id="poem-tab-${poem.id}">
+                    <h4 class="font-serif text-lg font-semibold text-gray-200">${poem.title}</h4>
+                </div>
+            `).join('');
+        }
+
+        function selectPoem(id) {
+            currentPoemId = id; stopTTS();
+            document.querySelectorAll('#poetryList > div').forEach(el => { el.classList.remove('bg-white/10', 'border-purple-500/50'); el.classList.add('hover:bg-white/5', 'border-transparent'); });
+            const activeTab = document.getElementById(`poem-tab-${id}`);
+            activeTab.classList.remove('hover:bg-white/5', 'border-transparent');
+            activeTab.classList.add('bg-white/10', 'border-purple-500/50');
+            
+            const p = POEMS[id];
+            document.getElementById('poetryContentContainer').innerHTML = `
+                <h2 class="text-2xl md:text-3xl font-serif text-purple-400 mb-6">${p.title}</h2>
+                <div class="font-serif text-xl md:text-2xl leading-[2] text-gray-300">
+                    ${p.text.replace(/\n/g, '<br/>')}
+                </div>
+                <div class="mt-10 text-cyan-500/50 font-serif italic">— The Dev Shayar</div>
+            `;
+        }
+
+        async function togglePoetryAudio() {
+            if (isLoadingAudio) return;
+            if (isSpeaking) { stopTTS(); return; }
+
+            const btn = document.getElementById('ttsButton');
+            const icon = document.getElementById('ttsIcon');
+            
+            try {
+                isLoadingAudio = true;
+                icon.className = 'fa-solid fa-spinner fa-spin';
+                btn.classList.add('text-cyan-400');
+
+                // ✅ यहाँ अपनी सही API Key डालें (AIza... से शुरू होनी चाहिए)
+                const apiKey = "AQ.Ab8RN6J4pkNcQGDmt5NeiTycOaIRzN5c6MaRhdbrXCN6mUDe4g"; 
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+                
+                // Text sanitize (remove newline chars which might break some models)
+                const sanitizedText = POEMS[currentPoemId].text.replace(/\n/g, ' ');
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: sanitizedText }] }],
+                        generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } } } },
+                        model: "gemini-2.5-flash-preview-tts"
+                    })
+                });
+
+                // ✅ Error Handling: सीधा Google का Error Message दिखाएगा
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(`Google API Error: ${errData.error?.message || response.statusText}`);
+                }
+                
+                const data = await response.json();
+                const pcmBase64 = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+                
+                if(pcmBase64) {
+                    currentAudio = new Audio(URL.createObjectURL(createWavFromPcm(pcmBase64, 24000)));
+                    currentAudio.onplay = () => {
+                        isLoadingAudio = false; isSpeaking = true;
+                        icon.className = 'fa-solid fa-stop';
+                        btn.classList.remove('text-cyan-400');
+                        btn.classList.add('audio-playing');
+                    };
+                    currentAudio.onended = stopTTS;
+                    currentAudio.play();
+                } else { throw new Error("No audio data received from Gemini"); }
+
+            } catch (e) {
+                stopTTS();
+                console.error(e);
+                alert(`TTS Failed! \n\nReason: ${e.message} \n\n(Note: API keys typically start with "AIza". Check your Google AI Studio Dashboard.)`);
+            }
+        }
+
+        function stopTTS() {
+            if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+            isSpeaking = false; isLoadingAudio = false;
+            const btn = document.getElementById('ttsButton'), icon = document.getElementById('ttsIcon');
+            if(icon) icon.className = 'fa-solid fa-play';
+            if(btn) btn.classList.remove('audio-playing', 'text-cyan-400');
+        }
+
+        function createWavFromPcm(b64, sr) {
+            const str = atob(b64), bytes = new Uint8Array(str.length);
+            for(let i=0; i<str.length; i++) bytes[i] = str.charCodeAt(i);
+            const buf = new ArrayBuffer(44 + bytes.length), v = new DataView(buf);
+            const ws = (o, s) => { for(let i=0;i<s.length;i++) v.setUint8(o+i, s.charCodeAt(i)); };
+            ws(v, 0, 'RIFF'); v.setUint32(4, 36+bytes.length, true); ws(v, 8, 'WAVE'); ws(v, 12, 'fmt ');
+            v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+            v.setUint32(24, sr, true); v.setUint32(28, sr*2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+            ws(v, 36, 'data'); v.setUint32(40, bytes.length, true);
+            new Uint8Array(buf, 44).set(bytes); return new Blob([buf], {type: 'audio/wav'});
+        }
+
+        // Init
+        window.addEventListener('beforeunload', stopTTS);
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && gameOverlay.classList.contains('active')) closeGame(); });
+        window.onload = () => { renderGames(); renderFeaturedGames(); renderPoetryList(); selectPoem(0); };
+
+    </script>
+</body>
+</html>

@@ -40,142 +40,51 @@
             overflow-x: hidden;
             -webkit-tap-highlight-color: transparent;
         }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        /* Hide Scrollbar but keep functionality */
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
+        .page-section { display: none; opacity: 0; animation: fadeUp 0.4s ease-out forwards; }
+        .page-section.active { display: block; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Section Transitions */
-        .page-section {
-            display: none;
-            opacity: 0;
-            animation: fadeUp 0.4s ease-out forwards;
-        }
-        .page-section.active {
-            display: block;
-        }
-
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Glowing AI Sphere Animation */
-        .sphere-container {
-            position: relative;
-            width: 280px;
-            height: 280px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .ring {
-            position: absolute;
-            border-radius: 50%;
-            border: 1px solid rgba(6, 182, 212, 0.3);
-            animation: rotate 10s linear infinite;
-        }
+        .sphere-container { position: relative; width: 280px; height: 280px; display: flex; align-items: center; justify-content: center; }
+        .ring { position: absolute; border-radius: 50%; border: 1px solid rgba(6, 182, 212, 0.3); animation: rotate 10s linear infinite; }
         .ring:nth-child(1) { width: 100%; height: 100%; border-top-color: #a855f7; border-bottom-color: #3b82f6; animation-duration: 8s; }
         .ring:nth-child(2) { width: 85%; height: 85%; border-left-color: #06b6d4; border-right-color: #a855f7; animation-duration: 12s; animation-direction: reverse; }
         .ring:nth-child(3) { width: 70%; height: 70%; border-top-color: #3b82f6; border-left-color: #06b6d4; animation-duration: 6s; }
-        .grid-globe {
-            position: absolute;
-            width: 90%; height: 90%;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(6,182,212,0.1) 0%, rgba(0,0,0,0) 70%);
-            box-shadow: 0 0 40px rgba(59, 130, 246, 0.3), inset 0 0 20px rgba(168, 85, 247, 0.3);
-            border: 1px dashed rgba(255,255,255,0.1);
-        }
-        @keyframes rotate {
-            100% { transform: rotate(360deg); }
-        }
+        .grid-globe { position: absolute; width: 90%; height: 90%; border-radius: 50%; background: radial-gradient(circle, rgba(6,182,212,0.1) 0%, rgba(0,0,0,0) 70%); box-shadow: 0 0 40px rgba(59, 130, 246, 0.3), inset 0 0 20px rgba(168, 85, 247, 0.3); border: 1px dashed rgba(255,255,255,0.1); }
+        @keyframes rotate { 100% { transform: rotate(360deg); } }
 
-        /* Nav Tab active states */
-        .nav-item {
-            color: #6b7280;
-            transition: all 0.3s ease;
-        }
+        .nav-item { color: #6b7280; transition: all 0.3s ease; }
         .nav-item:hover { color: #ffffff; }
-        .nav-item.active-tab {
-            color: #a855f7;
-        }
-        .desktop-nav-item {
-            position: relative;
-        }
-        .desktop-nav-item::after {
-            content: ''; position: absolute; bottom: -4px; left: 0; width: 0%; height: 2px;
-            background: linear-gradient(90deg, #a855f7, #06b6d4); transition: width 0.3s ease;
-        }
+        .nav-item.active-tab { color: #a855f7; }
+        .desktop-nav-item { position: relative; }
+        .desktop-nav-item::after { content: ''; position: absolute; bottom: -4px; left: 0; width: 0%; height: 2px; background: linear-gradient(90deg, #a855f7, #06b6d4); transition: width 0.3s ease; }
         .desktop-nav-item.active-tab::after { width: 100%; }
         .desktop-nav-item.active-tab { color: #fff; }
 
-        /* Custom Cards */
-        .glass-panel {
-            background: rgba(15, 15, 25, 0.6);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
+        .glass-panel { background: rgba(15, 15, 25, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
 
-        /* Custom Scrollbar for Chat Box */
-        .chat-scroll::-webkit-scrollbar {
-            width: 6px;
-        }
-        .chat-scroll::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 4px;
-        }
-        .chat-scroll::-webkit-scrollbar-thumb {
-            background: rgba(168, 85, 247, 0.3);
-            border-radius: 4px;
-        }
-        .chat-scroll::-webkit-scrollbar-thumb:hover {
-            background: rgba(168, 85, 247, 0.6);
-        }
+        .chat-scroll::-webkit-scrollbar { width: 6px; }
+        .chat-scroll::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); border-radius: 4px; }
+        .chat-scroll::-webkit-scrollbar-thumb { background: rgba(168, 85, 247, 0.3); border-radius: 4px; }
+        .chat-scroll::-webkit-scrollbar-thumb:hover { background: rgba(168, 85, 247, 0.6); }
 
-        /* Game Iframe Overlay */
-        .game-overlay {
-            position: fixed; inset: 0; background: rgba(3, 3, 8, 0.98);
-            z-index: 9999; display: flex; flex-direction: column;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
-        }
+        .game-overlay { position: fixed; inset: 0; background: rgba(3, 3, 8, 0.98); z-index: 9999; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
         .game-overlay.active { opacity: 1; pointer-events: all; }
         
-        /* Audio Pulse */
-        .audio-playing {
-            animation: pulse-border 1.5s infinite;
-            color: #a855f7;
-            border-color: #a855f7;
-        }
-        @keyframes pulse-border {
-            0% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(168, 85, 247, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); }
-        }
+        .audio-playing { animation: pulse-border 1.5s infinite; color: #a855f7; border-color: #a855f7; }
+        @keyframes pulse-border { 0% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(168, 85, 247, 0); } 100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); } }
 
-        /* Chat bubbles */
-        .chat-bubble-user {
-            background: linear-gradient(135deg, #3b82f6 0%, #a855f7 100%);
-            border-bottom-right-radius: 4px;
-        }
-        .chat-bubble-hero {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-bottom-left-radius: 4px;
-        }
+        .chat-bubble-user { background: linear-gradient(135deg, #3b82f6 0%, #a855f7 100%); border-bottom-right-radius: 4px; }
+        .chat-bubble-hero { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255,255,255,0.05); border-bottom-left-radius: 4px; }
 
-        /* Base padding for mobile bottom nav */
         .content-wrapper { padding-bottom: 80px; }
         @media (min-width: 768px) { .content-wrapper { padding-bottom: 0; } }
     </style>
 </head>
 <body class="antialiased relative bg-[#030308] text-white">
 
-    <!-- Ambient Background Glows -->
     <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
         <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-neonPurple/10 blur-[120px]"></div>
         <div class="absolute bottom-[20%] right-[-10%] w-[30%] h-[40%] rounded-full bg-neonBlue/10 blur-[100px]"></div>
@@ -184,9 +93,7 @@
     <!-- Desktop Header -->
     <header class="hidden md:flex w-full items-center justify-between px-8 py-6 max-w-7xl mx-auto z-50">
         <div class="flex items-center gap-3 cursor-pointer group" onclick="switchTab('home')">
-            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-                <i class="fa-solid fa-code text-white"></i>
-            </div>
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform"><i class="fa-solid fa-code text-white"></i></div>
             <div>
                 <h1 class="font-bold text-xl tracking-wide">DEV<span class="text-neonPurple">&</span>SHAYAR</h1>
                 <p class="text-[10px] text-gray-400 tracking-[0.2em]">CREATE. PLAY. INSPIRE.</p>
@@ -204,9 +111,7 @@
     <!-- Mobile Header -->
     <header class="md:hidden w-full flex items-center justify-between px-5 py-5 z-50">
         <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('home')">
-            <div class="w-8 h-8 rounded-md bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
-                <i class="fa-solid fa-code text-white text-sm"></i>
-            </div>
+            <div class="w-8 h-8 rounded-md bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center"><i class="fa-solid fa-code text-white text-sm"></i></div>
             <div>
                 <h1 class="font-bold text-lg tracking-wide leading-none">DEV<span class="text-neonPurple">&</span>SHAYAR</h1>
                 <p class="text-[8px] text-gray-400 tracking-[0.15em] mt-1">CREATE. PLAY. INSPIRE.</p>
@@ -227,19 +132,13 @@
                         <span class="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Intelligence</span>
                     </h2>
                     <div class="w-16 h-1 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full mb-6"></div>
-                    <p class="text-gray-400 text-lg mb-10 max-w-md font-light leading-relaxed">
-                        Interactive AI-generated games, thought-provoking poetry, and experiments where creativity and technology become one.
-                    </p>
+                    <p class="text-gray-400 text-lg mb-10 max-w-md font-light leading-relaxed">Interactive AI-generated games, thought-provoking poetry, and experiments where creativity and technology become one.</p>
                 </div>
                 
                 <div class="w-full lg:w-1/2 flex justify-center py-10">
                     <div class="sphere-container">
-                        <div class="ring"></div>
-                        <div class="ring"></div>
-                        <div class="ring"></div>
-                        <div class="grid-globe flex items-center justify-center backdrop-blur-sm">
-                            <span class="text-6xl font-bold bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent tracking-tighter">AI</span>
-                        </div>
+                        <div class="ring"></div><div class="ring"></div><div class="ring"></div>
+                        <div class="grid-globe flex items-center justify-center backdrop-blur-sm"><span class="text-6xl font-bold bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent tracking-tighter">AI</span></div>
                         <div class="absolute -bottom-12 w-64 h-8 bg-blue-500/20 blur-xl rounded-[100%]"></div>
                         <div class="absolute -bottom-10 w-48 h-2 border-t border-cyan-500/50 rounded-[100%] shadow-[0_-5px_20px_rgba(6,182,212,0.5)]"></div>
                         <div class="absolute -bottom-8 w-32 h-1 border-t border-purple-500/50 rounded-[100%] shadow-[0_-5px_15px_rgba(168,85,247,0.5)]"></div>
@@ -250,39 +149,25 @@
             <!-- Featured Games -->
             <div class="py-12 border-b border-white/5 relative w-full overflow-hidden">
                 <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-xl font-bold flex items-center gap-3">
-                        <i class="fa-solid fa-gamepad text-blue-500"></i> FEATURED GAMES
-                    </h3>
-                    <button onclick="switchTab('games')" class="text-purple-400 text-sm hover:text-purple-300 font-medium flex items-center gap-1">
-                        View All <i class="fa-solid fa-chevron-right text-xs"></i>
-                    </button>
+                    <h3 class="text-xl font-bold flex items-center gap-3"><i class="fa-solid fa-gamepad text-blue-500"></i> FEATURED GAMES</h3>
+                    <button onclick="switchTab('games')" class="text-purple-400 text-sm hover:text-purple-300 font-medium flex items-center gap-1">View All <i class="fa-solid fa-chevron-right text-xs"></i></button>
                 </div>
-                <div id="featuredGamesContainer" class="flex overflow-x-auto gap-5 pb-6 no-scrollbar snap-x snap-mandatory w-full" style="-webkit-overflow-scrolling: touch; scroll-behavior: smooth;">
-                </div>
+                <div id="featuredGamesContainer" class="flex overflow-x-auto gap-5 pb-6 no-scrollbar snap-x snap-mandatory w-full" style="-webkit-overflow-scrolling: touch; scroll-behavior: smooth;"></div>
             </div>
 
             <!-- Featured Poems -->
             <div class="py-12 mb-10">
                 <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-xl font-bold flex items-center gap-3">
-                        <i class="fa-solid fa-feather-pointed text-purple-500"></i> FEATURED POEMS
-                    </h3>
-                    <button onclick="switchTab('poetry')" class="text-cyan-400 text-sm hover:text-cyan-300 font-medium flex items-center gap-1">
-                        View All <i class="fa-solid fa-chevron-right text-xs"></i>
-                    </button>
+                    <h3 class="text-xl font-bold flex items-center gap-3"><i class="fa-solid fa-feather-pointed text-purple-500"></i> FEATURED POEMS</h3>
+                    <button onclick="switchTab('poetry')" class="text-cyan-400 text-sm hover:text-cyan-300 font-medium flex items-center gap-1">View All <i class="fa-solid fa-chevron-right text-xs"></i></button>
                 </div>
                 
                 <div class="glass-panel rounded-2xl p-6 relative overflow-hidden cursor-pointer group" onclick="switchTab('poetry')">
-                    <div class="absolute right-0 bottom-0 opacity-20 transform translate-x-1/4 translate-y-1/4 group-hover:scale-110 transition-transform duration-500">
-                        <i class="fa-solid fa-feather text-9xl text-purple-500"></i>
-                    </div>
+                    <div class="absolute right-0 bottom-0 opacity-20 transform translate-x-1/4 translate-y-1/4 group-hover:scale-110 transition-transform duration-500"><i class="fa-solid fa-feather text-9xl text-purple-500"></i></div>
                     <div class="relative z-10 flex gap-4">
                         <i class="fa-solid fa-quote-left text-3xl text-purple-500/50 mt-2"></i>
                         <div>
-                            <p class="font-serif text-xl md:text-2xl text-gray-200 leading-relaxed mb-4">
-                                दिन भर मशीनों से बातें करता हूँ,<br>
-                                रात को ये खामोश कीबोर्ड चुभता है।
-                            </p>
+                            <p class="font-serif text-xl md:text-2xl text-gray-200 leading-relaxed mb-4">दिन भर मशीनों से बातें करता हूँ,<br>रात को ये खामोश कीबोर्ड चुभता है।</p>
                             <p class="text-sm text-cyan-400 font-medium tracking-wide">— Silent Keyboard</p>
                         </div>
                     </div>
@@ -293,21 +178,16 @@
         <!-- ==================== GAMES SECTION ==================== -->
         <main id="games" class="page-section max-w-7xl mx-auto px-5 md:px-8 py-10">
             <div class="mb-10 text-center md:text-left">
-                <h2 class="text-3xl md:text-4xl font-bold mb-3 flex items-center justify-center md:justify-start gap-3">
-                    <i class="fa-solid fa-gamepad text-blue-500"></i> The Grid
-                </h2>
+                <h2 class="text-3xl md:text-4xl font-bold mb-3 flex items-center justify-center md:justify-start gap-3"><i class="fa-solid fa-gamepad text-blue-500"></i> The Grid</h2>
                 <p class="text-gray-400 max-w-2xl">Select an executable to load the AI-generated simulation environment.</p>
             </div>
-            
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6" id="gameGrid"></div>
         </main>
 
         <!-- ==================== POETRY SECTION ==================== -->
         <main id="poetry" class="page-section max-w-7xl mx-auto px-5 md:px-8 py-10">
             <div class="mb-10 text-center md:text-left">
-                <h2 class="text-3xl md:text-4xl font-bold mb-3 font-serif flex items-center justify-center md:justify-start gap-3">
-                    <i class="fa-solid fa-feather-pointed text-purple-500"></i> Shayar's Canvas
-                </h2>
+                <h2 class="text-3xl md:text-4xl font-bold mb-3 font-serif flex items-center justify-center md:justify-start gap-3"><i class="fa-solid fa-feather-pointed text-purple-500"></i> Shayar's Canvas</h2>
                 <p class="text-gray-400 max-w-2xl">Emotions written in the syntax of the soul. Tap the audio icon to listen.</p>
             </div>
 
@@ -316,24 +196,17 @@
                 
                 <div class="w-full lg:w-2/3 glass-panel rounded-3xl p-6 md:p-10 relative border-t border-purple-500/20 shadow-[0_0_30px_rgba(168,85,247,0.05)]">
                     <div class="absolute top-6 right-6 z-10 flex flex-col items-end gap-2">
-                        <button id="ttsButton" onclick="togglePoetryAudio()" class="w-12 h-12 rounded-full glass-panel flex items-center justify-center text-xl text-gray-300 hover:text-purple-400 hover:border-purple-500/50 transition-all">
-                            <i class="fa-solid fa-play" id="ttsIcon"></i>
-                        </button>
+                        <button id="ttsButton" onclick="togglePoetryAudio()" class="w-12 h-12 rounded-full glass-panel flex items-center justify-center text-xl text-gray-300 hover:text-purple-400 hover:border-purple-500/50 transition-all"><i class="fa-solid fa-play" id="ttsIcon"></i></button>
                         
                         <div id="ttsProgressContainer" class="hidden flex-col items-end bg-[#0a0a14]/90 backdrop-blur-md p-3 rounded-xl border border-white/10 shadow-lg min-w-[200px] transition-all">
                             <div class="flex items-center justify-between w-full mb-2">
                                 <span id="ttsProgressText" class="text-[10px] font-mono text-cyan-400 uppercase tracking-wider">Loading Model...</span>
                                 <span id="ttsProgressPercent" class="text-[10px] font-mono text-gray-400">0%</span>
                             </div>
-                            <div class="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden mb-2">
-                                <div id="ttsProgressBar" class="h-full bg-gradient-to-r from-cyan-500 to-purple-500 w-0 transition-all duration-300"></div>
-                            </div>
-                            <button onclick="cancelTTS()" class="text-[10px] font-bold uppercase tracking-wider text-red-500 hover:text-red-400 flex items-center gap-1 transition-colors">
-                                <i class="fa-solid fa-times"></i> Cancel
-                            </button>
+                            <div class="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden mb-2"><div id="ttsProgressBar" class="h-full bg-gradient-to-r from-cyan-500 to-purple-500 w-0 transition-all duration-300"></div></div>
+                            <button onclick="cancelTTS()" class="text-[10px] font-bold uppercase tracking-wider text-red-500 hover:text-red-400 flex items-center gap-1 transition-colors"><i class="fa-solid fa-times"></i> Cancel</button>
                         </div>
                     </div>
-                    
                     <div id="poetryContentContainer" class="mt-4 relative z-0"></div>
                 </div>
             </div>
@@ -342,9 +215,7 @@
         <!-- ==================== HEROES CHAT SECTION ==================== -->
         <main id="heroes" class="page-section max-w-4xl mx-auto px-5 md:px-8 py-6 md:py-10">
             <div class="mb-4 text-center md:text-left">
-                <h2 class="text-xl md:text-2xl font-bold flex items-center justify-center md:justify-start gap-2 font-serif">
-                    <i class="fa-solid fa-landmark-dome text-yellow-500 text-lg"></i> Echoes of Greatness
-                </h2>
+                <h2 class="text-xl md:text-2xl font-bold flex items-center justify-center md:justify-start gap-2 font-serif"><i class="fa-solid fa-landmark-dome text-yellow-500 text-lg"></i> Echoes of Greatness</h2>
             </div>
 
             <!-- Chat Interface -->
@@ -353,9 +224,7 @@
                 <!-- Chat Header -->
                 <div class="p-3 md:p-4 bg-black/40 border-b border-white/5 flex items-center justify-between flex-shrink-0">
                     <div class="flex items-center gap-3 md:gap-4">
-                        <div id="heroAvatarSmall" class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-lg md:text-xl shadow-lg flex-shrink-0 transition-all duration-500">
-                            <i class="fa-solid fa-atom text-white"></i>
-                        </div>
+                        <div id="heroAvatarSmall" class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-lg md:text-xl shadow-lg flex-shrink-0 transition-all duration-500"><i class="fa-solid fa-atom text-white"></i></div>
                         <div class="flex flex-col">
                             <div class="relative flex items-center">
                                 <select id="heroSelect" onchange="changeHero()" class="appearance-none bg-transparent border-none text-white font-bold font-serif text-base md:text-lg focus:outline-none focus:ring-0 cursor-pointer pr-5 py-0 m-0 leading-tight">
@@ -383,9 +252,7 @@
                 <div class="p-3 md:p-4 bg-black/40 border-t border-white/5 flex-shrink-0">
                     <form onsubmit="handleHeroChat(event)" class="relative flex items-center">
                         <input type="text" id="chatInput" placeholder="Ask your question..." class="w-full bg-[#0a0a14] border border-white/10 rounded-full py-3 md:py-4 pl-5 pr-14 text-sm focus:outline-none focus:border-cyan-500 transition-all text-white placeholder-gray-500" autocomplete="off" required>
-                        <button type="submit" id="chatSubmitBtn" class="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed">
-                            <i class="fa-solid fa-paper-plane text-sm ml-[-2px]"></i>
-                        </button>
+                        <button type="submit" id="chatSubmitBtn" class="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"><i class="fa-solid fa-paper-plane text-sm ml-[-2px]"></i></button>
                     </form>
                 </div>
             </div>
@@ -395,30 +262,19 @@
         <main id="about" class="page-section max-w-5xl mx-auto px-5 md:px-8 py-10">
             <div class="glass-panel rounded-3xl overflow-hidden flex flex-col md:flex-row relative">
                 <div class="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 blur-[80px] rounded-full"></div>
-                
                 <div class="w-full md:w-2/5 p-10 flex flex-col justify-center items-center relative border-b md:border-b-0 md:border-r border-white/10 bg-black/40">
                     <div class="w-32 h-32 md:w-48 md:h-48 rounded-full bg-gradient-to-br from-cyan-400 to-purple-600 p-[2px] mb-6 shadow-[0_0_30px_rgba(6,182,212,0.3)]">
-                        <div class="w-full h-full bg-[#0a0a14] rounded-full flex items-center justify-center">
-                            <i class="fa-solid fa-user-astronaut text-6xl text-white/70"></i>
-                        </div>
+                        <div class="w-full h-full bg-[#0a0a14] rounded-full flex items-center justify-center"><i class="fa-solid fa-user-astronaut text-6xl text-white/70"></i></div>
                     </div>
                     <h3 class="text-2xl font-bold tracking-wide">The Architect</h3>
                     <p class="text-cyan-400 font-mono text-sm mt-1">&lt;coder /&gt; | ✍️ shayar</p>
                 </div>
-                
                 <div class="w-full md:w-3/5 p-8 md:p-12 relative z-10">
-                    <h2 class="text-3xl md:text-4xl font-bold mb-6 font-serif leading-tight">
-                        Developer by <span class="text-cyan-400">Profession</span>,<br>
-                        Shayar by <span class="text-purple-400">Passion</span>.
-                    </h2>
-                    
+                    <h2 class="text-3xl md:text-4xl font-bold mb-6 font-serif leading-tight">Developer by <span class="text-cyan-400">Profession</span>,<br>Shayar by <span class="text-purple-400">Passion</span>.</h2>
                     <div class="space-y-4 text-gray-300 font-light">
                         <p>During the day, I build systems. I speak in the strict, unforgiving languages of logic and algorithms to solve complex problems.</p>
                         <p>But when the screen dims, the keyboard becomes a canvas. I speak in rhythms and emotions. As a Shayar, I find the logic in human emotion and the art in everyday chaos.</p>
-                        <blockquote class="border-l-2 border-purple-500 pl-4 py-2 italic text-gray-400 my-6 font-serif">
-                            "Compiling code to build the future,<br>
-                            Composing words to heal the soul."
-                        </blockquote>
+                        <blockquote class="border-l-2 border-purple-500 pl-4 py-2 italic text-gray-400 my-6 font-serif">"Compiling code to build the future,<br>Composing words to heal the soul."</blockquote>
                         <p>This AI Playground is a collision of both worlds. The games here were orchestrated purely through AI prompting. The poetry is pure human heart.</p>
                     </div>
                 </div>
@@ -428,43 +284,21 @@
 
     <!-- Mobile Bottom Navigation -->
     <nav class="md:hidden fixed bottom-0 left-0 w-full glass-panel border-t border-white/10 z-50 px-2 py-3 flex justify-around items-center pb-safe">
-        <button onclick="switchTab('home')" class="nav-item active-tab flex flex-col items-center gap-1 w-12" data-tab="home">
-            <i class="fa-solid fa-house text-lg"></i>
-            <span class="text-[9px] font-semibold tracking-wide">HOME</span>
-        </button>
-        <button onclick="switchTab('games')" class="nav-item flex flex-col items-center gap-1 w-12" data-tab="games">
-            <i class="fa-solid fa-gamepad text-lg"></i>
-            <span class="text-[9px] font-semibold tracking-wide">GAMES</span>
-        </button>
-        <button onclick="switchTab('poetry')" class="nav-item flex flex-col items-center gap-1 w-12" data-tab="poetry">
-            <i class="fa-solid fa-feather text-lg"></i>
-            <span class="text-[9px] font-semibold tracking-wide">POETRY</span>
-        </button>
-        <button onclick="switchTab('heroes')" class="nav-item flex flex-col items-center gap-1 w-12" data-tab="heroes">
-            <i class="fa-solid fa-landmark text-lg"></i>
-            <span class="text-[9px] font-semibold tracking-wide">CHAT</span>
-        </button>
-        <button onclick="switchTab('about')" class="nav-item flex flex-col items-center gap-1 w-12" data-tab="about">
-            <i class="fa-regular fa-user text-lg"></i>
-            <span class="text-[9px] font-semibold tracking-wide">ABOUT</span>
-        </button>
+        <button onclick="switchTab('home')" class="nav-item active-tab flex flex-col items-center gap-1 w-12" data-tab="home"><i class="fa-solid fa-house text-lg"></i><span class="text-[9px] font-semibold tracking-wide">HOME</span></button>
+        <button onclick="switchTab('games')" class="nav-item flex flex-col items-center gap-1 w-12" data-tab="games"><i class="fa-solid fa-gamepad text-lg"></i><span class="text-[9px] font-semibold tracking-wide">GAMES</span></button>
+        <button onclick="switchTab('poetry')" class="nav-item flex flex-col items-center gap-1 w-12" data-tab="poetry"><i class="fa-solid fa-feather text-lg"></i><span class="text-[9px] font-semibold tracking-wide">POETRY</span></button>
+        <button onclick="switchTab('heroes')" class="nav-item flex flex-col items-center gap-1 w-12" data-tab="heroes"><i class="fa-solid fa-landmark text-lg"></i><span class="text-[9px] font-semibold tracking-wide">CHAT</span></button>
+        <button onclick="switchTab('about')" class="nav-item flex flex-col items-center gap-1 w-12" data-tab="about"><i class="fa-regular fa-user text-lg"></i><span class="text-[9px] font-semibold tracking-wide">ABOUT</span></button>
     </nav>
 
     <!-- GAME IFRAME OVERLAY -->
     <div class="game-overlay" id="gameOverlay">
         <div class="h-14 bg-[#05050A] border-b border-white/10 flex justify-between items-center px-4">
-            <div class="font-mono text-cyan-400 text-sm font-semibold tracking-wider flex items-center gap-2">
-                <i class="fa-solid fa-terminal text-xs"></i> <span id="activeGameTitle">Executing.exe</span>
-            </div>
-            <button onclick="closeGame()" class="w-8 h-8 rounded-full bg-white/5 text-gray-400 hover:bg-red-500/20 hover:text-red-400 transition-colors flex items-center justify-center">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
+            <div class="font-mono text-cyan-400 text-sm font-semibold tracking-wider flex items-center gap-2"><i class="fa-solid fa-terminal text-xs"></i> <span id="activeGameTitle">Executing.exe</span></div>
+            <button onclick="closeGame()" class="w-8 h-8 rounded-full bg-white/5 text-gray-400 hover:bg-red-500/20 hover:text-red-400 transition-colors flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="flex-1 bg-black flex items-center justify-center relative">
-            <div id="gameLoader" class="absolute flex flex-col items-center justify-center gap-4">
-                <div class="w-10 h-10 border-2 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin"></div>
-                <p class="font-mono text-cyan-500/50 text-xs animate-pulse tracking-widest">LOADING MODULE...</p>
-            </div>
+            <div id="gameLoader" class="absolute flex flex-col items-center justify-center gap-4"><div class="w-10 h-10 border-2 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin"></div><p class="font-mono text-cyan-500/50 text-xs animate-pulse tracking-widest">LOADING MODULE...</p></div>
             <iframe id="gameIframe" src="" title="Game Session" class="w-full h-full border-none opacity-0 transition-opacity duration-500"></iframe>
         </div>
     </div>
@@ -473,7 +307,6 @@
     <script type="module">
         
         // --- API ROUTE INTEGRATION (VERCEL BACKEND) ---
-        // Instead of Google directly, we now hit our secure Vercel Serverless function!
         async function callGemini(contentsPayload) {
             try {
                 const response = await fetch('/api/Gemini', {
@@ -500,15 +333,18 @@
         }
 
         async function getGeminiTTSAudio(text) {
-            const response = await fetch('/api/gemini', {
+            const response = await fetch('/api/Gemini', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'tts', text: text })
             });
 
-            if (!response.ok) throw new Error(`TTS API error! status: ${response.status}`);
-            
             const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || `TTS API error! status: ${response.status}`);
+            }
+            
             const inlineData = result.candidates?.[0]?.content?.parts?.[0]?.inlineData;
             if (!inlineData) throw new Error("No audio data returned");
 
@@ -542,12 +378,10 @@
             document.querySelectorAll('.page-section').forEach(sec => sec.classList.remove('active'));
             const targetSection = document.getElementById(tabId);
             if(targetSection) targetSection.classList.add('active');
-
             document.querySelectorAll('.nav-item').forEach(link => {
                 link.classList.remove('active-tab');
                 if(link.getAttribute('data-tab') === tabId) link.classList.add('active-tab');
             });
-
             if(tabId !== 'poetry') stopTTS();
             window.scrollTo({ top: 0, behavior: 'instant' });
         }

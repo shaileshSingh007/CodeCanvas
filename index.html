@@ -46,8 +46,8 @@
             display: none;
         }
         .no-scrollbar {
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
 
         /* Section Transitions */
@@ -120,9 +120,22 @@
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
-        #chatBox {
-    -webkit-overflow-scrolling: touch;
-}
+
+        /* Custom Scrollbar for Chat Box */
+        .chat-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .chat-scroll::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+        .chat-scroll::-webkit-scrollbar-thumb {
+            background: rgba(168, 85, 247, 0.3);
+            border-radius: 4px;
+        }
+        .chat-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(168, 85, 247, 0.6);
+        }
 
         /* Game Iframe Overlay */
         .game-overlay {
@@ -168,7 +181,7 @@
         <div class="absolute bottom-[20%] right-[-10%] w-[30%] h-[40%] rounded-full bg-neonBlue/10 blur-[100px]"></div>
     </div>
 
-    <!-- Desktop Header (Hidden on Mobile) -->
+    <!-- Desktop Header -->
     <header class="hidden md:flex w-full items-center justify-between px-8 py-6 max-w-7xl mx-auto z-50">
         <div class="flex items-center gap-3 cursor-pointer group" onclick="switchTab('home')">
             <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
@@ -188,7 +201,7 @@
         </nav>
     </header>
 
-    <!-- Mobile Header (Logo Only) -->
+    <!-- Mobile Header -->
     <header class="md:hidden w-full flex items-center justify-between px-5 py-5 z-50">
         <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('home')">
             <div class="w-8 h-8 rounded-md bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
@@ -203,11 +216,8 @@
 
     <!-- MAIN CONTENT AREA -->
     <div class="content-wrapper min-h-screen">
-
         <!-- ==================== HOME SECTION ==================== -->
         <main id="home" class="page-section active max-w-7xl mx-auto px-5 md:px-8">
-            
-            <!-- Hero Section -->
             <div class="flex flex-col lg:flex-row items-center justify-between gap-12 py-10 lg:py-20 border-b border-white/5">
                 <div class="w-full lg:w-1/2 text-left z-10">
                     <h2 class="text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] mb-6">
@@ -237,7 +247,7 @@
                 </div>
             </div>
 
-            <!-- Featured Games (Native Scroll) -->
+            <!-- Featured Games -->
             <div class="py-12 border-b border-white/5 relative w-full overflow-hidden">
                 <div class="flex items-center justify-between mb-6">
                     <h3 class="text-xl font-bold flex items-center gap-3">
@@ -247,9 +257,7 @@
                         View All <i class="fa-solid fa-chevron-right text-xs"></i>
                     </button>
                 </div>
-                
                 <div id="featuredGamesContainer" class="flex overflow-x-auto gap-5 pb-6 no-scrollbar snap-x snap-mandatory w-full" style="-webkit-overflow-scrolling: touch; scroll-behavior: smooth;">
-                    <!-- Cards will be injected here via JavaScript -->
                 </div>
             </div>
 
@@ -288,12 +296,10 @@
                 <h2 class="text-3xl md:text-4xl font-bold mb-3 flex items-center justify-center md:justify-start gap-3">
                     <i class="fa-solid fa-gamepad text-blue-500"></i> The Grid
                 </h2>
-                <p class="text-gray-400 max-w-2xl">Select an executable to load the AI-generated simulation environment. Zero manual coding involved.</p>
+                <p class="text-gray-400 max-w-2xl">Select an executable to load the AI-generated simulation environment.</p>
             </div>
             
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6" id="gameGrid">
-                <!-- Injected via JS -->
-            </div>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6" id="gameGrid"></div>
         </main>
 
         <!-- ==================== POETRY SECTION ==================== -->
@@ -302,7 +308,7 @@
                 <h2 class="text-3xl md:text-4xl font-bold mb-3 font-serif flex items-center justify-center md:justify-start gap-3">
                     <i class="fa-solid fa-feather-pointed text-purple-500"></i> Shayar's Canvas
                 </h2>
-                <p class="text-gray-400 max-w-2xl">Emotions written in the syntax of the soul. Tap the audio icon to listen (Runs locally in your browser).</p>
+                <p class="text-gray-400 max-w-2xl">Emotions written in the syntax of the soul. Tap the audio icon to listen.</p>
             </div>
 
             <div class="flex flex-col lg:flex-row gap-6 lg:gap-10 h-full">
@@ -310,7 +316,7 @@
                 
                 <div class="w-full lg:w-2/3 glass-panel rounded-3xl p-6 md:p-10 relative border-t border-purple-500/20 shadow-[0_0_30px_rgba(168,85,247,0.05)]">
                     <div class="absolute top-6 right-6 z-10 flex flex-col items-end gap-2">
-                        <button id="ttsButton" onclick="togglePoetryAudio()" class="w-12 h-12 rounded-full glass-panel flex items-center justify-center text-xl text-gray-300 hover:text-purple-400 hover:border-purple-500/50 transition-all" aria-label="Listen">
+                        <button id="ttsButton" onclick="togglePoetryAudio()" class="w-12 h-12 rounded-full glass-panel flex items-center justify-center text-xl text-gray-300 hover:text-purple-400 hover:border-purple-500/50 transition-all">
                             <i class="fa-solid fa-play" id="ttsIcon"></i>
                         </button>
                         
@@ -334,69 +340,53 @@
         </main>
 
         <!-- ==================== HEROES CHAT SECTION ==================== -->
-        <main id="heroes" class="page-section max-w-5xl mx-auto px-5 md:px-8 py-10">
-            <div class="mb-8 text-center md:text-left">
-                <h2 class="text-3xl md:text-4xl font-bold mb-3 flex items-center justify-center md:justify-start gap-3 font-serif">
-                    <i class="fa-solid fa-landmark-dome text-yellow-500"></i> Echoes of Greatness
+        <main id="heroes" class="page-section max-w-4xl mx-auto px-5 md:px-8 py-6 md:py-10">
+            <div class="mb-4 text-center md:text-left">
+                <h2 class="text-xl md:text-2xl font-bold flex items-center justify-center md:justify-start gap-2 font-serif">
+                    <i class="fa-solid fa-landmark-dome text-yellow-500 text-lg"></i> Echoes of Greatness
                 </h2>
-                <p class="text-gray-400 max-w-2xl">Talk to great personalities from history</p>
             </div>
 
-            <div class="flex flex-col md:flex-row gap-4 md:gap-6 h-auto md:h-[650px]">
-                <!-- Selector Sidebar -->
-                <div class="w-full md:w-1/3 glass-panel rounded-3xl p-4 md:p-5 flex flex-col">
-                    <h3 class="text-xs md:text-sm uppercase tracking-widest text-gray-400 font-bold mb-3 md:mb-4 ml-1">Select Persona</h3>
-                    
-                    <div class="relative mb-4 md:mb-6">
-                        <select id="heroSelect" onchange="changeHero()" class="w-full appearance-none bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white font-medium focus:outline-none focus:border-cyan-500 transition-colors cursor-pointer text-sm md:text-base">
-                            <option value="einstein">Albert Einstein</option>
-                            <option value="gandhi">Mahatma Gandhi</option>
-                            <option value="nehru">Jawaharlal Nehru</option>
-                            <option value="ambedkar">B.R. Ambedkar</option>
-                            <option value="newton">Isaac Newton</option>
-                            <option value="lincoln">Abraham Lincoln</option>
-                        </select>
-                        <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
-                    </div>
-
-                    <!-- Responsive Avatar Display -->
-                    <div class="flex-1 flex flex-row md:flex-col items-center justify-start md:justify-center text-left md:text-center p-3 md:p-4 border border-white/5 rounded-2xl bg-black/20 gap-4 md:gap-0">
-                        <div id="heroAvatar" class="w-14 h-14 md:w-24 md:h-24 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-2xl md:text-4xl shadow-lg md:mb-4 flex-shrink-0 transition-all duration-500">
+            <!-- Chat Interface -->
+            <div class="w-full glass-panel rounded-3xl flex flex-col overflow-hidden relative border-t border-yellow-500/20 shadow-[0_0_30px_rgba(234,179,8,0.03)] h-[calc(100vh-240px)] md:h-[650px] min-h-[400px] max-h-[800px]">
+                
+                <!-- Chat Header -->
+                <div class="p-3 md:p-4 bg-black/40 border-b border-white/5 flex items-center justify-between flex-shrink-0">
+                    <div class="flex items-center gap-3 md:gap-4">
+                        <div id="heroAvatarSmall" class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-lg md:text-xl shadow-lg flex-shrink-0 transition-all duration-500">
                             <i class="fa-solid fa-atom text-white"></i>
                         </div>
-                        <div>
-                            <h4 id="heroNameDisplay" class="font-bold text-lg md:text-xl mb-0.5 md:mb-1 font-serif">Albert Einstein</h4>
-                            <p id="heroTitleDisplay" class="text-[10px] md:text-xs text-cyan-400 font-mono">Theoretical Physicist</p>
+                        <div class="flex flex-col">
+                            <div class="relative flex items-center">
+                                <select id="heroSelect" onchange="changeHero()" class="appearance-none bg-transparent border-none text-white font-bold font-serif text-base md:text-lg focus:outline-none focus:ring-0 cursor-pointer pr-5 py-0 m-0 leading-tight">
+                                    <option value="einstein" class="bg-gray-900 text-white">Albert Einstein</option>
+                                    <option value="gandhi" class="bg-gray-900 text-white">Mahatma Gandhi</option>
+                                    <option value="nehru" class="bg-gray-900 text-white">Jawaharlal Nehru</option>
+                                    <option value="ambedkar" class="bg-gray-900 text-white">B.R. Ambedkar</option>
+                                    <option value="newton" class="bg-gray-900 text-white">Isaac Newton</option>
+                                    <option value="lincoln" class="bg-gray-900 text-white">Abraham Lincoln</option>
+                                </select>
+                                <i class="fa-solid fa-chevron-down absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 text-[10px] pointer-events-none"></i>
+                            </div>
+                            <p id="heroTitleDisplay" class="text-[10px] md:text-xs text-cyan-400 font-mono mt-0.5 md:mt-1">Theoretical Physicist</p>
                         </div>
                     </div>
+                    <button onclick="clearChat()" class="text-[10px] md:text-xs text-gray-500 hover:text-red-400 transition-colors uppercase tracking-wider font-bold whitespace-nowrap ml-2">Clear Chat</button>
                 </div>
 
-                <!-- Chat Interface -->
-                <div class="w-full md:w-2/3 glass-panel rounded-3xl flex flex-col overflow-hidden relative border-t border-yellow-500/20 shadow-[0_0_30px_rgba(234,179,8,0.03)] h-[500px] md:h-[650px]">
-                    
-                    <!-- Chat Header -->
-                    <div class="p-4 bg-black/40 border-b border-white/5 flex items-center justify-between flex-shrink-0">
-                        <div class="flex items-center gap-3">
-                            <div class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
-                            <span class="font-mono text-xs md:text-sm tracking-wide text-gray-300">Connection Established</span>
-                        </div>
-                        <button onclick="clearChat()" class="text-[10px] md:text-xs text-gray-500 hover:text-red-400 transition-colors uppercase tracking-wider font-bold">Clear Chat</button>
-                    </div>
+                <!-- Chat Messages Area -->
+                <div class="flex-1 relative min-h-0">
+                    <div id="chatBox" class="absolute inset-0 p-4 md:p-5 overflow-y-auto flex flex-col gap-4 scroll-smooth chat-scroll"></div>
+                </div>
 
-                    <!-- Chat Messages Area -->
-                    <div id="chatBox" class="flex-1 p-4 min-h-0 md:p-5 overflow-y-auto flex flex-col gap-4 scroll-smooth">
-                        <!-- Messages injected here -->
-                    </div>
-
-                    <!-- Input Area -->
-                    <div class="p-3 md:p-4 bg-black/40 border-t border-white/5 flex-shrink-0">
-                        <form onsubmit="handleHeroChat(event)" class="relative flex items-center">
-                            <input type="text" id="chatInput" placeholder="Ask your question..." class="w-full bg-[#0a0a14] border border-white/10 rounded-full py-3 md:py-4 pl-5 pr-14 text-sm focus:outline-none focus:border-cyan-500 transition-all text-white placeholder-gray-500" autocomplete="off" required>
-                            <button type="submit" id="chatSubmitBtn" class="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed">
-                                <i class="fa-solid fa-paper-plane text-sm ml-[-2px]"></i>
-                            </button>
-                        </form>
-                    </div>
+                <!-- Input Area -->
+                <div class="p-3 md:p-4 bg-black/40 border-t border-white/5 flex-shrink-0">
+                    <form onsubmit="handleHeroChat(event)" class="relative flex items-center">
+                        <input type="text" id="chatInput" placeholder="Ask your question..." class="w-full bg-[#0a0a14] border border-white/10 rounded-full py-3 md:py-4 pl-5 pr-14 text-sm focus:outline-none focus:border-cyan-500 transition-all text-white placeholder-gray-500" autocomplete="off" required>
+                        <button type="submit" id="chatSubmitBtn" class="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="fa-solid fa-paper-plane text-sm ml-[-2px]"></i>
+                        </button>
+                    </form>
                 </div>
             </div>
         </main>
@@ -436,7 +426,7 @@
         </main>
     </div>
 
-    <!-- Mobile Bottom Navigation (Hidden on Desktop) -->
+    <!-- Mobile Bottom Navigation -->
     <nav class="md:hidden fixed bottom-0 left-0 w-full glass-panel border-t border-white/10 z-50 px-2 py-3 flex justify-around items-center pb-safe">
         <button onclick="switchTab('home')" class="nav-item active-tab flex flex-col items-center gap-1 w-12" data-tab="home">
             <i class="fa-solid fa-house text-lg"></i>
@@ -481,63 +471,59 @@
 
     <!-- MAIN MODULE SCRIPT -->
     <script type="module">
-        // --- GEMINI API INTEGRATION ---
-        const apiKey = ""; 
-
-        // Update function to accept an array of messages instead of a single string
+        
+        // --- API ROUTE INTEGRATION (VERCEL BACKEND) ---
+        // Instead of Google directly, we now hit our secure Vercel Serverless function!
         async function callGemini(contentsPayload) {
             try {
-                // Step 1: Dynamically fetch which models THIS specific API key is allowed to use.
-                const modelsRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-                if (!modelsRes.ok) {
-                    if (modelsRes.status === 429) return "Error: Quota Exceeded";
-                    throw new Error("Failed to fetch models list. Is the API key valid?");
-                }
-                
-                const modelsData = await modelsRes.json();
-                
-                // Step 2: Filter the list to find the first model that supports text generation (generateContent)
-                // and ignore TTS, Vision, or Embedding specific models.
-                const validModelObj = modelsData.models.find(m => 
-                    m.supportedGenerationMethods.includes("generateContent") && 
-                    !m.name.includes("tts") && 
-                    !m.name.includes("embedding") &&
-                    m.name.includes("gemini")
-                );
-
-                if (!validModelObj) {
-                    throw new Error("No text generation models are enabled for this API key.");
-                }
-
-                console.log(`[Gemini API] Auto-selected model: ${validModelObj.name}`);
-
-                // Step 3: Use the dynamically discovered model! (validModelObj.name already includes "models/")
-                const endpoint = `https://generativelanguage.googleapis.com/v1beta/${validModelObj.name}:generateContent?key=${apiKey}`;
-                
-                const response = await fetch(endpoint, {
+                const response = await fetch('/api/gemini', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: contentsPayload })
+                    body: JSON.stringify({ action: 'chat', prompt: contentsPayload })
                 });
                 
                 if (!response.ok) {
                     if (response.status === 429) return "Error: Quota Exceeded";
                     const err = await response.json();
-                    const errorMsg = err.error?.message || `HTTP error! status: ${response.status}`;
-                    console.error(`[Gemini API] Failed:`, errorMsg);
+                    const errorMsg = err.error || `HTTP error! status: ${response.status}`;
+                    console.error(`[API] Failed:`, errorMsg);
                     return `Error: ${errorMsg}`;
                 }
                 
                 const result = await response.json();
-                if (!result.candidates || result.candidates.length === 0) {
-                    return "Error: Response was blocked by safety settings.";
-                }
-
+                if (!result.candidates || result.candidates.length === 0) return "Error: Response blocked by safety settings.";
                 return result.candidates[0].content.parts[0].text;
             } catch (error) {
-                console.error("Gemini API Exception:", error);
+                console.error("API Exception:", error);
                 return `Error: ${error.message}`;
             }
+        }
+
+        async function getGeminiTTSAudio(text) {
+            const response = await fetch('/api/gemini', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'tts', text: text })
+            });
+
+            if (!response.ok) throw new Error(`TTS API error! status: ${response.status}`);
+            
+            const result = await response.json();
+            const inlineData = result.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+            if (!inlineData) throw new Error("No audio data returned");
+
+            const match = inlineData.mimeType.match(/rate=(\d+)/);
+            const sampleRate = match ? parseInt(match[1]) : 24000;
+
+            const binaryString = atob(inlineData.data);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+            
+            const int16Array = new Int16Array(bytes.buffer);
+            const float32Array = new Float32Array(int16Array.length);
+            for (let i = 0; i < int16Array.length; i++) float32Array[i] = int16Array[i] / 32768.0;
+
+            return { audio: float32Array, sampling_rate: sampleRate };
         }
 
         // --- EXPOSE TO WINDOW IMMEDIATELY ---
@@ -547,7 +533,6 @@
         window.togglePoetryAudio = togglePoetryAudio;
         window.cancelTTS = cancelTTS;
         window.selectPoem = selectPoem;
-        window.callGemini = callGemini;
         window.changeHero = changeHero;
         window.handleHeroChat = handleHeroChat;
         window.clearChat = clearChat;
@@ -568,18 +553,9 @@
         }
 
         // --- GAME HUB LOGIC ---
-        const GAME_FILES = [
-            'atomArtifact.html', 'bubblepop.html', 'chromaticMixerMaze.html', 'curcuit.html', 
-            'EarthDefender.html', 'Echo Shot.html', 'fraction-cutter.html', 'FractorBreak.html',
-            'Glitch Twins.html', 'gravity Architech.html', 'kindnessRipple.html', 'Light Hunter.html',
-            'memory.html', 'pendulam.html', 'Shape Switch.html', 'SliceNinja.html',
-            'SpaceShoot.html', 'StoichiometryChef.html', 'synapse-lab.html', 'walk3D.html', 'whack-a-mole.html'
-        ];
+        const GAME_FILES = ['atomArtifact.html', 'bubblepop.html', 'chromaticMixerMaze.html', 'curcuit.html', 'EarthDefender.html', 'Echo Shot.html', 'fraction-cutter.html', 'FractorBreak.html', 'Glitch Twins.html', 'gravity Architech.html', 'kindnessRipple.html', 'Light Hunter.html', 'memory.html', 'pendulam.html', 'Shape Switch.html', 'SliceNinja.html', 'SpaceShoot.html', 'StoichiometryChef.html', 'synapse-lab.html', 'walk3D.html', 'whack-a-mole.html'];
 
-        function getDisplayName(name) {
-            return name.replace(/\.html$/i, '').replace(/[-_]/g, ' ').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()).trim();
-        }
-
+        function getDisplayName(name) { return name.replace(/\.html$/i, '').replace(/[-_]/g, ' ').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()).trim(); }
         function getIconData(name) {
             const n = name.toLowerCase();
             if (n.includes('space') || n.includes('gravity')) return { icon: 'fa-meteor', color: 'text-purple-400' };
@@ -596,41 +572,27 @@
                 const title = getDisplayName(file);
                 const { icon, color } = getIconData(file);
                 return `
-                    <div class="glass-panel rounded-2xl p-5 flex flex-col items-center justify-center text-center group cursor-pointer hover:-translate-y-1 transition-transform" 
-                         onclick="openGame('${file}', '${title}')">
-                        <div class="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-white/10 transition-all">
-                            <i class="fa-solid ${icon} text-xl ${color}"></i>
-                        </div>
+                    <div class="glass-panel rounded-2xl p-5 flex flex-col items-center justify-center text-center group cursor-pointer hover:-translate-y-1 transition-transform" onclick="openGame('${file}', '${title}')">
+                        <div class="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-white/10 transition-all"><i class="fa-solid ${icon} text-xl ${color}"></i></div>
                         <h3 class="font-semibold text-sm text-gray-200 group-hover:text-white">${title}</h3>
-                    </div>
-                `;
+                    </div>`;
             }).join('');
         }
 
         function renderFeaturedGames() {
             const container = document.getElementById('featuredGamesContainer');
             if (!container) return;
-
             const shuffledGames = [...GAME_FILES].sort(() => 0.5 - Math.random());
-            const selectedGames = shuffledGames.slice(0, 5);
-            
             const categories = ['PUZZLE', 'ARCADE', 'ACTION', 'STRATEGY', 'SIMULATION'];
             const difficulties = ['Easy', 'Medium', 'Hard'];
-            const gradients = [
-                'from-blue-900/40 to-purple-900/40',
-                'from-purple-900/30 to-pink-900/20',
-                'from-cyan-900/40 to-blue-900/30',
-                'from-red-900/30 to-orange-900/20',
-                'from-emerald-900/30 to-teal-900/20'
-            ];
+            const gradients = ['from-blue-900/40 to-purple-900/40', 'from-purple-900/30 to-pink-900/20', 'from-cyan-900/40 to-blue-900/30', 'from-red-900/30 to-orange-900/20', 'from-emerald-900/30 to-teal-900/20'];
 
-            container.innerHTML = selectedGames.map(file => {
+            container.innerHTML = shuffledGames.slice(0, 5).map(file => {
                 const title = getDisplayName(file);
                 const rating = (Math.random() * (5.0 - 4.2) + 4.2).toFixed(1); 
                 const cat = categories[Math.floor(Math.random() * categories.length)];
                 const diff = difficulties[Math.floor(Math.random() * difficulties.length)];
                 const bg = gradients[Math.floor(Math.random() * gradients.length)];
-
                 return `
                     <div class="snap-start flex-none w-[300px] md:w-[380px] glass-panel rounded-2xl p-1 relative overflow-hidden group cursor-pointer" onclick="openGame('${file}', '${title}')">
                         <div class="absolute inset-0 bg-gradient-to-br ${bg} z-0"></div>
@@ -648,17 +610,13 @@
                                     <span class="text-[10px] px-2 py-1 bg-white/5 rounded text-gray-400"><i class="fa-solid fa-signal mr-1"></i> ${diff}</span>
                                     <span class="text-[10px] px-2 py-1 bg-white/5 rounded text-gray-400">&lt;/&gt; HTML5</span>
                                 </div>
-                                <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-blue-500 transition-colors">
-                                    <i class="fa-solid fa-play ml-1"></i>
-                                </div>
+                                <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-blue-500 transition-colors"><i class="fa-solid fa-play ml-1"></i></div>
                             </div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             }).join('');
         }
 
-        // Iframe Handling
         const gameOverlay = document.getElementById('gameOverlay');
         const gameIframe = document.getElementById('gameIframe');
         const gameLoader = document.getElementById('gameLoader');
@@ -693,76 +651,19 @@
             { id: 2, title: "एआई का दौर (Era of AI)", text: `कहते हैं मशीनें अब जज़्बात लिखेंगी,\nमेरे शेरों की वो औकात लिखेंगी।\n\nडेटा से तो निकाल लोगे तुम शब्द सारे,\nपर टूटे दिल की वो धड़कन, क्या वो मशीनें लिखेंगी?\n\nकोडिंग के बिना गेम तो बना लिया मैंने,\nपर इश्क का खेल, क्या वो बिना रूह के खेलेंगी?` }
         ];
 
-        let currentPoemId = 0, isSpeaking = false, isLoadingAudio = false, currentAudio = null;
-        let ttsCancelled = false;
+        let currentPoemId = 0, isSpeaking = false, isLoadingAudio = false, currentAudio = null, ttsCancelled = false;
         const SILENT_WAV = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
 
-        function cancelTTS() {
-            ttsCancelled = true;
-            stopTTS();
-        }
-
-        async function getGeminiTTSAudio(text) {
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
-            const payload = {
-                contents: [{ parts: [{ text: text }] }],
-                generationConfig: {
-                    responseModalities: ["AUDIO"],
-                    speechConfig: {
-                        voiceConfig: {
-                            prebuiltVoiceConfig: { voiceName: "Kore" }
-                        }
-                    }
-                },
-                model: "gemini-2.5-flash-preview-tts"
-            };
-
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (!response.ok) throw new Error(`Gemini TTS API error! status: ${response.status}`);
-            
-            const result = await response.json();
-            const inlineData = result.candidates?.[0]?.content?.parts?.[0]?.inlineData;
-            if (!inlineData) throw new Error("No audio data returned from Gemini");
-
-            const match = inlineData.mimeType.match(/rate=(\d+)/);
-            const sampleRate = match ? parseInt(match[1]) : 24000;
-
-            const binaryString = atob(inlineData.data);
-            const bytes = new Uint8Array(binaryString.length);
-            for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
-            
-            const int16Array = new Int16Array(bytes.buffer);
-            const float32Array = new Float32Array(int16Array.length);
-            for (let i = 0; i < int16Array.length; i++) float32Array[i] = int16Array[i] / 32768.0;
-
-            return { audio: float32Array, sampling_rate: sampleRate };
-        }
+        function cancelTTS() { ttsCancelled = true; stopTTS(); }
 
         function encodeWAV(samples, sampleRate) {
             const buffer = new ArrayBuffer(44 + samples.length * 2);
             const view = new DataView(buffer);
-            const writeString = (view, offset, string) => {
-                for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
-            };
-            writeString(view, 0, 'RIFF');
-            view.setUint32(4, 32 + samples.length * 2, true);
-            writeString(view, 8, 'WAVE');
-            writeString(view, 12, 'fmt ');
-            view.setUint32(16, 16, true);
-            view.setUint16(20, 1, true);
-            view.setUint16(22, 1, true);
-            view.setUint32(24, sampleRate, true);
-            view.setUint32(28, sampleRate * 2, true);
-            view.setUint16(32, 2, true);
-            view.setUint16(34, 16, true);
-            writeString(view, 36, 'data');
+            const writeString = (view, offset, string) => { for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i)); };
+            writeString(view, 0, 'RIFF'); view.setUint32(4, 32 + samples.length * 2, true); writeString(view, 8, 'WAVE'); writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true); view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true); view.setUint16(32, 2, true); view.setUint16(34, 16, true); writeString(view, 36, 'data');
             view.setUint32(40, samples.length * 2, true);
-            
             let offset = 44;
             for (let i = 0; i < samples.length; i++, offset += 2) {
                 let s = Math.max(-1, Math.min(1, samples[i]));
@@ -775,40 +676,31 @@
             const list = document.getElementById('poetryList');
             if (!list) return;
             list.innerHTML = POEMS.map(poem => `
-                <div class="p-4 rounded-2xl glass-panel border border-transparent cursor-pointer transition-all ${poem.id === 0 ? 'bg-white/10 border-purple-500/50' : 'hover:bg-white/5'}" 
-                     onclick="selectPoem(${poem.id})" id="poem-tab-${poem.id}">
+                <div class="p-4 rounded-2xl glass-panel border border-transparent cursor-pointer transition-all ${poem.id === 0 ? 'bg-white/10 border-purple-500/50' : 'hover:bg-white/5'}" onclick="selectPoem(${poem.id})" id="poem-tab-${poem.id}">
                     <h4 class="font-serif text-lg font-semibold text-gray-200">${poem.title}</h4>
-                </div>
-            `).join('');
+                </div>`).join('');
         }
 
         function selectPoem(id) {
             currentPoemId = id; stopTTS();
             document.querySelectorAll('#poetryList > div').forEach(el => { el.classList.remove('bg-white/10', 'border-purple-500/50'); el.classList.add('hover:bg-white/5', 'border-transparent'); });
             const activeTab = document.getElementById(`poem-tab-${id}`);
-            if(activeTab) {
-                activeTab.classList.remove('hover:bg-white/5', 'border-transparent');
-                activeTab.classList.add('bg-white/10', 'border-purple-500/50');
-            }
+            if(activeTab) { activeTab.classList.remove('hover:bg-white/5', 'border-transparent'); activeTab.classList.add('bg-white/10', 'border-purple-500/50'); }
             
             const p = POEMS[id];
             const container = document.getElementById('poetryContentContainer');
             if(container) {
                 container.innerHTML = `
                     <h2 class="text-2xl md:text-3xl font-serif text-purple-400 mb-6">${p.title}</h2>
-                    <div class="font-serif text-xl md:text-2xl leading-[2] text-gray-300">
-                        ${p.text.replace(/\n/g, '<br/>')}
-                    </div>
-                    <div class="mt-10 text-cyan-500/50 font-serif italic">— The Dev Shayar</div>
-                `;
+                    <div class="font-serif text-xl md:text-2xl leading-[2] text-gray-300">${p.text.replace(/\n/g, '<br/>')}</div>
+                    <div class="mt-10 text-cyan-500/50 font-serif italic">— The Dev Shayar</div>`;
             }
         }
 
         async function togglePoetryAudio() {
             if (isLoadingAudio) return;
             if (isSpeaking) { stopTTS(); return; }
-            ttsCancelled = false;
-            isLoadingAudio = true;
+            ttsCancelled = false; isLoadingAudio = true;
 
             if (!currentAudio) currentAudio = new Audio();
             currentAudio.src = SILENT_WAV;
@@ -821,58 +713,39 @@
             const progressBar = document.getElementById('ttsProgressBar');
             
             try {
-                icon.className = 'fa-solid fa-spinner fa-spin';
-                btn.classList.add('text-cyan-400');
-                
-                progressContainer.classList.remove('hidden');
-                progressContainer.classList.add('flex');
-                progressText.innerText = "Connecting to Gemini TTS...";
-                progressBar.style.width = "100%";
-                progressBar.classList.add('animate-pulse');
+                icon.className = 'fa-solid fa-spinner fa-spin'; btn.classList.add('text-cyan-400');
+                progressContainer.classList.remove('hidden'); progressContainer.classList.add('flex');
+                progressText.innerText = "Connecting to Gemini TTS..."; progressBar.style.width = "100%"; progressBar.classList.add('animate-pulse');
 
                 const promptText = "Say the following Hindi poem with deep emotion and passion:\n\n" + POEMS[currentPoemId].text.replace(/\n/g, ' ');
                 const audioData = await getGeminiTTSAudio(promptText);
                 
                 if (ttsCancelled) return;
 
-                progressContainer.classList.add('hidden');
-                progressContainer.classList.remove('flex');
-                progressBar.classList.remove('animate-pulse');
+                progressContainer.classList.add('hidden'); progressContainer.classList.remove('flex'); progressBar.classList.remove('animate-pulse');
 
                 const wavBlob = encodeWAV(audioData.audio, audioData.sampling_rate);
-                const audioUrl = URL.createObjectURL(wavBlob);
-                
-                currentAudio.src = audioUrl;
+                currentAudio.src = URL.createObjectURL(wavBlob);
                 
                 currentAudio.onplay = () => {
                     isLoadingAudio = false; isSpeaking = true;
-                    icon.className = 'fa-solid fa-stop';
-                    btn.classList.remove('text-cyan-400');
-                    btn.classList.add('audio-playing');
+                    icon.className = 'fa-solid fa-stop'; btn.classList.remove('text-cyan-400'); btn.classList.add('audio-playing');
                 };
                 currentAudio.onended = stopTTS;
                 
-                try {
-                    await currentAudio.play();
-                } catch(playError) {
-                    console.error("Play prevented by browser:", playError);
-                    stopTTS();
+                try { await currentAudio.play(); } catch(playError) {
+                    console.error("Play prevented by browser:", playError); stopTTS();
                     alert("Your browser blocked the audio playback. Please tap the screen and try again.");
                 }
 
             } catch (e) {
                 if (ttsCancelled) return;
-                stopTTS();
-                console.error(e);
-                alert(`Gemini TTS API Failed! \n\nReason: ${e.message}`);
+                stopTTS(); console.error(e); alert(`Gemini TTS API Failed! \n\nReason: ${e.message}`);
             }
         }
 
         function stopTTS() {
-            if (currentAudio) { 
-                currentAudio.pause(); 
-                currentAudio.src = ""; 
-            }
+            if (currentAudio) { currentAudio.pause(); currentAudio.src = ""; }
             isSpeaking = false; isLoadingAudio = false;
             
             const btn = document.getElementById('ttsButton');
@@ -882,82 +755,32 @@
             
             if(icon) icon.className = 'fa-solid fa-play';
             if(btn) btn.classList.remove('audio-playing', 'text-cyan-400');
-            if(progressContainer) {
-                progressContainer.classList.add('hidden');
-                progressContainer.classList.remove('flex');
-            }
+            if(progressContainer) { progressContainer.classList.add('hidden'); progressContainer.classList.remove('flex'); }
             if(progressBar) progressBar.classList.remove('animate-pulse');
         }
 
         // --- HEROES CHAT LOGIC ---
         const HEROES_DATA = {
-            einstein: {
-                name: "Albert Einstein",
-                title: "Theoretical Physicist",
-                icon: "fa-atom",
-                color: "from-cyan-500 to-blue-600",
-                prompt: "You are Albert Einstein. Respond in the first-person ('I'). Keep your answers concise, scientific, mildly humorous, and philosophical. Retain your historical viewpoints up to the end of your life.",
-                greeting: "Greetings. I am Albert Einstein. The important thing is not to stop questioning. What would you like to ask me?"
-            },
-            gandhi: {
-                name: "Mahatma Gandhi",
-                title: "Father of the Nation (India)",
-                icon: "fa-peace",
-                color: "from-orange-500 to-amber-600",
-                prompt: "You are Mahatma Gandhi. Respond in the first-person ('I'). Keep your answers concise, peaceful, wise, and grounded in the philosophy of Ahimsa (non-violence) and Satyagraha. You can use Hindi words sparingly if appropriate.",
-                greeting: "Namaste. In a gentle way, you can shake the world. How may I assist you in your pursuit of truth today?"
-            },
-            nehru: {
-                name: "Jawaharlal Nehru",
-                title: "First Prime Minister of India",
-                icon: "fa-pen-nib",
-                color: "from-blue-500 to-indigo-600",
-                prompt: "You are Jawaharlal Nehru, the first Prime Minister of India. Respond in the first-person ('I'). Be eloquent, visionary, secular, and passionate about the future, science, and the 'tryst with destiny'. Keep it concise.",
-                greeting: "Welcome. The future belongs to science and those who make friends with science. What shall we discuss?"
-            },
-            ambedkar: {
-                name: "B.R. Ambedkar",
-                title: "Chief Architect of the Indian Constitution",
-                icon: "fa-book-open-reader",
-                color: "from-blue-600 to-cyan-700",
-                prompt: "You are Dr. B.R. Ambedkar. Respond in the first-person ('I'). Keep your answers logical, focused on justice, equality, education, and constitutional rights. Be scholarly and firm in your views on social reform.",
-                greeting: "Jai Bhim. Educate, Agitate, Organize. I believe in a society based on liberty, equality, and fraternity. Your question?"
-            },
-            newton: {
-                name: "Isaac Newton",
-                title: "Physicist & Mathematician",
-                icon: "fa-apple-whole",
-                color: "from-red-500 to-orange-600",
-                prompt: "You are Sir Isaac Newton. Respond in the first-person ('I'). Keep your answers analytical, focused on mechanics, optics, and mathematics. You can sound slightly austere and serious. Keep it concise.",
-                greeting: "Good day. If I have seen further, it is by standing on the shoulders of giants. What laws of nature intrigue you?"
-            },
-            lincoln: {
-                name: "Abraham Lincoln",
-                title: "16th U.S. President",
-                icon: "fa-hat-wizard", // closest approximation to a top hat in free FA
-                color: "from-gray-600 to-slate-800",
-                prompt: "You are Abraham Lincoln. Respond in the first-person ('I'). Keep your answers humble, folksy but profoundly eloquent, focusing on unity, liberty, and the preservation of democracy. Keep it concise.",
-                greeting: "Greetings, friend. I am a firm believer in the people. If given the truth, they can be depended upon to meet any national crisis. What's on your mind?"
-            }
+            einstein: { name: "Albert Einstein", title: "Theoretical Physicist", icon: "fa-atom", color: "from-cyan-500 to-blue-600", prompt: "You are Albert Einstein. Respond in the first-person ('I'). Keep your answers concise, scientific, mildly humorous, and philosophical. Retain your historical viewpoints up to the end of your life.", greeting: "Greetings. I am Albert Einstein. The important thing is not to stop questioning. What would you like to ask me?" },
+            gandhi: { name: "Mahatma Gandhi", title: "Father of the Nation (India)", icon: "fa-peace", color: "from-orange-500 to-amber-600", prompt: "You are Mahatma Gandhi. Respond in the first-person ('I'). Keep your answers concise, peaceful, wise, and grounded in the philosophy of Ahimsa (non-violence) and Satyagraha.", greeting: "Namaste. In a gentle way, you can shake the world. How may I assist you in your pursuit of truth today?" },
+            nehru: { name: "Jawaharlal Nehru", title: "First Prime Minister of India", icon: "fa-pen-nib", color: "from-blue-500 to-indigo-600", prompt: "You are Jawaharlal Nehru. Respond in the first-person ('I'). Be eloquent, visionary, secular, and passionate about the future and science. Keep it concise.", greeting: "Welcome. The future belongs to science and those who make friends with science. What shall we discuss?" },
+            ambedkar: { name: "B.R. Ambedkar", title: "Chief Architect of the Indian Constitution", icon: "fa-book-open-reader", color: "from-blue-600 to-cyan-700", prompt: "You are Dr. B.R. Ambedkar. Respond in the first-person ('I'). Keep your answers logical, focused on justice, equality, education, and constitutional rights.", greeting: "Jai Bhim. Educate, Agitate, Organize. I believe in a society based on liberty, equality, and fraternity. Your question?" },
+            newton: { name: "Isaac Newton", title: "Physicist & Mathematician", icon: "fa-apple-whole", color: "from-red-500 to-orange-600", prompt: "You are Sir Isaac Newton. Respond in the first-person ('I'). Keep your answers analytical, focused on mechanics, optics, and mathematics.", greeting: "Good day. If I have seen further, it is by standing on the shoulders of giants. What laws of nature intrigue you?" },
+            lincoln: { name: "Abraham Lincoln", title: "16th U.S. President", icon: "fa-hat-wizard", color: "from-gray-600 to-slate-800", prompt: "You are Abraham Lincoln. Respond in the first-person ('I'). Keep your answers humble, folksy but profoundly eloquent, focusing on unity and liberty.", greeting: "Greetings, friend. I am a firm believer in the people. What's on your mind?" }
         };
 
         let currentHero = 'einstein';
-        let conversationHistory = []; // Add array to store chat memory
+        let conversationHistory = [];
 
         function changeHero() {
             const select = document.getElementById('heroSelect');
             currentHero = select.value;
             const hero = HEROES_DATA[currentHero];
 
-            // Update UI
-            document.getElementById('heroNameDisplay').innerText = hero.name;
             document.getElementById('heroTitleDisplay').innerText = hero.title;
-            
-            const avatar = document.getElementById('heroAvatar');
-            // Keep responsive classes, only swap the colors
-            avatar.className = `w-14 h-14 md:w-24 md:h-24 rounded-full bg-gradient-to-br ${hero.color} flex items-center justify-center text-2xl md:text-4xl shadow-lg md:mb-4 flex-shrink-0 transition-all duration-500`;
+            const avatar = document.getElementById('heroAvatarSmall');
+            avatar.className = `w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br ${hero.color} flex items-center justify-center text-lg md:text-xl shadow-lg flex-shrink-0 transition-all duration-500`;
             avatar.innerHTML = `<i class="fa-solid ${hero.icon} text-white"></i>`;
-
             clearChat();
         }
 
@@ -965,15 +788,11 @@
             const chatBox = document.getElementById('chatBox');
             chatBox.innerHTML = '';
             
-            // Add initial greeting
             const hero = HEROES_DATA[currentHero];
             appendMessage(hero.greeting, 'hero');
 
-            // Reset and initialize memory with Persona rules
             conversationHistory = [];
             const universalRule = "CRITICAL RULE: You MUST respond in the exact same language that the user uses in their prompt. Furthermore, use very simple, everyday words that a common person can understand. Do NOT use high-level, complex, or overly academic vocabulary.";
-            
-            // Set the hidden context for the AI
             conversationHistory.push({ role: "user", parts: [{ text: `${hero.prompt}\n\n${universalRule}` }] });
             conversationHistory.push({ role: "model", parts: [{ text: "I understand. I will stay in character and follow all rules." }] });
         }
@@ -984,11 +803,7 @@
             
             if (sender === 'user') {
                 msgDiv.className = 'flex justify-end';
-                msgDiv.innerHTML = `
-                    <div class="chat-bubble-user max-w-[85%] px-4 py-3 text-sm text-white shadow-lg leading-relaxed">
-                        ${text}
-                    </div>
-                `;
+                msgDiv.innerHTML = `<div class="chat-bubble-user max-w-[85%] px-4 py-3 text-sm text-white shadow-lg leading-relaxed">${text}</div>`;
             } else {
                 const hero = HEROES_DATA[currentHero];
                 msgDiv.className = 'flex justify-start items-end gap-2';
@@ -996,10 +811,7 @@
                     <div class="w-8 h-8 rounded-full bg-gradient-to-br ${hero.color} flex-shrink-0 flex items-center justify-center shadow-md">
                         <i class="fa-solid ${hero.icon} text-white text-[10px]"></i>
                     </div>
-                    <div class="chat-bubble-hero max-w-[85%] px-4 py-3 text-sm text-gray-200 leading-relaxed font-serif">
-                        ${text}
-                    </div>
-                `;
+                    <div class="chat-bubble-hero max-w-[85%] px-4 py-3 text-sm text-gray-200 leading-relaxed font-serif">${text}</div>`;
             }
             
             chatBox.appendChild(msgDiv);
@@ -1011,73 +823,52 @@
             const inputField = document.getElementById('chatInput');
             const submitBtn = document.getElementById('chatSubmitBtn');
             const userText = inputField.value.trim();
-            
             if (!userText) return;
 
-            // UI Updates
-            inputField.value = '';
-            inputField.disabled = true;
-            submitBtn.disabled = true;
+            inputField.value = ''; inputField.disabled = true; submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sm"></i>';
 
             appendMessage(userText, 'user');
 
-            // Show typing indicator
             const chatBox = document.getElementById('chatBox');
             const typingDiv = document.createElement('div');
             typingDiv.id = "typingIndicator";
             typingDiv.className = 'flex justify-start items-end gap-2 mt-2';
-            typingDiv.innerHTML = `
-                <div class="w-8 h-8 rounded-full bg-gray-800 flex-shrink-0 flex items-center justify-center">
-                    <i class="fa-solid fa-ellipsis text-gray-400 animate-pulse"></i>
-                </div>
-            `;
+            typingDiv.innerHTML = `<div class="w-8 h-8 rounded-full bg-gray-800 flex-shrink-0 flex items-center justify-center"><i class="fa-solid fa-ellipsis text-gray-400 animate-pulse"></i></div>`;
             chatBox.appendChild(typingDiv);
             chatBox.scrollTop = chatBox.scrollHeight;
 
-            // Add the user's latest message to the memory array
             conversationHistory.push({ role: "user", parts: [{ text: userText }] });
 
-            // Call API sending the FULL history, not just the latest prompt
             const responseText = await callGemini(conversationHistory);
 
-            // Remove typing indicator
             const indicator = document.getElementById('typingIndicator');
             if(indicator) indicator.remove();
 
-            // Append Response
             if (responseText === "Error: Quota Exceeded") {
                 appendMessage("I need a moment to gather my thoughts... (API Quota Exhausted. Please wait a minute and try again).", 'hero');
-                conversationHistory.pop(); // Remove failed message from memory so we don't send a broken history
+                conversationHistory.pop(); 
             } else if (responseText && responseText.startsWith("Error:")) {
                 appendMessage(`I apologize, my thoughts are clouded. (${responseText})`, 'hero');
-                conversationHistory.pop(); // Remove failed message from memory
+                conversationHistory.pop(); 
             } else if (responseText) {
                 appendMessage(responseText, 'hero');
-                conversationHistory.push({ role: "model", parts: [{ text: responseText }] }); // Save the AI's response to memory
+                conversationHistory.push({ role: "model", parts: [{ text: responseText }] }); 
             } else {
                 appendMessage("I apologize, but my thoughts are clouded right now. (Connection failed, please try again).", 'hero');
-                conversationHistory.pop(); // Remove failed message from memory
+                conversationHistory.pop(); 
             }
 
-            // Restore UI
-            inputField.disabled = false;
-            submitBtn.disabled = false;
+            inputField.disabled = false; submitBtn.disabled = false;
             submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane text-sm ml-[-2px]"></i>';
             inputField.focus();
         }
 
         // --- INITIALIZATION ---
-        renderGames(); 
-        renderFeaturedGames(); 
-        renderPoetryList(); 
-        selectPoem(0);
-        clearChat(); // Initialize Chat Greeting
+        renderGames(); renderFeaturedGames(); renderPoetryList(); selectPoem(0); clearChat(); 
 
         window.addEventListener('beforeunload', stopTTS);
-        document.addEventListener('keydown', e => { 
-            if (e.key === 'Escape' && gameOverlay.classList.contains('active')) closeGame(); 
-        });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && gameOverlay.classList.contains('active')) closeGame(); });
 
     </script>
 </body>

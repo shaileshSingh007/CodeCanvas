@@ -476,7 +476,7 @@
         // Instead of Google directly, we now hit our secure Vercel Serverless function!
         async function callGemini(contentsPayload) {
             try {
-                const response = await fetch('/api/gemini', {
+                const response = await fetch('/api/Gemini', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'chat', prompt: contentsPayload })

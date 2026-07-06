@@ -4,7 +4,6 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    // Securely grab the API key from Vercel Environment Variables
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
         return res.status(500).json({ error: 'GEMINI_API_KEY is not set in Vercel settings.' });
@@ -15,7 +14,6 @@ export default async function handler(req, res) {
     try {
         // --- 1. HEROES CHAT LOGIC ---
         if (action === 'chat') {
-            // Dynamically find available text model for this key
             const modelsRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
             if (!modelsRes.ok) {
                 if (modelsRes.status === 429) return res.status(429).json({ error: 'Quota Exceeded' });
@@ -35,7 +33,7 @@ export default async function handler(req, res) {
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: prompt }) // 'prompt' is the conversation history array
+                body: JSON.stringify({ contents: prompt })
             });
             
             const data = await response.json();
@@ -50,7 +48,8 @@ export default async function handler(req, res) {
                 generationConfig: {
                     responseModalities: ["AUDIO"],
                     speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } }
-                }
+                },
+                model: "gemini-2.5-flash-preview-tts" // <-- This was missing in the previous backend version!
             };
 
             const response = await fetch(endpoint, {
@@ -60,7 +59,12 @@ export default async function handler(req, res) {
             });
             
             const data = await response.json();
-            return res.status(response.status).json(data);
+            
+            if (!response.ok) {
+                return res.status(response.status).json({ error: data.error?.message || 'Gemini TTS request failed' });
+            }
+
+            return res.status(200).json(data);
         }
         
         else {

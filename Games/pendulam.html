@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover, maximum-scale=1.0, minimum-scale=1.0">
+  <title>Pendulum Catcher · Swing & Collect</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      background: linear-gradient(180deg, #0a0a2e 0%, #1a1a4e 50%, #0d0d30 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Segoe UI', 'Fredoka', system-ui, sans-serif;
+      padding: 0;
+      margin: 0;
+    }
+
+    .game-wrapper {
+      background: linear-gradient(180deg, #1a1a40 0%, #0d0d30 100%);
+      border-radius: 0;
+      padding: 6px;
+      box-shadow: 0 0 60px rgba(100, 150, 255, 0.3);
+      border: 2px solid #3a3a8a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      max-width: 100%;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      padding: 0.3rem 0.5rem;
+      color: #c0d0ff;
+      font-weight: bold;
+      font-size: clamp(0.6rem, 1.5vw, 0.8rem);
+      background: rgba(20, 20, 60, 0.9);
+      border-radius: 12px;
+      margin-bottom: 4px;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      flex-shrink: 0;
+      min-height: 30px;
+    }
+
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 0.2rem;
+      background: #2a2a6a;
+      padding: 0.15rem 0.5rem;
+      border-radius: 12px;
+      box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+      font-size: clamp(0.55rem, 1.3vw, 0.7rem);
+    }
+
+    #scoreDisplay, #livesDisplay, #bestDisplay {
+      color: #ffd700;
+      font-size: clamp(0.7rem, 1.6vw, 0.9rem);
+      min-width: 22px;
+      text-align: center;
+      text-shadow: 0 0 10px #ffd700;
+    }
+
+    .canvas-container {
+      flex: 1;
+      width: 100%;
+      display: flex;
+      align-items: stretch;
+      justify-content: stretch;
+      min-height: 0;
+      position: relative;
+    }
+
+    canvas {
+      display: block;
+      border-radius: 8px;
+      background: radial-gradient(ellipse at 50% 0%, #1a1a50 0%, #0a0a20 100%);
+      box-shadow: inset 0 0 50px rgba(50, 50, 200, 0.2);
+      border: 2px solid #3a3a7a;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .controls {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.3rem 0.4rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      min-height: 32px;
+      flex-shrink: 0;
+    }
+
+    button {
+      background: radial-gradient(circle at 30% 30%, #6b6bff, #3a3acc);
+      border: none;
+      color: white;
+      font-weight: bold;
+      font-size: clamp(0.65rem, 1.4vw, 0.8rem);
+      padding: 0.35rem 1rem;
+      border-radius: 1.5rem;
+      cursor: pointer;
+      box-shadow: 0 3px 0 #1e1e7a, 0 5px 10px rgba(0, 0, 0, 0.5);
+      border: 1px solid #aaaaff;
+      transition: all 0.08s linear;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      display: flex;
+      align-items: center;
+      gap: 0.2rem;
+      white-space: nowrap;
+    }
+
+    button:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 #1e1e7a, 0 3px 6px rgba(0,0,0,0.5);
+    }
+
+    #exitBtn {
+      background: radial-gradient(circle at 30% 30%, #e74c3c, #c0392b);
+      box-shadow: 0 3px 0 #7b241c, 0 5px 10px rgba(0, 0, 0, 0.5);
+      border-color: #f1948a;
+      display: none;
+    }
+
+    .instruction {
+      color: #b0b0ff;
+      font-size: clamp(0.5rem, 1.1vw, 0.65rem);
+      background: rgba(20,20,50,0.7);
+      padding: 0.12rem 0.6rem;
+      border-radius: 8px;
+      white-space: nowrap;
+    }
+
+    #messageBox {
+      color: #ffcc80;
+      font-weight: bold;
+      font-size: clamp(0.55rem, 1.2vw, 0.7rem);
+      min-height: 1rem;
+      white-space: nowrap;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+<div class="game-wrapper">
+  <div class="header">
+    <div class="stat"><span>💎</span> <span id="scoreDisplay">0</span></div>
+    <div class="stat"><span>❤️</span> <span id="livesDisplay">5</span></div>
+    <div class="stat"><span>🏆</span> <span id="bestDisplay">0</span></div>
+  </div>
+
+  <div class="canvas-container">
+    <canvas id="gameCanvas" aria-label="Pendulum Catcher game canvas"></canvas>
+  </div>
+
+  <div class="controls" id="controlsArea">
+    <button id="startBtn">
+      <span>⏳</span> START
+    </button>
+    <span class="instruction" id="instructionText">👆 CLICK DIRECTION TO SWING</span>
+    <span id="messageBox">✨ Catch the gems!</span>
+    <div class="button-group" id="gameOverButtons" style="display: none;">
+      <button id="playAgainBtn">
+        <span>🔄</span> AGAIN
+      </button>
+      <button id="exitBtn">
+        <span>🚪</span> EXIT
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const canvasContainer = document.querySelector('.canvas-container');
+
+    // UI elements
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const livesDisplay = document.getElementById('livesDisplay');
+    const bestDisplay = document.getElementById('bestDisplay');
+    const messageBox = document.getElementById('messageBox');
+    const startBtn = document.getElementById('startBtn');
+    const playAgainBtn = document.getElementById('playAgainBtn');
+    const exitBtn = document.getElementById('exitBtn');
+    const gameOverButtons = document.getElementById('gameOverButtons');
+    const instructionText = document.getElementById('instructionText');
+
+    // ----- Physics Constants -----
+    const GRAVITY = 0.3;
+    const PENDULUM_LENGTH_RATIO = 0.45;
+    const SWING_FORCE = 0.025; // Very gentle force per click
+    const MAX_ANGULAR_VELOCITY = 0.08;
+    const DAMPING = 0.998;
+    
+    // ----- Game State -----
+    let gameActive = false;
+    let gameOver = false;
+    let score = 0;
+    let lives = 5;
+    let bestScore = 0;
+    
+    // Pendulum physics
+    let pivotX = 0;
+    let pivotY = 0;
+    let pendulumLength = 150;
+    let angle = 0;
+    let angularVelocity = 0;
+    let catcherRadius = 16;
+    
+    // Falling items
+    let items = [];
+    let particles = [];
+    let floatingTexts = [];
+    
+    // Game scale
+    let gameScale = 1;
+    
+    // Spawn timer
+    let spawnTimer = 0;
+    let difficultyLevel = 1;
+    
+    // Click ripple effects
+    let ripples = [];
+    
+    // Gem types
+    const GEMS = [
+      {emoji: '💎', points: 50, color: '#4dc9f6'},
+      {emoji: '🔮', points: 30, color: '#a55eea'},
+      {emoji: '💍', points: 40, color: '#ffd700'},
+      {emoji: '⭐', points: 25, color: '#ffa502'},
+      {emoji: '🔵', points: 20, color: '#3742fa'},
+      {emoji: '🟢', points: 20, color: '#2ed573'}
+    ];
+    
+    const ROCKS = [
+      {emoji: '🪨', penalty: 1, color: '#888888'},
+      {emoji: '💣', penalty: 2, color: '#ff4444'}
+    ];
+
+    // ----- Resize Canvas -----
+    function resizeCanvas() {
+      const container = canvasContainer;
+      const rect = container.getBoundingClientRect();
+      
+      canvas.width = Math.floor(rect.width);
+      canvas.height = Math.floor(rect.height);
+      
+      gameScale = Math.min(canvas.width / 400, canvas.height / 600, 1.3);
+      catcherRadius = Math.floor(15 * gameScale);
+      
+      pivotX = canvas.width / 2;
+      pivotY = canvas.height * 0.1;
+      pendulumLength = canvas.height * PENDULUM_LENGTH_RATIO;
+      
+      loadBestScore();
+    }
+
+    function loadBestScore() {
+      const saved = localStorage.getItem('pendulumCatcherBest');
+      if (saved) {
+        bestScore = parseInt(saved);
+        bestDisplay.textContent = bestScore;
+      }
+    }
+
+    function saveBestScore() {
+      if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem('pendulumCatcherBest', bestScore);
+        bestDisplay.textContent = bestScore;
+      }
+    }
+
+    function showGameOverButtons() {
+      gameOverButtons.style.display = 'flex';
+      startBtn.style.display = 'none';
+      instructionText.style.display = 'none';
+    }
+
+    function hideGameOverButtons() {
+      gameOverButtons.style.display = 'none';
+      startBtn.style.display = 'flex';
+      instructionText.style.display = 'inline';
+    }
+
+    function updateUI() {
+      scoreDisplay.textContent = score;
+      livesDisplay.textContent = lives;
+    }
+
+    function setMessage(text) {
+      messageBox.textContent = text;
+    }
+
+    // ----- Get Catcher Position -----
+    function getCatcherPos() {
+      return {
+        x: pivotX + pendulumLength * Math.sin(angle),
+        y: pivotY + pendulumLength * Math.cos(angle)
+      };
+    }
+
+    // ----- Spawn Items -----
+    function spawnItem() {
+      const isRock = Math.random() < 0.18 + difficultyLevel * 0.02;
+      let itemData;
+      
+      if (isRock) {
+        itemData = ROCKS[Math.floor(Math.random() * ROCKS.length)];
+      } else {
+        itemData = GEMS[Math.floor(Math.random() * GEMS.length)];
+      }
+      
+      const size = 24 * gameScale;
+      const x = Math.random() * (canvas.width - size * 2) + size;
+      
+      items.push({
+        x: x,
+        y: -size,
+        width: size,
+        height: size,
+        emoji: itemData.emoji,
+        points: itemData.points || 0,
+        penalty: itemData.penalty || 0,
+        color: itemData.color,
+        isRock: isRock,
+        vy: 1.2 + Math.random() * 1.8 * gameScale + difficultyLevel * 0.08,
+        vx: (Math.random() - 0.5) * 0.4 * gameScale,
+        rotation: 0,
+        rotSpeed: (Math.random() - 0.5) * 0.04
+      });
+    }
+
+    function createCatchParticles(x, y, color) {
+      for (let i = 0; i < 8; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 1 + Math.random() * 3 * gameScale;
+        particles.push({
+          x: x,
+          y: y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 2 * gameScale,
+          life: 1,
+          decay: 0.03 + Math.random() * 0.04,
+          size: 2 + Math.random() * 3 * gameScale,
+          color: color
+        });
+      }
+    }
+
+    // ----- Initialize / Reset -----
+    function resetGame() {
+      gameActive = true;
+      gameOver = false;
+      score = 0;
+      lives = 5;
+      difficultyLevel = 1;
+      
+      angle = 0;
+      angularVelocity = 0;
+      
+      items = [];
+      particles = [];
+      floatingTexts = [];
+      ripples = [];
+      spawnTimer = 30;
+      
+      hideGameOverButtons();
+      updateUI();
+      setMessage('👆 Click left/right to swing');
+    }
+
+    function exitGame() {
+      gameActive = false;
+      gameOver = false;
+      items = [];
+      particles = [];
+      floatingTexts = [];
+      ripples = [];
+      hideGameOverButtons();
+      startBtn.style.display = 'flex';
+      instructionText.style.display = 'inline';
+      setMessage('✨ Press START!');
+      updateUI();
+    }
+
+    // ----- Apply Swing Force -----
+    function swingPendulum(direction) {
+      if (!gameActive || gameOver) return;
+      // Apply small force in the direction
+      angularVelocity += direction * SWING_FORCE;
+      // Clamp max velocity
+      angularVelocity = Math.max(-MAX_ANGULAR_VELOCITY, Math.min(MAX_ANGULAR_VELOCITY, angularVelocity));
+    }
+
+    function createRipple(x, y) {
+      ripples.push({
+        x: x,
+        y: y,
+        radius: 5 * gameScale,
+        maxRadius: 30 * gameScale,
+        life: 1,
+        color: 'rgba(255,255,255,0.5)'
+      });
+    }
+
+    // ----- Update Physics -----
+    function update() {
+      if (!gameActive && !gameOver) return;
+      if (!gameActive) {
+        updateParticles();
+        updateRipples();
+        return;
+      }
+
+      // Pendulum physics
+      const angularAcceleration = -GRAVITY / pendulumLength * Math.sin(angle);
+      angularVelocity += angularAcceleration;
+      angularVelocity *= DAMPING;
+      
+      // Clamp velocity
+      if (Math.abs(angularVelocity) > MAX_ANGULAR_VELOCITY) {
+        angularVelocity = Math.sign(angularVelocity) * MAX_ANGULAR_VELOCITY;
+      }
+      
+      angle += angularVelocity;
+      
+      // Limit angle
+      if (angle > Math.PI * 0.48) {
+        angle = Math.PI * 0.48;
+        angularVelocity *= -0.5;
+      }
+      if (angle < -Math.PI * 0.48) {
+        angle = -Math.PI * 0.48;
+        angularVelocity *= -0.5;
+      }
+
+      // Update items
+      for (let i = items.length - 1; i >= 0; i--) {
+        const item = items[i];
+        item.y += item.vy;
+        item.x += item.vx;
+        item.rotation += item.rotSpeed;
+        
+        if (item.x < 0 || item.x + item.width > canvas.width) {
+          item.vx *= -1;
+          item.x = Math.max(0, Math.min(item.x, canvas.width - item.width));
+        }
+        
+        // Check collision with catcher
+        const catcher = getCatcherPos();
+        const dx = item.x + item.width/2 - catcher.x;
+        const dy = item.y + item.height/2 - catcher.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        
+        if (dist < catcherRadius + item.width * 0.35) {
+          if (item.isRock) {
+            lives -= item.penalty;
+            createCatchParticles(item.x + item.width/2, item.y + item.height/2, '#ff4444');
+            floatingTexts.push({
+              x: item.x + item.width/2,
+              y: item.y,
+              text: '-' + item.penalty + ' ❤️',
+              life: 1,
+              color: '#ff4444'
+            });
+            if (lives <= 0) {
+              lives = 0;
+              endGame();
+            }
+          } else {
+            score += item.points;
+            createCatchParticles(item.x + item.width/2, item.y + item.height/2, item.color);
+            floatingTexts.push({
+              x: item.x + item.width/2,
+              y: item.y,
+              text: '+' + item.points,
+              life: 1,
+              color: item.color
+            });
+          }
+          items.splice(i, 1);
+          updateUI();
+          continue;
+        }
+        
+        if (item.y > canvas.height + 30) {
+          if (!item.isRock) {
+            setMessage('💔 Missed!');
+          }
+          items.splice(i, 1);
+        }
+      }
+      
+      updateParticles();
+      updateRipples();
+      
+      // Update floating texts
+      for (let i = floatingTexts.length - 1; i >= 0; i--) {
+        const ft = floatingTexts[i];
+        ft.y -= 1 * gameScale;
+        ft.life -= 0.02;
+        if (ft.life <= 0) floatingTexts.splice(i, 1);
+      }
+      
+      // Spawn items
+      spawnTimer--;
+      if (spawnTimer <= 0) {
+        spawnItem();
+        spawnTimer = Math.max(25, 55 - difficultyLevel * 2);
+        if (Math.random() < 0.25) spawnItem();
+      }
+      
+      // Increase difficulty
+      if (score > difficultyLevel * 150) {
+        difficultyLevel++;
+        setMessage('⚡ Level ' + difficultyLevel + '!');
+      }
+      
+      if (score > bestScore) {
+        saveBestScore();
+      }
+    }
+
+    function updateParticles() {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.1 * gameScale;
+        p.life -= p.decay;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+    }
+
+    function updateRipples() {
+      for (let i = ripples.length - 1; i >= 0; i--) {
+        const r = ripples[i];
+        r.radius += 1.5 * gameScale;
+        r.life -= 0.03;
+        if (r.life <= 0 || r.radius > r.maxRadius) ripples.splice(i, 1);
+      }
+    }
+
+    function endGame() {
+      gameOver = true;
+      gameActive = false;
+      updateUI();
+      saveBestScore();
+      setMessage('💀 Game Over! Score: ' + score);
+      showGameOverButtons();
+    }
+
+    // ----- Drawing Functions -----
+    function drawBackground() {
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, '#0a0a30');
+      gradient.addColorStop(0.5, '#151545');
+      gradient.addColorStop(1, '#0a0a20');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Twinkling stars
+      for (let i = 0; i < 50; i++) {
+        const sx = (i * 173 + 50) % canvas.width;
+        const sy = (i * 97 + 30) % canvas.height;
+        const twinkle = Math.sin(Date.now() * 0.0015 + i) * 0.3 + 0.5;
+        ctx.fillStyle = `rgba(255,255,255,${twinkle * 0.4})`;
+        ctx.beginPath();
+        ctx.arc(sx, sy, 0.8 * gameScale, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawRipples() {
+      ripples.forEach(r => {
+        ctx.strokeStyle = r.color.replace('0.5', (r.life * 0.5).toString());
+        ctx.lineWidth = 1.5 * gameScale;
+        ctx.beginPath();
+        ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+        ctx.stroke();
+      });
+    }
+
+    function drawPendulum() {
+      const catcher = getCatcherPos();
+      
+      // Draw string
+      ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+      ctx.lineWidth = 1.5 * gameScale;
+      ctx.beginPath();
+      ctx.moveTo(pivotX, pivotY);
+      ctx.lineTo(catcher.x, catcher.y);
+      ctx.stroke();
+      
+      // Draw pivot
+      ctx.fillStyle = '#c0c0ff';
+      ctx.shadowColor = '#8888ff';
+      ctx.shadowBlur = 8 * gameScale;
+      ctx.beginPath();
+      ctx.arc(pivotX, pivotY, 4 * gameScale, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      
+      // Draw catcher basket
+      const gradient = ctx.createRadialGradient(
+        catcher.x - 2, catcher.y - 2, catcherRadius * 0.1,
+        catcher.x, catcher.y, catcherRadius
+      );
+      gradient.addColorStop(0, '#ffeaa7');
+      gradient.addColorStop(0.5, '#fdcb6e');
+      gradient.addColorStop(1, '#e17055');
+      
+      ctx.fillStyle = gradient;
+      ctx.shadowColor = 'rgba(253,203,110,0.5)';
+      ctx.shadowBlur = 12 * gameScale;
+      ctx.beginPath();
+      ctx.arc(catcher.x, catcher.y, catcherRadius, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Rim
+      ctx.strokeStyle = '#ffeaa7';
+      ctx.lineWidth = 2 * gameScale;
+      ctx.beginPath();
+      ctx.arc(catcher.x, catcher.y, catcherRadius, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      // Inner shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.2)';
+      ctx.beginPath();
+      ctx.arc(catcher.x, catcher.y, catcherRadius * 0.65, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.shadowBlur = 0;
+    }
+
+    function drawItems() {
+      items.forEach(item => {
+        ctx.save();
+        ctx.translate(item.x + item.width/2, item.y + item.height/2);
+        ctx.rotate(item.rotation);
+        
+        const fontSize = item.width * 0.75;
+        ctx.font = `${fontSize}px "Segoe UI Emoji", "Apple Color Emoji", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        if (!item.isRock) {
+          ctx.shadowColor = item.color;
+          ctx.shadowBlur = 10 * gameScale;
+        } else {
+          ctx.shadowColor = '#ff4444';
+          ctx.shadowBlur = 6 * gameScale;
+        }
+        
+        ctx.fillText(item.emoji, 0, 0);
+        ctx.shadowBlur = 0;
+        ctx.restore();
+      });
+    }
+
+    function drawParticles() {
+      particles.forEach(p => {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+    }
+
+    function drawFloatingTexts() {
+      floatingTexts.forEach(ft => {
+        ctx.fillStyle = ft.color;
+        ctx.globalAlpha = ft.life;
+        ctx.font = `bold ${12 * gameScale}px "Fredoka", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText(ft.text, ft.x, ft.y);
+      });
+      ctx.globalAlpha = 1;
+    }
+
+    function drawClickZones() {
+      // Draw subtle indicators for click zones
+      const zoneHeight = 60 * gameScale;
+      const zoneY = canvas.height - zoneHeight - 10 * gameScale;
+      
+      // Left zone
+      ctx.fillStyle = 'rgba(100,150,255,0.08)';
+      ctx.fillRect(0, zoneY, pivotX, zoneHeight);
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.font = `${10 * gameScale}px "Segoe UI"`;
+      ctx.textAlign = 'center';
+      ctx.fillText('👈 SWING LEFT', pivotX/2, zoneY + zoneHeight/2 + 4);
+      
+      // Right zone
+      ctx.fillStyle = 'rgba(255,150,100,0.08)';
+      ctx.fillRect(pivotX, zoneY, canvas.width - pivotX, zoneHeight);
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.fillText('SWING RIGHT 👉', pivotX + (canvas.width - pivotX)/2, zoneY + zoneHeight/2 + 4);
+    }
+
+    function drawGameOverOverlay() {
+      ctx.fillStyle = 'rgba(0,0,0,0.8)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#ffffff';
+      const fontSize = Math.min(canvas.width / 10, 32);
+      ctx.font = `bold ${fontSize}px "Fredoka", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText('GAME OVER', canvas.width/2, canvas.height/2 - 30);
+      ctx.font = `${fontSize * 0.5}px "Segoe UI"`;
+      ctx.fillText('Score: ' + score + '  Best: ' + bestScore, canvas.width/2, canvas.height/2 + 15);
+    }
+
+    function drawStartScreen() {
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const fontSize = Math.min(canvas.width / 12, 26);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `bold ${fontSize}px "Fredoka"`;
+      ctx.textAlign = 'center';
+      ctx.fillText('⏳ Pendulum Catcher', canvas.width/2, canvas.height/2 - 35);
+      ctx.font = `${fontSize * 0.5}px "Segoe UI"`;
+      ctx.fillStyle = '#c0d0ff';
+      ctx.fillText('Click left/right to swing', canvas.width/2, canvas.height/2);
+      ctx.fillText('Catch gems 💎 Avoid rocks 🪨', canvas.width/2, canvas.height/2 + 25);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      drawBackground();
+      drawRipples();
+      drawItems();
+      drawPendulum();
+      drawParticles();
+      drawFloatingTexts();
+      
+      if (gameActive && !gameOver) {
+        drawClickZones();
+      }
+      
+      // Info
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.font = `${9 * gameScale}px "Segoe UI"`;
+      ctx.textAlign = 'right';
+      ctx.fillText('Lvl ' + difficultyLevel, canvas.width - 12, 20 * gameScale);
+      
+      if (gameOver) {
+        drawGameOverOverlay();
+      } else if (!gameActive) {
+        drawStartScreen();
+      }
+    }
+
+    // ----- Game Loop -----
+    function gameLoop() {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    // ----- Event Handlers -----
+    function handleInteraction(clientX, clientY) {
+      if (!gameActive || gameOver) return;
+      
+      const rect = canvas.getBoundingClientRect();
+      const clickX = (clientX - rect.left) * (canvas.width / rect.width);
+      const clickY = (clientY - rect.top) * (canvas.height / rect.height);
+      
+      // Create ripple at click position
+      createRipple(clickX, clickY);
+      
+      // Determine swing direction based on click position relative to pivot
+      if (clickX < pivotX) {
+        // Click left side - swing left (negative direction)
+        swingPendulum(-1);
+      } else {
+        // Click right side - swing right (positive direction)
+        swingPendulum(1);
+      }
+    }
+
+    // Button handlers
+    startBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      resizeCanvas();
+      resetGame();
+      startBtn.style.display = 'none';
+      instructionText.style.display = 'inline';
+    });
+
+    playAgainBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      resizeCanvas();
+      resetGame();
+    });
+
+    exitBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      exitGame();
+    });
+
+    // Canvas events
+    canvas.addEventListener('click', (e) => {
+      handleInteraction(e.clientX, e.clientY);
+    });
+    
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      if (touch) {
+        handleInteraction(touch.clientX, touch.clientY);
+      }
+    });
+    
+    // Keyboard controls (small taps)
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'a') swingPendulum(-1);
+      if (e.key === 'ArrowRight' || e.key === 'd') swingPendulum(1);
+    });
+    
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 100));
+
+    // Initial setup
+    resizeCanvas();
+    loadBestScore();
+    updateUI();
+    setMessage('✨ Press START!');
+    gameLoop();
+  })();
+</script>
+</body>
+</html>

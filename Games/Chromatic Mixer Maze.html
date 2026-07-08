@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Chromatic Mixer - Enhanced</title>
+  <style>
+    :root {
+      --bg-base: #020617;
+      --panel-bg: rgba(15, 23, 42, 0.75);
+      --panel-border: rgba(51, 65, 85, 0.5);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --btn-danger: #ef4444;
+      --btn-warning: #f59e0b;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+    }
+
+    body {
+      background: var(--bg-base);
+      background-image: 
+        radial-gradient(circle at 50% 0%, #1e293b 0%, transparent 50%),
+        radial-gradient(circle at 50% 100%, #0f172a 0%, transparent 50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      height: 100dvh;
+      width: 100vw;
+      overflow: hidden;
+      touch-action: none;
+      overscroll-behavior: none;
+      color: var(--text-main);
+    }
+
+    .game-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      max-width: 540px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      background: rgba(2, 6, 23, 0.4);
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--panel-border);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    /* Top Bar */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--panel-bg);
+      border-bottom: 1px solid var(--panel-border);
+      z-index: 10;
+      flex-shrink: 0;
+    }
+
+    .level-badge {
+      background: linear-gradient(135deg, #38bdf8, #2563eb);
+      color: #fff;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 0.8rem;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      box-shadow: 0 2px 10px rgba(37, 99, 235, 0.3);
+    }
+
+    .door-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .door-info-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+
+    .color-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.9);
+      box-shadow: 0 0 12px currentColor;
+      transition: all 0.3s ease;
+    }
+
+    .door-name {
+      font-size: 0.8rem;
+      font-weight: 700;
+      min-width: 65px;
+      text-align: left;
+    }
+
+    /* Buttons */
+    button {
+      border: none;
+      color: white;
+      font-weight: 700;
+      padding: 8px 16px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    button:active {
+      transform: scale(0.92);
+    }
+
+    .btn-reset {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: var(--text-muted);
+    }
+    
+    .btn-reset:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+
+    /* Canvas Area */
+    .canvas-wrapper {
+      flex: 1 1 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+      background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+    }
+
+    canvas {
+      display: block;
+      touch-action: none;
+      filter: drop-shadow(0 0 20px rgba(0,0,0,0.5));
+    }
+
+    /* Bottom Bar */
+    .bottom-bar {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 16px;
+      background: var(--panel-bg);
+      border-top: 1px solid var(--panel-border);
+      z-index: 10;
+      flex-shrink: 0;
+    }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 12px;
+    }
+
+    .mix-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .difficulty-indicator {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .difficulty-indicator strong {
+      color: var(--btn-warning);
+    }
+
+    .composition-bar-container {
+      width: 100%;
+      height: 16px;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+    }
+
+    .composition-segment {
+      height: 100%;
+      transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.3s;
+      box-shadow: inset 0 0 8px rgba(0,0,0,0.2);
+    }
+
+    .action-area {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 40px;
+    }
+
+    .message-box {
+      font-size: 0.85rem;
+      color: #fff;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .message-box.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .message-box.error {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+    }
+
+    .message-box.success {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: #6ee7b7;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-tryagain {
+      background: var(--btn-danger);
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+      display: none;
+    }
+
+    .btn-next {
+      background: linear-gradient(135deg, var(--btn-warning), #d97706);
+      box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+      display: none;
+      animation: pulse-glow 2s infinite;
+    }
+
+    .btn-tryagain.visible, .btn-next.visible {
+      display: flex;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 10px rgba(245,158,11,0.4); transform: scale(1); }
+      50% { box-shadow: 0 0 20px rgba(245,158,11,0.8); transform: scale(1.05); }
+    }
+
+    /* Tutorial Overlay */
+    .tutorial-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(2, 6, 23, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      opacity: 1;
+      transition: opacity 0.4s ease;
+    }
+
+    .tutorial-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .tutorial-card {
+      background: var(--panel-bg);
+      border-radius: 24px;
+      padding: 32px 24px;
+      max-width: 340px;
+      width: 90%;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.05) inset;
+      transform: translateY(20px);
+      opacity: 0;
+      animation: slide-up 0.5s forwards 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    @keyframes slide-up {
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .tutorial-card h2 {
+      color: #fff;
+      font-size: 1.5rem;
+      margin-bottom: 24px;
+      background: linear-gradient(to right, #38bdf8, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .tutorial-card .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      text-align: left;
+      margin-bottom: 24px;
+    }
+
+    .tutorial-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(0,0,0,0.3);
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .step-icon {
+      font-size: 1.4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+    }
+
+    .step-text {
+      font-size: 0.85rem;
+      line-height: 1.4;
+      color: var(--text-muted);
+    }
+
+    .step-text strong {
+      color: #fff;
+    }
+
+    .btn-ok {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      font-size: 1rem;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.5);
+    }
+
+    .btn-ok:hover {
+      box-shadow: 0 10px 30px -5px rgba(59, 130, 246, 0.7);
+      transform: translateY(-2px);
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translate(0, 0); }
+      10%, 30%, 50%, 70%, 90% { transform: translate(-4px, 0); }
+      20%, 40%, 60%, 80% { transform: translate(4px, 0); }
+    }
+    .shake-anim {
+      animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+    }
+
+    @media (max-width: 400px) {
+      .top-bar, .bottom-bar {
+        padding: 10px 12px;
+      }
+      .door-info {
+        padding: 4px 10px;
+      }
+      .door-name {
+        font-size: 0.75rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="game-container" id="gameContainer">
+  <div class="top-bar">
+    <span class="level-badge" id="levelDisplay">Lvl 1</span>
+    <div class="door-info">
+      <span class="door-info-label">TARGET</span>
+      <div class="color-dot" id="doorDot" style="background:#ff00ff;"></div>
+      <span class="door-name" id="doorLabel">MAGENTA</span>
+    </div>
+    <button class="btn-reset" id="resetBtn" title="Restart Level (R)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path></svg>
+    </button>
+  </div>
+  
+  <div class="canvas-wrapper">
+    <canvas id="gameCanvas"></canvas>
+  </div>
+  
+  <div class="bottom-bar">
+    <div class="status-row">
+      <div class="mix-info">
+        <div class="difficulty-indicator" id="difficultyIndicator">
+          Requires <strong>2</strong> exact bases
+        </div>
+        <div class="composition-bar-container" id="compositionBar">
+          <div class="composition-segment" style="width:100%; background:rgba(255,255,255,0.05);"></div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="action-area">
+      <div class="message-box" id="messageBox">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        <span>Swipe or use Arrow Keys</span>
+      </div>
+      <div class="action-buttons">
+        <button class="btn-tryagain" id="tryAgainBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+          Retry
+        </button>
+        <button class="btn-next" id="nextBtn">
+          Next Level
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tutorial-overlay" id="tutorialOverlay">
+    <div class="tutorial-card">
+      <h2>Chromatic Mixer</h2>
+      <div class="steps">
+        <div class="tutorial-step">
+          <div class="step-icon">💎</div>
+          <div class="step-text"><strong>You</strong> are the crystal. Move to collect ingredients.</div>
+        </div>
+        <div class="tutorial-step">
+          <div class="step-icon">🎨</div>
+          <div class="step-text">Absorb <strong>Base Elements</strong> (Red, Blue, Yellow, White, Black).</div>
+        </div>
+        <div class="tutorial-step">
+          <div class="step-icon">🧠</div>
+          <div class="step-text">Use real-world logic to match your mix to the <strong>Target Door</strong>!</div>
+        </div>
+      </div>
+      <button class="btn-ok" id="btnOk">Start Mixing</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  // DOM Elements
+  const container = document.getElementById('gameContainer');
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const doorDot = document.getElementById('doorDot');
+  const doorLabel = document.getElementById('doorLabel');
+  const messageBox = document.getElementById('messageBox');
+  const levelDisplay = document.getElementById('levelDisplay');
+  const difficultyIndicator = document.getElementById('difficultyIndicator');
+  const resetBtn = document.getElementById('resetBtn');
+  const tryAgainBtn = document.getElementById('tryAgainBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const compositionBar = document.getElementById('compositionBar');
+  const tutorialOverlay = document.getElementById('tutorialOverlay');
+  const btnOk = document.getElementById('btnOk');
+
+  // --- Strict Base & Recipe Definition ---
+  const BASES = {
+    RED: { r: 239, g: 68, b: 68, name: 'RED' },
+    BLUE: { r: 59, g: 130, b: 246, name: 'BLUE' },
+    YELLOW: { r: 234, g: 179, b: 8, name: 'YELLOW' },
+    WHITE: { r: 255, g: 255, b: 255, name: 'WHITE' },
+    BLACK: { r: 30, g: 30, b: 30, name: 'BLACK' }
+  };
+
+  const RECIPES = [
+    // 2-Base Mixes
+    { name: 'GREEN', hex: '#22c55e', recipe: ['BLUE', 'YELLOW'] },
+    { name: 'ORANGE', hex: '#f97316', recipe: ['RED', 'YELLOW'] },
+    { name: 'PURPLE', hex: '#a855f7', recipe: ['RED', 'BLUE'] },
+    { name: 'PINK', hex: '#ec4899', recipe: ['RED', 'WHITE'] },
+    { name: 'GRAY', hex: '#9ca3af', recipe: ['BLACK', 'WHITE'] },
+    { name: 'LIGHT BLUE', hex: '#7dd3fc', recipe: ['BLUE', 'WHITE'] },
+    { name: 'NAVY', hex: '#1e3a8a', recipe: ['BLUE', 'BLACK'] },
+    
+    // 3-Base Mixes
+    { name: 'BROWN', hex: '#78350f', recipe: ['RED', 'YELLOW', 'BLUE'] },
+    { name: 'PEACH', hex: '#fdba74', recipe: ['RED', 'YELLOW', 'WHITE'] },
+    { name: 'LAVENDER', hex: '#c4b5fd', recipe: ['RED', 'BLUE', 'WHITE'] },
+    { name: 'MINT', hex: '#6ee7b7', recipe: ['BLUE', 'YELLOW', 'WHITE'] },
+    { name: 'SLATE', hex: '#475569', recipe: ['BLACK', 'WHITE', 'BLUE'] },
+    
+    // 4-Base Mixes
+    { name: 'BEIGE', hex: '#f5f5dc', recipe: ['RED', 'YELLOW', 'BLUE', 'WHITE'] },
+    { name: 'UMBER', hex: '#635147', recipe: ['RED', 'YELLOW', 'BLUE', 'BLACK'] }
+  ];
+
+  // Game State
+  let gameStarted = false;
+  let currentLevel = 1;
+  let COLS = 7, ROWS = 7;
+  let player = {col:0, row:0};
+  let doorPos = {col:6, row:6};
+  
+  let currentRecipe = null;
+  let requiredMixCount = 2;
+  let usedDoorColors = new Set();
+  
+  let mixers = [];
+  let activeMixers = [];
+  let visitedMixers = new Map();
+  let gameOver = false;
+  let gameWon = false;
+  
+  // Animation & Rendering State
+  let animX = 0, animY = 0;
+  let targetX = 0, targetY = 0;
+  let isMoving = false;
+  const MOVE_SPEED = 0.4;
+  let particles = [];
+  let ripples = [];
+  let mixFlash = null;
+  let cellSize = 50;
+  let inputQueue = [];
+  let processingInput = false;
+  let time = 0;
+  let screenShake = 0;
+
+  // --- Logic & UI Functions ---
+
+  function checkRecipeMatch() {
+    if (activeMixers.length !== currentRecipe.recipe.length) return false;
+    
+    let targetCounts = {};
+    currentRecipe.recipe.forEach(r => targetCounts[r] = (targetCounts[r]||0) + 1);
+    
+    let activeCounts = {};
+    activeMixers.forEach(m => activeCounts[m.name] = (activeCounts[m.name]||0) + 1);
+    
+    for (let key in targetCounts) {
+      if (targetCounts[key] !== activeCounts[key]) return false;
+    }
+    return true;
+  }
+
+  function updateCompositionBar() {
+    compositionBar.innerHTML = '';
+    
+    if (activeMixers.length === 0) {
+      const segment = document.createElement('div');
+      segment.className = 'composition-segment';
+      segment.style.width = '100%';
+      segment.style.background = 'rgba(255,255,255,0.05)';
+      compositionBar.appendChild(segment);
+      difficultyIndicator.innerHTML = `Requires <strong>${requiredMixCount}</strong> bases`;
+      return;
+    }
+    
+    const segmentWidth = 100 / activeMixers.length;
+    activeMixers.forEach(color => {
+      const segment = document.createElement('div');
+      segment.className = 'composition-segment';
+      segment.style.width = `${segmentWidth}%`;
+      segment.style.background = `rgb(${color.r},${color.g},${color.b})`;
+      segment.style.boxShadow = `inset 0 0 10px rgba(0,0,0,0.5)`;
+      compositionBar.appendChild(segment);
+    });
+    
+    difficultyIndicator.innerHTML = `<strong>${activeMixers.length}/${requiredMixCount}</strong> picked up`;
+  }
+
+  function showMessage(text, type = 'normal', icon = '') {
+    messageBox.className = `message-box visible ${type}`;
+    let iconHtml = '';
+    if (icon === 'success') iconHtml = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
+    else if (icon === 'error') iconHtml = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`;
+    else if (icon === 'info') iconHtml = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+    
+    messageBox.innerHTML = `${iconHtml}<span>${text}</span>`;
+  }
+
+  function triggerScreenShake() {
+    screenShake = 15;
+    container.classList.remove('shake-anim');
+    void container.offsetWidth;
+    container.classList.add('shake-anim');
+  }
+
+  function updateUI() {
+    doorDot.style.backgroundColor = currentRecipe.hex;
+    doorDot.style.boxShadow = `0 0 15px ${currentRecipe.hex}`;
+    doorLabel.textContent = currentRecipe.name;
+    levelDisplay.textContent = `Lvl ${currentLevel}`;
+  }
+
+  // --- Level Generation ---
+
+  function generateLevel(level) {
+    // Better grid scaling for controlled nodes
+    COLS = Math.min(5 + Math.floor((level - 1) / 3), 8);
+    ROWS = COLS;
+    
+    mixers = [];
+    visitedMixers = new Map();
+    activeMixers = [];
+    particles = [];
+    ripples = [];
+    mixFlash = null;
+    inputQueue = [];
+    processingInput = false;
+    
+    player = {col: 0, row: 0};
+    doorPos = {col: COLS - 1, row: ROWS - 1};
+    
+    // Choose Recipe Complexity based on Level
+    let targetMixCount = 2;
+    if (level >= 4) targetMixCount = 3;
+    if (level >= 7) targetMixCount = 4;
+    
+    let validRecipes = RECIPES.filter(r => r.recipe.length === targetMixCount);
+    // If we want more variety, mix previous difficulties slightly
+    if (level >= 6) {
+      validRecipes = validRecipes.concat(RECIPES.filter(r => r.recipe.length === 3));
+    }
+
+    let availableRecipes = validRecipes.filter(r => !usedDoorColors.has(r.name));
+    if (availableRecipes.length === 0) {
+      usedDoorColors.clear();
+      availableRecipes = validRecipes;
+    }
+    
+    currentRecipe = availableRecipes[Math.floor(Math.random() * availableRecipes.length)];
+    usedDoorColors.add(currentRecipe.name);
+    requiredMixCount = currentRecipe.recipe.length;
+
+    // Create the exact required bases
+    let nodesToPlace = currentRecipe.recipe.map(baseName => BASES[baseName]);
+    
+    // Add exactly 4 distractors without flooding the grid with identical colors
+    let numDistractions = 4;
+    const allBaseKeys = Object.keys(BASES);
+    
+    // First, use all bases that are NOT in the recipe to guarantee distinct color variety
+    let unusedBases = allBaseKeys.filter(k => !currentRecipe.recipe.includes(k));
+    unusedBases.sort(() => Math.random() - 0.5);
+    
+    unusedBases.forEach(k => {
+      if (numDistractions > 0) {
+        nodesToPlace.push(BASES[k]);
+        numDistractions--;
+      }
+    });
+    
+    // If we still need distractors, fill randomly, but maximum duplication will be minimal
+    if (numDistractions > 0) {
+      let randomFills = [...allBaseKeys].sort(() => Math.random() - 0.5);
+      randomFills.forEach(k => {
+        if (numDistractions > 0) {
+          nodesToPlace.push(BASES[k]);
+          numDistractions--;
+        }
+      });
+    }
+    
+    nodesToPlace.sort(() => Math.random() - 0.5);
+    
+    let usedPositions = new Set([`0,0`, `${doorPos.col},${doorPos.row}`]);
+    
+    nodesToPlace.forEach(nodeBase => {
+      let placed = false;
+      let attempts = 0;
+      while (!placed && attempts < 100) {
+        const col = Math.floor(Math.random() * COLS);
+        const row = Math.floor(Math.random() * ROWS);
+        const key = `${col},${row}`;
+        if (!usedPositions.has(key)) {
+          usedPositions.add(key);
+          mixers.push({col, row, color: nodeBase});
+          placed = true;
+        }
+        attempts++;
+      }
+    });
+    
+    gameOver = false;
+    gameWon = false;
+    
+    resizeCanvas();
+    animX = player.col * cellSize + cellSize/2;
+    animY = player.row * cellSize + cellSize/2;
+    targetX = animX;
+    targetY = animY;
+    isMoving = false;
+    
+    messageBox.className = 'message-box';
+    tryAgainBtn.classList.remove('visible');
+    nextBtn.classList.remove('visible');
+    
+    if (level === 1) {
+      showMessage('Swipe or use arrows to move', 'normal');
+    } else {
+      messageBox.className = 'message-box'; // reset/hide
+    }
+    
+    updateCompositionBar();
+    updateUI();
+  }
+
+  // --- Effects ---
+
+  function spawnParticles(x, y, colorStr, count = 15, speedMult = 1) {
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = (1 + Math.random() * 3) * speedMult;
+      particles.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        color: colorStr,
+        life: 1,
+        decay: 0.02 + Math.random() * 0.03,
+        size: 2 + Math.random() * 4
+      });
+    }
+  }
+
+  function spawnRipple(x, y, colorStr) {
+    ripples.push({
+      x, y, color: colorStr,
+      radius: 0,
+      maxRadius: cellSize * 1.5,
+      alpha: 0.8,
+      decay: 0.03
+    });
+  }
+
+  // --- Movement Logic ---
+
+  function executeMove(dx, dy) {
+    if (!gameStarted || gameOver || gameWon) return;
+    
+    const newCol = player.col + dx;
+    const newRow = player.row + dy;
+
+    if (newCol < 0 || newCol >= COLS || newRow < 0 || newRow >= ROWS) {
+      targetX = player.col * cellSize + cellSize/2 + (dx * cellSize * 0.2);
+      targetY = player.row * cellSize + cellSize/2 + (dy * cellSize * 0.2);
+      isMoving = true;
+      setTimeout(() => {
+        targetX = player.col * cellSize + cellSize/2;
+        targetY = player.row * cellSize + cellSize/2;
+      }, 100);
+      return;
+    }
+
+    player.col = newCol;
+    player.row = newRow;
+    targetX = newCol * cellSize + cellSize/2;
+    targetY = newRow * cellSize + cellSize/2;
+    isMoving = true;
+
+    // Door collision logic
+    if (newCol === doorPos.col && newRow === doorPos.row) {
+      if (checkRecipeMatch()) {
+        gameWon = true;
+        showMessage('Perfect Match!', 'success', 'success');
+        spawnParticles(targetX, targetY, currentRecipe.hex, 40, 1.5);
+        spawnRipple(targetX, targetY, currentRecipe.hex);
+        nextBtn.classList.add('visible');
+      } else {
+        if (activeMixers.length !== requiredMixCount) {
+          showMessage(`Needs exactly ${requiredMixCount} bases!`, 'error', 'info');
+        } else {
+          showMessage('Wrong real-world mix!', 'error', 'error');
+          gameOver = true;
+          tryAgainBtn.classList.add('visible');
+        }
+        triggerScreenShake();
+        if(!gameOver) {
+          // Bounce back if wrong amount
+          player.col -= dx;
+          player.row -= dy;
+          targetX = player.col * cellSize + cellSize/2;
+          targetY = player.row * cellSize + cellSize/2;
+        }
+        spawnParticles(targetX, targetY, '#ef4444', 15);
+      }
+    }
+    
+    // Mixer logic
+    const mixer = mixers.find(m => m.col === newCol && m.row === newRow);
+    if (mixer && !gameWon && !gameOver) {
+      const key = `${newCol},${newRow}`;
+      const colorStr = `rgb(${mixer.color.r},${mixer.color.g},${mixer.color.b})`;
+      
+      if (visitedMixers.has(key)) {
+        const colorToRemove = visitedMixers.get(key);
+        // Find index of first instance and remove
+        const idx = activeMixers.findIndex(c => c.name === colorToRemove.name);
+        if(idx !== -1) activeMixers.splice(idx, 1);
+        
+        visitedMixers.delete(key);
+        mixFlash = {x: targetX, y: targetY, color: '#ffffff', alpha: 0.3};
+        spawnParticles(targetX, targetY, '#ffffff', 10);
+        showMessage(`Dropped ${colorToRemove.name}`, 'normal');
+      } else {
+        visitedMixers.set(key, mixer.color);
+        activeMixers.push(mixer.color);
+        mixFlash = {x: targetX, y: targetY, color: colorStr, alpha: 0.6};
+        spawnParticles(targetX, targetY, colorStr, 20);
+        spawnRipple(targetX, targetY, colorStr);
+        showMessage(`Absorbed ${mixer.color.name}`, 'normal');
+      }
+      updateCompositionBar();
+    }
+  }
+
+  function processInputQueue() {
+    if (processingInput || inputQueue.length === 0) return;
+    if (isMoving) return; 
+    
+    processingInput = true;
+    const move = inputQueue.shift();
+    executeMove(move.dx, move.dy);
+    processingInput = false;
+    
+    if (inputQueue.length > 0 && !isMoving) {
+      setTimeout(processInputQueue, 20);
+    }
+  }
+
+  function queueMove(dx, dy) {
+    if (!gameStarted || gameWon || gameOver) return;
+    inputQueue.push({dx, dy});
+    if (inputQueue.length > 2) inputQueue.shift();
+    processInputQueue();
+  }
+
+  // --- Rendering ---
+
+  function resizeCanvas() {
+    const wrapper = canvas.parentElement;
+    const padding = 20;
+    const maxW = wrapper.clientWidth - padding;
+    const maxH = wrapper.clientHeight - padding;
+    
+    cellSize = Math.floor(Math.min(maxW / COLS, maxH / ROWS));
+    if (cellSize < 30) cellSize = 30;
+    if (cellSize > 70) cellSize = 70;
+    
+    const canvasWidth = cellSize * COLS;
+    const canvasHeight = cellSize * ROWS;
+    
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
+    canvas.style.width = canvasWidth + 'px';
+    canvas.style.height = canvasHeight + 'px';
+    
+    animX = player.col * cellSize + cellSize/2;
+    animY = player.row * cellSize + cellSize/2;
+    targetX = animX;
+    targetY = animY;
+  }
+
+  function updateAnimation() {
+    time += 0.05;
+
+    if (screenShake > 0) {
+      screenShake *= 0.8;
+      if (screenShake < 0.5) screenShake = 0;
+    }
+
+    if (isMoving) {
+      const dx = targetX - animX;
+      const dy = targetY - animY;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      
+      if (dist < 1) {
+        animX = targetX;
+        animY = targetY;
+        isMoving = false;
+        if (inputQueue.length > 0) setTimeout(processInputQueue, 10);
+      } else {
+        animX += dx * MOVE_SPEED;
+        animY += dy * MOVE_SPEED;
+      }
+    }
+    
+    particles = particles.filter(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.life -= p.decay;
+      return p.life > 0;
+    });
+
+    ripples = ripples.filter(r => {
+      r.radius += (r.maxRadius - r.radius) * 0.1;
+      r.alpha -= r.decay;
+      return r.alpha > 0;
+    });
+    
+    if (mixFlash) {
+      mixFlash.alpha -= 0.08;
+      if (mixFlash.alpha <= 0) mixFlash = null;
+    }
+  }
+
+  function draw() {
+    if (!ctx || canvas.width === 0 || !currentRecipe) return;
+    const w = canvas.width;
+    const h = canvas.height;
+    
+    ctx.clearRect(0, 0, w, h);
+    ctx.save();
+
+    if (screenShake > 0) {
+      const sx = (Math.random() - 0.5) * screenShake;
+      const sy = (Math.random() - 0.5) * screenShake;
+      ctx.translate(sx, sy);
+    }
+    
+    // Grid
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+    ctx.lineWidth = 1;
+    for (let row = 0; row < ROWS; row++) {
+      for (let col = 0; col < COLS; col++) {
+        const x = col * cellSize;
+        const y = row * cellSize;
+        
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.6)';
+        ctx.fillRect(x + 2, y + 2, cellSize - 4, cellSize - 4);
+        
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.beginPath();
+        ctx.arc(x, y, 1.5, 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
+    
+    // Mixers
+    mixers.forEach(mixer => {
+      const x = mixer.col * cellSize + cellSize/2;
+      const y = mixer.row * cellSize + cellSize/2;
+      const isActive = visitedMixers.has(`${mixer.col},${mixer.row}`);
+      const radius = cellSize * 0.22;
+      const breathe = Math.sin(time + mixer.col + mixer.row) * 2;
+      
+      const colorStr = `rgb(${mixer.color.r},${mixer.color.g},${mixer.color.b})`;
+      
+      if (!isActive) {
+        ctx.beginPath();
+        ctx.arc(x, y, radius * 2 + breathe, 0, Math.PI * 2);
+        const grd = ctx.createRadialGradient(x, y, radius, x, y, radius * 2.5 + breathe);
+        grd.addColorStop(0, `rgba(${mixer.color.r},${mixer.color.g},${mixer.color.b},0.3)`);
+        grd.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = grd;
+        ctx.fill();
+      }
+      
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fillStyle = isActive ? colorStr : `rgba(${mixer.color.r},${mixer.color.g},${mixer.color.b},0.8)`;
+      ctx.fill();
+      
+      ctx.strokeStyle = isActive ? '#fff' : 'rgba(255,255,255,0.4)';
+      ctx.lineWidth = isActive ? 2 : 1;
+      ctx.stroke();
+      
+      if (isActive) {
+        ctx.fillStyle = '#000';
+        ctx.font = `bold ${cellSize*0.2}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('✓', x, y);
+      }
+    });
+
+    // Ripples
+    ripples.forEach(r => {
+      ctx.beginPath();
+      ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+      ctx.globalAlpha = r.alpha;
+      ctx.strokeStyle = r.color;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.globalAlpha = 1.0;
+    });
+    
+    // Door
+    const dx = doorPos.col * cellSize + cellSize/2;
+    const dy = doorPos.row * cellSize + cellSize/2;
+    const doorRadius = cellSize * 0.38;
+    const doorBreathe = Math.sin(time * 1.5) * 2;
+    
+    ctx.shadowColor = currentRecipe.hex;
+    ctx.shadowBlur = 20 + doorBreathe * 5;
+    
+    ctx.beginPath();
+    ctx.arc(dx, dy, doorRadius, 0, Math.PI * 2);
+    ctx.fillStyle = currentRecipe.hex;
+    ctx.fill();
+    
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.beginPath();
+    ctx.arc(dx, dy, doorRadius * 0.4, 0, Math.PI*2);
+    ctx.fill();
+    
+    // STATIC Player Avatar (Neutral Crystal)
+    const px = animX;
+    const py = animY;
+    const pr = cellSize * 0.28;
+
+    ctx.beginPath();
+    const auraGrd = ctx.createRadialGradient(px, py, pr, px, py, pr * 3);
+    auraGrd.addColorStop(0, 'rgba(255,255,255,0.25)');
+    auraGrd.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = auraGrd;
+    ctx.arc(px, py, pr * 3, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.rotate(Math.PI / 4);
+    
+    const diamondSize = pr * 0.9;
+    
+    ctx.shadowColor = 'rgba(255,255,255,0.6)';
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.rect(-diamondSize, -diamondSize, diamondSize * 2, diamondSize * 2);
+    ctx.fill();
+    
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = '#ccc';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = '#e2e8f0';
+    ctx.beginPath();
+    ctx.rect(-diamondSize*0.4, -diamondSize*0.4, diamondSize * 0.8, diamondSize * 0.8);
+    ctx.fill();
+
+    ctx.restore();
+    
+    // Particles
+    particles.forEach(p => {
+      ctx.globalAlpha = p.life;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1.0;
+
+    // Flash
+    if (mixFlash) {
+      ctx.globalAlpha = mixFlash.alpha;
+      ctx.fillStyle = mixFlash.color;
+      ctx.fillRect(0, 0, w, h);
+      ctx.globalAlpha = 1.0;
+    }
+    
+    ctx.restore();
+  }
+
+  function gameLoop() {
+    updateAnimation();
+    draw();
+    requestAnimationFrame(gameLoop);
+  }
+
+  // --- Inputs ---
+  let touchStartX = 0, touchStartY = 0;
+  
+  function handleStart(e) {
+    if (!gameStarted || gameOver || gameWon) return;
+    const point = e.touches ? e.touches[0] : e;
+    touchStartX = point.clientX;
+    touchStartY = point.clientY;
+  }
+  
+  function handleEnd(e) {
+    if (!gameStarted || gameOver || gameWon) return;
+    const point = e.changedTouches ? e.changedTouches[0] : e;
+    const dx = point.clientX - touchStartX;
+    const dy = point.clientY - touchStartY;
+    const threshold = 30; 
+    
+    if (Math.abs(dx) < threshold && Math.abs(dy) < threshold) return;
+    
+    if (Math.abs(dx) > Math.abs(dy)) queueMove(dx > 0 ? 1 : -1, 0);
+    else queueMove(0, dy > 0 ? 1 : -1);
+  }
+
+  function handleKeyDown(e) {
+    if (!gameStarted || gameOver || gameWon) return;
+    
+    switch(e.key) {
+      case 'ArrowUp': case 'w': case 'W': queueMove(0, -1); break;
+      case 'ArrowDown': case 's': case 'S': queueMove(0, 1); break;
+      case 'ArrowLeft': case 'a': case 'A': queueMove(-1, 0); break;
+      case 'ArrowRight': case 'd': case 'D': queueMove(1, 0); break;
+      case 'r': case 'R': if(gameStarted) generateLevel(currentLevel); break;
+    }
+  }
+
+  function startGame() {
+    tutorialOverlay.classList.add('hidden');
+    setTimeout(() => {
+      gameStarted = true;
+    }, 400);
+  }
+
+  function init() {
+    generateLevel(1);
+    
+    canvas.addEventListener('touchstart', handleStart, {passive: true});
+    canvas.addEventListener('touchend', handleEnd, {passive: true});
+    canvas.addEventListener('mousedown', handleStart);
+    canvas.addEventListener('mouseup', handleEnd);
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('resize', resizeCanvas);
+    
+    btnOk.addEventListener('click', startGame);
+    
+    resetBtn.addEventListener('click', () => {
+      if (gameStarted) {
+        generateLevel(currentLevel);
+        container.classList.remove('shake-anim');
+      }
+    });
+    
+    tryAgainBtn.addEventListener('click', () => {
+      if (gameStarted) generateLevel(currentLevel);
+    });
+    
+    nextBtn.addEventListener('click', () => {
+      if (gameStarted) {
+        currentLevel++;
+        generateLevel(currentLevel);
+      }
+    });
+    
+    gameLoop();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>

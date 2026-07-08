@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover, maximum-scale=1.0, minimum-scale=1.0">
+  <title>Fruit Slice Ninja · Juicer Edition</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* Fixes mobile viewport stretching and enforces centering */
+    html, body {
+      margin: 0; padding: 0;
+      width: 100vw; height: 100vh;
+      height: 100dvh; /* Uses dynamic viewport height if supported */
+      overflow: hidden; 
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none; -webkit-user-select: none;
+      background-color: #05000a; /* Dark border outside the game on landscape screens */
+      font-family: 'Fredoka', system-ui, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .game-wrapper {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      max-width: 500px; /* Forces portrait aspect ratio on wide screens */
+      display: flex; flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 0 50px rgba(0,0,0,0.8);
+      background: radial-gradient(ellipse at center, #2a164a 0%, #0d0015 100%);
+    }
+
+    /* Heads Up Display */
+    .hud {
+      position: absolute; top: 0; left: 0; right: 0;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: env(safe-area-inset-top, 1rem) 1rem 1rem env(safe-area-inset-left, 1rem);
+      z-index: 10;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .stat-group {
+      display: flex; gap: 0.8rem;
+    }
+
+    .stat {
+      background: rgba(40, 20, 60, 0.65);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 0.4rem 0.8rem;
+      border-radius: 20px;
+      border: 2px solid rgba(150, 80, 255, 0.4);
+      display: flex; align-items: center; gap: 0.3rem;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      color: #fff;
+      font-weight: 600;
+      font-size: clamp(0.8rem, 2vw, 1.1rem);
+    }
+
+    .stat span:last-child {
+      color: #ffd700;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+      min-width: 1.2rem;
+      text-align: center;
+    }
+
+    /* Canvas */
+    canvas {
+      display: block;
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+      cursor: crosshair;
+      z-index: 1;
+    }
+
+    /* UI Overlays */
+    .ui-layer {
+      position: absolute; 
+      inset: 0;
+      display: grid; 
+      place-items: center;
+      z-index: 20; 
+      pointer-events: none;
+    }
+
+    .screen {
+      grid-area: 1 / 1; 
+      background: rgba(30, 15, 50, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 2.5rem 1.5rem;
+      border-radius: 25px;
+      border: 2px solid rgba(170, 100, 255, 0.5);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.7), inset 0 0 30px rgba(150, 50, 255, 0.2);
+      text-align: center;
+      pointer-events: auto;
+      transform: scale(1);
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      width: 85%;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .screen.hidden {
+      opacity: 0;
+      transform: scale(0.8);
+      pointer-events: none;
+    }
+
+    .title {
+      font-size: clamp(1.8rem, 9vmin, 3rem);
+      color: #fff;
+      text-shadow: 0 4px 15px rgba(0,0,0,0.6), 0 0 20px rgba(150,50,255,0.8);
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      line-height: 1.1;
+    }
+
+    .subtitle {
+      color: #dcb3ff;
+      font-size: clamp(0.85rem, 4vmin, 1rem);
+      margin-bottom: 2rem;
+      line-height: 1.4;
+      margin-top: 10px;
+    }
+
+    button {
+      background: linear-gradient(135deg, #ff5e62, #ff9966);
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      font-size: clamp(1.1rem, 4vw, 1.3rem);
+      font-family: 'Fredoka', sans-serif;
+      font-weight: 700;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 6px 0 #cc4a4e, 0 15px 25px rgba(0,0,0,0.4);
+      transition: all 0.1s ease;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+      width: 100%;
+    }
+
+    button:active {
+      transform: translateY(6px);
+      box-shadow: 0 0px 0 #cc4a4e, 0 5px 10px rgba(0,0,0,0.4);
+    }
+
+    .final-score {
+      font-size: 2rem; color: #ffd700;
+      margin: 1rem 0 2rem;
+      text-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+    }
+    
+    .win-title {
+      color: #ffbb00;
+      text-shadow: 0 4px 15px rgba(0,0,0,0.6), 0 0 30px rgba(255, 180, 0, 0.9);
+    }
+  </style>
+</head>
+<body>
+<div class="game-wrapper">
+  
+  <div class="hud" id="hud" style="opacity: 0;">
+    <div class="stat-group">
+      <div class="stat"><span>🍉</span> <span id="scoreDisplay">0</span></div>
+      <div class="stat"><span>❤️</span> <span id="livesDisplay">3</span></div>
+    </div>
+    <div class="stat"><span>🏆</span> <span id="bestDisplay">0</span></div>
+  </div>
+
+  <canvas id="gameCanvas"></canvas>
+
+  <div class="ui-layer">
+    <!-- Start Screen -->
+    <div class="screen" id="startScreen">
+      <h1 class="title">Fruit Slice<br>Ninja</h1>
+      <p class="subtitle">Slice fruits & fill the juice bar!<br>Avoid the deadly bombs! 💣</p>
+      <button id="startBtn"><span>🔪</span> Play Now</button>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div class="screen hidden" id="gameOverScreen">
+      <h1 class="title" style="color: #ff5e62;">GAME OVER</h1>
+      <div class="final-score">Score: <span id="finalScore">0</span></div>
+      <button id="playAgainBtn"><span>🔄</span> Try Again</button>
+    </div>
+    
+    <!-- Win Screen -->
+    <div class="screen hidden" id="gameWinScreen">
+      <h1 class="title win-title">YOU WIN!</h1>
+      <p class="subtitle" style="color: #fff;">Juice Bar 100% Full!</p>
+      <div class="final-score">Score: <span id="winScore">0</span></div>
+      <button id="playAgainWinBtn"><span>🏆</span> Play Again</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  (function() {
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // UI Elements
+    const hud = document.getElementById('hud');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const livesDisplay = document.getElementById('livesDisplay');
+    const bestDisplay = document.getElementById('bestDisplay');
+    const finalScoreDisplay = document.getElementById('finalScore');
+    const winScoreDisplay = document.getElementById('winScore');
+    
+    const startScreen = document.getElementById('startScreen');
+    const gameOverScreen = document.getElementById('gameOverScreen');
+    const gameWinScreen = document.getElementById('gameWinScreen');
+
+    // Buttons
+    document.getElementById('startBtn').addEventListener('click', () => setMode('PLAYING'));
+    document.getElementById('playAgainBtn').addEventListener('click', () => setMode('PLAYING'));
+    document.getElementById('playAgainWinBtn').addEventListener('click', () => setMode('PLAYING'));
+
+    // Game State
+    let mode = 'MENU'; 
+    let score = 0;
+    let lives = 3;
+    let bestScore = 0;
+    let shakeTime = 0;
+    let gameScale = 1;
+    let juiceLevel = 0; // 0 to 100
+    let gearRot = 0;
+    
+    // Entities
+    let items = [];
+    let halves = [];
+    let splashes = [];
+    let particles = [];
+    let sliceTrail = [];
+    
+    // Input
+    let mouseX = 0, mouseY = 0;
+    let prevMouseX = 0, prevMouseY = 0;
+    let isSwiping = false;
+    
+    // Timers
+    let spawnTimer = 0;
+    
+    // Assets (Standard Emojis)
+    const FRUITS = [
+      {emoji: '🍎', color: '#ff4444'}, {emoji: '🍊', color: '#ff8800'},
+      {emoji: '🍋', color: '#ffdd00'}, {emoji: '🍇', color: '#8844ff'},
+      {emoji: '🍓', color: '#ff4466'}, {emoji: '🍑', color: '#ffaa77'},
+      {emoji: '🥝', color: '#88cc44'}, {emoji: '🍌', color: '#ffdd44'},
+      {emoji: '🍉', color: '#ff5544'}, {emoji: '🍒', color: '#cc2244'}
+    ];
+    const BOMB = {emoji: '💣', color: '#333333'};
+
+    // ----- Initialization & Resize -----
+    function resizeCanvas() {
+      const wrapper = document.querySelector('.game-wrapper');
+      canvas.width = wrapper.clientWidth;
+      canvas.height = wrapper.clientHeight;
+      gameScale = canvas.width / 400;
+      loadBestScore();
+    }
+
+    function loadBestScore() {
+      const saved = localStorage.getItem('fruitNinjaJuiceBest');
+      if (saved) {
+        bestScore = parseInt(saved);
+        bestDisplay.textContent = bestScore;
+      }
+    }
+
+    function saveBestScore() {
+      if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem('fruitNinjaJuiceBest', bestScore);
+        bestDisplay.textContent = bestScore;
+      }
+    }
+
+    function setMode(newMode) {
+      mode = newMode;
+      startScreen.classList.add('hidden');
+      gameOverScreen.classList.add('hidden');
+      gameWinScreen.classList.add('hidden');
+      
+      if (mode === 'MENU') {
+        startScreen.classList.remove('hidden');
+        hud.style.opacity = '0';
+      } else if (mode === 'PLAYING') {
+        hud.style.opacity = '1';
+        score = 0;
+        lives = 3;
+        juiceLevel = 0;
+        items = [];
+        halves = [];
+        splashes = [];
+        particles = [];
+        updateUI();
+      } else if (mode === 'GAMEOVER') {
+        gameOverScreen.classList.remove('hidden');
+        hud.style.opacity = '0';
+        finalScoreDisplay.textContent = score;
+        saveBestScore();
+      } else if (mode === 'WIN') {
+        gameWinScreen.classList.remove('hidden');
+        hud.style.opacity = '0';
+        winScoreDisplay.textContent = score;
+        saveBestScore();
+      }
+    }
+
+    function updateUI() {
+      scoreDisplay.textContent = score;
+      livesDisplay.textContent = lives;
+    }
+
+    // ----- Responsive Spawning -----
+    function spawnItem() {
+      const isBomb = mode === 'PLAYING' ? (Math.random() < 0.15) : false;
+      const data = isBomb ? BOMB : FRUITS[Math.floor(Math.random() * FRUITS.length)];
+      
+      const size = 65 * gameScale; 
+      const x = Math.random() * (canvas.width - size - 40) + 20; 
+      
+      items.push({
+        x: x,
+        y: canvas.height + size, 
+        width: size,
+        emoji: data.emoji,
+        color: data.color,
+        isBomb: isBomb,
+        vx: (Math.random() - 0.5) * 6 * gameScale, 
+        vy: -(14 + Math.random() * 5) * gameScale, 
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.15
+      });
+    }
+
+    function createSplash(x, y, color, itemSize) {
+      splashes.push({
+        x: x, y: y,
+        color: color,
+        life: 1.0,
+        maxRadius: itemSize * 1.5
+      });
+      
+      for (let i = 0; i < 15; i++) {
+        particles.push({
+          x: x, y: y,
+          vx: (Math.random() - 0.5) * itemSize * 0.2,
+          vy: (Math.random() - 0.5) * itemSize * 0.2,
+          life: 1.0,
+          decay: 0.02 + Math.random() * 0.03,
+          size: itemSize * (0.05 + Math.random() * 0.08),
+          color: color
+        });
+      }
+    }
+
+    // ----- Game Logic -----
+    function update() {
+      if (mode === 'WIN') return; // Stop updating physics on win
+
+      gearRot += 0.05; // Spin the juicer gear
+
+      spawnTimer--;
+      if (spawnTimer <= 0) {
+        spawnItem();
+        let baseDelay = mode === 'PLAYING' ? Math.max(20, 60 - Math.floor(score / 20)) : 80;
+        spawnTimer = baseDelay + Math.floor(Math.random() * 30);
+        if (mode === 'PLAYING' && Math.random() < 0.3) spawnItem(); 
+      }
+
+      const gravity = 0.25 * gameScale; 
+      const centerX = canvas.width / 2; 
+      const rampBaseY = canvas.height * 0.88; 
+      const holeRadius = canvas.width * 0.12;
+      const rampSlope = 0.3;
+
+      // Update whole items
+      for (let i = items.length - 1; i >= 0; i--) {
+        const item = items[i];
+        item.x += item.vx;
+        item.y += item.vy;
+        item.vy += gravity;
+        item.rotation += item.rotSpeed;
+
+        // Bounce off screen walls
+        if (item.x < 0) { item.x = 0; item.vx *= -1; }
+        if (item.x + item.width > canvas.width) { item.x = canvas.width - item.width; item.vx *= -1; }
+
+        if (item.y > canvas.height + item.width * 2) {
+          if (mode === 'PLAYING' && !item.isBomb) {
+            lives--;
+            updateUI();
+            if (lives <= 0) setMode('GAMEOVER');
+          }
+          items.splice(i, 1);
+        }
+      }
+
+      // Update sliced halves and RAMP PHYSICS
+      for (let i = halves.length - 1; i >= 0; i--) {
+        const h = halves[i];
+        h.x += h.vx;
+        h.y += h.vy;
+        h.vy += gravity;
+        h.rotation += h.rotSpeed;
+
+        // Calculate ramp collision
+        let onRampY = 0;
+        let isOnRamp = false;
+        let slideDir = 0;
+        
+        if (h.x < centerX - holeRadius) {
+          onRampY = rampBaseY - ((centerX - holeRadius) - h.x) * rampSlope;
+          isOnRamp = true;
+          slideDir = 1;
+        } else if (h.x > centerX + holeRadius) {
+          onRampY = rampBaseY - (h.x - (centerX + holeRadius)) * rampSlope;
+          isOnRamp = true;
+          slideDir = -1;
+        }
+
+        // Half hits the sloped base
+        if (isOnRamp && h.y + h.width/2 >= onRampY) {
+          h.y = onRampY - h.width/2; // Snap to surface
+          if (h.vy > 0) h.vy *= -0.2; // Slight bounce
+          h.vx += slideDir * 0.6 * gameScale; // Accelerate down slope towards juicer
+          h.vx *= 0.95; // Friction
+          h.rotSpeed = h.vx * 0.05; // Rolling effect
+        } 
+        // Half falls into the juicer hole
+        else if (!isOnRamp && h.y > rampBaseY) {
+          // It reached the bottom of the juicer!
+          if (h.y > canvas.height - 20) {
+            createSplash(h.x, canvas.height - 30, h.color, h.width * 0.8);
+            halves.splice(i, 1);
+            
+            if (mode === 'PLAYING') {
+              juiceLevel += 0.5; // 0.5% per half = 1% per full fruit
+              if (juiceLevel >= 100) {
+                juiceLevel = 100;
+                setMode('WIN');
+              }
+            }
+            continue;
+          }
+        }
+
+        // Failsafe cleanup
+        if (h.y > canvas.height + h.width * 2) halves.splice(i, 1);
+      }
+
+      // Update particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += gravity * 0.5;
+        p.life -= p.decay;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+
+      // Update splashes
+      for (let i = splashes.length - 1; i >= 0; i--) {
+        splashes[i].life -= 0.02;
+        if (splashes[i].life <= 0) splashes.splice(i, 1);
+      }
+
+      // Check Slicing
+      if (isSwiping && (Math.abs(mouseX - prevMouseX) > 2 || Math.abs(mouseY - prevMouseY) > 2)) {
+        checkSlice();
+      }
+
+      // Trail decay
+      if (isSwiping) {
+        sliceTrail.push({x: mouseX, y: mouseY, life: 1});
+        if (sliceTrail.length > 20) sliceTrail.shift();
+      }
+      for (let i = sliceTrail.length - 1; i >= 0; i--) {
+        sliceTrail[i].life -= 0.08;
+        if (sliceTrail[i].life <= 0) sliceTrail.splice(i, 1);
+      }
+
+      prevMouseX = mouseX;
+      prevMouseY = mouseY;
+    }
+
+    function checkSlice() {
+      for (let i = items.length - 1; i >= 0; i--) {
+        const item = items[i];
+        const cx = item.x + item.width/2;
+        const cy = item.y + item.width/2; 
+        
+        const dist = pointToLineDistance(cx, cy, prevMouseX, prevMouseY, mouseX, mouseY);
+
+        if (dist < item.width * 0.6) {
+          let dx = mouseX - prevMouseX;
+          let dy = mouseY - prevMouseY;
+          if (dx === 0 && dy === 0) { dx = 1; dy = 0; } 
+          const cutAngle = Math.atan2(dy, dx);
+
+          if (item.isBomb) {
+            createSplash(cx, cy, '#ff0000', item.width);
+            items.splice(i, 1);
+            if (mode === 'PLAYING') {
+              shakeTime = 30; 
+              setMode('GAMEOVER');
+            }
+          } else {
+            if (mode === 'PLAYING') {
+              score += 10;
+              updateUI();
+            }
+            createSplash(cx, cy, item.color, item.width);
+            
+            // Perpendicular splitting physics
+            const perpAngle = cutAngle - Math.PI / 2;
+            const splitForce = item.width * 0.08;
+            const pushX = Math.cos(perpAngle) * splitForce;
+            const pushY = Math.sin(perpAngle) * splitForce;
+            const liftForce = item.width * 0.08; 
+            
+            halves.push({
+              x: cx, y: cy, width: item.width, emoji: item.emoji, color: item.color,
+              vx: item.vx + pushX, vy: item.vy + pushY - liftForce,
+              rotation: item.rotation, rotSpeed: item.rotSpeed - 0.1,
+              cutAngle: cutAngle,
+              side: 1 // Top half
+            });
+            
+            halves.push({
+              x: cx, y: cy, width: item.width, emoji: item.emoji, color: item.color,
+              vx: item.vx - pushX, vy: item.vy - pushY - liftForce,
+              rotation: item.rotation, rotSpeed: item.rotSpeed + 0.1,
+              cutAngle: cutAngle,
+              side: -1 // Bottom half
+            });
+            
+            items.splice(i, 1);
+          }
+        }
+      }
+    }
+
+    function pointToLineDistance(px, py, x1, y1, x2, y2) {
+      const A = px - x1, B = py - y1, C = x2 - x1, D = y2 - y1;
+      const dot = A * C + B * D;
+      const lenSq = C * C + D * D;
+      if (lenSq === 0) return Math.sqrt(A * A + B * B);
+      let param = Math.max(0, Math.min(1, dot / lenSq));
+      const xx = x1 + param * C, yy = y1 + param * D;
+      const dx = px - xx, dy = py - yy;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+    
+    // Helper for rounded rectangles (Safe for older devices)
+    function drawRoundRect(ctx, x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    // ----- Rendering -----
+    function drawEnvironment() {
+      const centerX = canvas.width / 2; 
+      const rampBaseY = canvas.height * 0.88;
+      const holeRadius = canvas.width * 0.12;
+      const jarBottom = canvas.height - 10;
+      
+      const barW = 12 * gameScale; 
+      const barGap = 15; 
+      const barX = canvas.width - barW - barGap;
+      const barTop = canvas.height * 0.15; 
+      const barBottom = canvas.height * 0.85; 
+      const barH = barBottom - barTop;
+      const radius = barW / 2;
+
+      // 1. Draw Pipe connecting Juicer to Juice Bar
+      const pipeGrad = ctx.createLinearGradient(0, jarBottom - 30, 0, jarBottom - 10);
+      pipeGrad.addColorStop(0, '#555');
+      pipeGrad.addColorStop(0.5, '#ddd');
+      pipeGrad.addColorStop(1, '#333');
+
+      ctx.beginPath();
+      ctx.moveTo(centerX + holeRadius, jarBottom - 20);
+      ctx.lineTo(barX + barW/2, jarBottom - 20);
+      ctx.lineTo(barX + barW/2, barBottom - radius);
+      ctx.lineWidth = 14 * gameScale;
+      ctx.strokeStyle = pipeGrad;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.stroke();
+      
+      // Flowing juice inside pipe
+      if (juiceLevel > 0) {
+        ctx.beginPath();
+        ctx.moveTo(centerX + holeRadius, jarBottom - 20);
+        ctx.lineTo(barX + barW/2, jarBottom - 20);
+        ctx.lineTo(barX + barW/2, barBottom - radius);
+        ctx.lineWidth = 6 * gameScale;
+        ctx.strokeStyle = '#ff9900';
+        ctx.stroke();
+      }
+
+      // 2. Draw Juice Bar Background
+      ctx.fillStyle = 'rgba(0,0,0,0.4)';
+      ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+      ctx.lineWidth = 1.5;
+      drawRoundRect(ctx, barX, barTop, barW, barH, radius);
+      ctx.fill();
+      ctx.stroke();
+
+      // Juice Fill with Gradient
+      if (juiceLevel > 0) {
+        const fillH = Math.max(radius * 2, barH * (juiceLevel / 100)); 
+        const fillGrad = ctx.createLinearGradient(0, barBottom, 0, barTop);
+        fillGrad.addColorStop(0, '#ff8800');
+        fillGrad.addColorStop(1, '#ffcc00');
+        ctx.fillStyle = fillGrad;
+        
+        ctx.save();
+        drawRoundRect(ctx, barX, barBottom - fillH, barW, fillH, radius);
+        ctx.clip();
+        ctx.fillRect(barX, barBottom - fillH, barW, fillH);
+        ctx.restore();
+      }
+
+      // Juice Bar Gloss
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      drawRoundRect(ctx, barX + barW * 0.15, barTop + 2, barW * 0.3, barH - 4, radius * 0.5);
+      ctx.fill();
+
+      // 3. Draw Glass Juicer Jar
+      ctx.fillStyle = 'rgba(180, 200, 240, 0.15)';
+      ctx.beginPath();
+      ctx.moveTo(centerX - holeRadius, rampBaseY);
+      ctx.lineTo(centerX - holeRadius, jarBottom);
+      ctx.lineTo(centerX + holeRadius, jarBottom);
+      ctx.lineTo(centerX + holeRadius, rampBaseY);
+      ctx.fill();
+
+      if (juiceLevel > 0) {
+        const maxJuiceHeight = jarBottom - rampBaseY;
+        const currentJHeight = maxJuiceHeight * (juiceLevel / 100);
+        ctx.fillStyle = 'rgba(255, 136, 0, 0.8)';
+        ctx.fillRect(centerX - holeRadius, jarBottom - currentJHeight, holeRadius * 2, currentJHeight);
+      }
+
+      // Internal Grinder Gear
+      ctx.save();
+      ctx.translate(centerX, jarBottom - 25 * gameScale);
+      ctx.rotate(gearRot);
+      ctx.fillStyle = '#999'; 
+      ctx.beginPath();
+      for(let i=0; i<8; i++){
+          ctx.rotate(Math.PI/4);
+          ctx.rect(-4 * gameScale, -20 * gameScale, 8 * gameScale, 40 * gameScale);
+      }
+      ctx.fill();
+      ctx.fillStyle = '#ddd';
+      ctx.beginPath();
+      ctx.arc(0, 0, 12 * gameScale, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = '#333';
+      ctx.beginPath();
+      ctx.arc(0, 0, 5 * gameScale, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+
+      // Front reflection of glass
+      const glassGloss = ctx.createLinearGradient(centerX - holeRadius, 0, centerX + holeRadius, 0);
+      glassGloss.addColorStop(0, 'rgba(255,255,255,0.4)');
+      glassGloss.addColorStop(0.2, 'rgba(255,255,255,0.05)');
+      glassGloss.addColorStop(0.8, 'rgba(255,255,255,0.0)');
+      glassGloss.addColorStop(1, 'rgba(255,255,255,0.2)');
+      ctx.fillStyle = glassGloss;
+      ctx.fillRect(centerX - holeRadius, rampBaseY, holeRadius * 2, jarBottom - rampBaseY);
+      
+      ctx.strokeStyle = 'rgba(200, 230, 255, 0.6)';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(centerX - holeRadius, rampBaseY, holeRadius * 2, jarBottom - rampBaseY);
+
+      // 4. Draw Sloped Ramps
+      const rampGrad = ctx.createLinearGradient(0, rampBaseY - 60, 0, rampBaseY);
+      rampGrad.addColorStop(0, '#3a1b5c'); 
+      rampGrad.addColorStop(1, '#1a0830'); 
+
+      ctx.strokeStyle = rampGrad; 
+      ctx.lineWidth = 8 * gameScale; 
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      
+      ctx.moveTo(-10, rampBaseY - (centerX - holeRadius) * 0.3);
+      ctx.lineTo(centerX - holeRadius, rampBaseY);
+      
+      ctx.moveTo(canvas.width + 10, rampBaseY - (canvas.width - (centerX + holeRadius)) * 0.3);
+      ctx.lineTo(centerX + holeRadius, rampBaseY);
+      ctx.stroke();
+      
+      ctx.strokeStyle = 'rgba(150, 80, 255, 0.5)';
+      ctx.lineWidth = 2 * gameScale;
+      ctx.stroke();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      ctx.save();
+      if (shakeTime > 0) {
+        const dx = (Math.random() - 0.5) * 20;
+        const dy = (Math.random() - 0.5) * 20;
+        ctx.translate(dx, dy);
+        shakeTime--;
+        
+        ctx.fillStyle = `rgba(255, 0, 0, ${shakeTime / 60})`;
+        ctx.fillRect(-20, -20, canvas.width + 40, canvas.height + 40);
+      }
+
+      // Draw splats in deep background
+      splashes.forEach(s => {
+        ctx.save();
+        ctx.globalAlpha = s.life * 0.6;
+        ctx.fillStyle = s.color;
+        ctx.beginPath();
+        const r = s.maxRadius * (1.5 - s.life); 
+        ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+
+      // Draw Environment (Juicer, ramps, pipes)
+      drawEnvironment();
+
+      // IMPORTANT: Explicitly reset fillStyle to solid black to clear the glass gradient.
+      // If we don't do this, fruits use the glass gradient and become completely transparent 
+      // when they fall outside the center horizontal band (appearing "cut initially").
+      
+      // Draw Whole Items
+      items.forEach(item => {
+        ctx.save();
+        ctx.translate(item.x + item.width/2, item.y + item.width/2);
+        ctx.rotate(item.rotation);
+        
+        // Math.floor required here to prevent decimal pixel sizes from breaking font rendering
+        ctx.font = `${Math.floor(item.width * 0.8)}px Arial, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Resetting the fill style and shadow to draw emoji cleanly
+        ctx.fillStyle = '#000000'; 
+        
+        if (item.isBomb) {
+          ctx.shadowColor = '#ff0000';
+          ctx.shadowBlur = item.width * 0.3;
+        } else {
+          ctx.shadowBlur = 0;
+        }
+        
+        ctx.fillText(item.emoji, 0, 0);
+        ctx.restore();
+      });
+
+      // Draw True Halves
+      halves.forEach(h => {
+        ctx.save();
+        ctx.translate(h.x, h.y);
+        
+        // Rotate to the angle of the swipe cut to apply the correct clipping mask
+        ctx.rotate(h.cutAngle);
+        
+        const s = h.width; 
+        
+        ctx.beginPath();
+        if (h.side === 1) {
+          ctx.rect(-s, -s, s*2, s); // Top half of the cut line
+        } else {
+          ctx.rect(-s, 0, s*2, s); // Bottom half of the cut line
+        }
+        ctx.clip();
+
+        // Rotate back to the fruit's local rotation to draw the emoji properly
+        ctx.rotate(h.rotation - h.cutAngle);
+        
+        ctx.font = `${Math.floor(h.width * 0.8)}px Arial, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Resetting the fill style to draw emoji cleanly
+        ctx.fillStyle = '#000000';
+        ctx.shadowBlur = 0;
+        ctx.fillText(h.emoji, 0, 0);
+        
+        // Rotate back to cut angle to draw the white inner cut surface
+        ctx.rotate(-(h.rotation - h.cutAngle));
+        ctx.beginPath();
+        ctx.moveTo(-h.width * 0.4, 0);
+        ctx.lineTo(h.width * 0.4, 0);
+        ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        ctx.restore();
+      });
+
+      // Draw Particles
+      particles.forEach(p => {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+
+      // Draw Swipe Trail
+      if (sliceTrail.length > 1) {
+        ctx.strokeStyle = '#ffffff';
+        const strokeW = Math.max(4, canvas.width * 0.01); 
+        ctx.lineWidth = strokeW;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.shadowColor = '#a855f7'; 
+        ctx.shadowBlur = strokeW * 3;
+        
+        ctx.beginPath();
+        ctx.moveTo(sliceTrail[0].x, sliceTrail[0].y);
+        for (let i = 1; i < sliceTrail.length; i++) {
+          ctx.globalAlpha = sliceTrail[i].life;
+          ctx.lineTo(sliceTrail[i].x, sliceTrail[i].y);
+        }
+        ctx.stroke();
+        
+        ctx.lineWidth = strokeW * 0.3;
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#e9d5ff';
+        ctx.stroke();
+        
+        ctx.globalAlpha = 1;
+      }
+
+      ctx.restore();
+    }
+
+    function gameLoop() {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    // ----- Input Handling -----
+    function updateCoords(e) {
+      let clientX = e.clientX;
+      let clientY = e.clientY;
+      if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      }
+      const rect = canvas.getBoundingClientRect();
+      mouseX = (clientX - rect.left) * (canvas.width / rect.width);
+      mouseY = (clientY - rect.top) * (canvas.height / rect.height);
+    }
+
+    function startSwipe(e) {
+      isSwiping = true;
+      updateCoords(e);
+      prevMouseX = mouseX;
+      prevMouseY = mouseY;
+      sliceTrail = [];
+    }
+
+    function moveSwipe(e) {
+      if (!isSwiping) return;
+      updateCoords(e);
+    }
+
+    function endSwipe() {
+      isSwiping = false;
+    }
+
+    canvas.addEventListener('mousedown', startSwipe);
+    window.addEventListener('mousemove', moveSwipe);
+    window.addEventListener('mouseup', endSwipe);
+    
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startSwipe(e); }, {passive: false});
+    window.addEventListener('touchmove', (e) => { if(isSwiping) e.preventDefault(); moveSwipe(e); }, {passive: false});
+    window.addEventListener('touchend', endSwipe);
+
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('orientationchange', () => { setTimeout(resizeCanvas, 200); });
+
+    // Boot
+    resizeCanvas();
+    setMode('MENU');
+    requestAnimationFrame(gameLoop);
+  })();
+</script>
+</body>
+</html>

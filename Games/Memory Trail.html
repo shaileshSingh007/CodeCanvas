@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Memory Trail: The Return</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #030308;
+            --ui-cyan: #00ffff;
+            --ui-purple: #b026ff;
+            --ui-gold: #ffcf00;
+            --ui-red: #ff3366;
+            --ui-fire: #ff6600;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            overflow: hidden;
+            font-family: 'Orbitron', sans-serif;
+            color: white;
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* UI Overlays */
+        #uiLayer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 15px; /* Reduced padding */
+            background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%);
+            position: relative;
+            z-index: 11;
+        }
+
+        .hud-section {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .hud-right { text-align: right; }
+        
+        .score-val {
+            font-size: 1rem; /* Reduced font size to force single line */
+            color: var(--ui-cyan);
+            text-shadow: 0 0 10px var(--ui-cyan);
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .meter-label {
+            font-size: 0.6rem;
+            color: #ccc;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+
+        /* Detached absolute positioning prevents layout deflection */
+        .alert-text {
+            position: absolute;
+            top: 55px; 
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            text-align: center;
+            color: var(--ui-red);
+            text-shadow: 0 0 10px var(--ui-red);
+            font-size: 1rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            animation: pulse 1s infinite alternate;
+            display: none;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        @keyframes pulse {
+            from { opacity: 1; text-shadow: 0 0 10px currentColor; }
+            to { opacity: 0.5; text-shadow: 0 0 20px currentColor; }
+        }
+
+        /* Touch Controls */
+        #touchControls {
+            display: none;
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            height: 120px;
+            z-index: 20;
+            pointer-events: auto;
+        }
+
+        .dpad {
+            position: absolute;
+            bottom: 10px;
+            left: 20px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .action-pad {
+            position: absolute;
+            bottom: 10px;
+            right: 20px;
+        }
+
+        .btn {
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 2rem;
+            backdrop-filter: blur(4px);
+            transition: background 0.1s;
+        }
+        
+        .btn.active, .btn:active {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: #fff;
+            box-shadow: 0 0 15px #fff;
+        }
+
+        /* Screens */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 5, 20, 0.95);
+            z-index: 30;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            backdrop-filter: blur(8px);
+        }
+
+        .hidden { display: none !important; }
+
+        h1 {
+            font-size: 3.5rem;
+            color: var(--ui-gold);
+            text-shadow: 0 0 20px var(--ui-fire);
+            margin-bottom: 5px;
+            text-align: center;
+        }
+
+        p {
+            color: #ddd;
+            max-width: 500px;
+            text-align: center;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+            padding: 0 15px;
+        }
+
+        .menu-btn {
+            background: transparent;
+            border: 2px solid var(--ui-gold);
+            color: var(--ui-gold);
+            padding: 15px 50px;
+            font-size: 1.2rem;
+            font-family: inherit;
+            cursor: pointer;
+            border-radius: 30px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.2s;
+            box-shadow: 0 0 10px rgba(255,200,0,0.2);
+            font-weight: bold;
+        }
+
+        .menu-btn:hover, .menu-btn:active {
+            background: var(--ui-gold);
+            color: #000;
+            box-shadow: 0 0 20px var(--ui-gold);
+        }
+
+        #levelInfo {
+            font-size: 1.5rem;
+            color: var(--ui-cyan);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="uiLayer">
+        <div class="hud-top">
+            <div class="hud-section">
+                <span class="meter-label">Sector / Level</span>
+                <span class="score-val" id="uiLevel">1 / 10</span>
+            </div>
+            
+            <div class="hud-section hud-right">
+                <span class="meter-label">Time Remaining</span>
+                <span class="score-val" id="uiTime" style="color: var(--ui-gold);">0:00</span>
+            </div>
+        </div>
+        <div class="alert-text" id="uiAlert">PHASE 2: RETURN BLIND</div>
+    </div>
+
+    <div id="touchControls">
+        <div class="dpad">
+            <div class="btn" id="btnLeft">←</div>
+            <div class="btn" id="btnRight">→</div>
+        </div>
+        <div class="action-pad">
+            <div class="btn" id="btnJump">▲</div>
+        </div>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="startScreen" class="screen">
+        <h1>MEMORY TRAIL</h1>
+        <div id="levelInfo">The Sunset Protocol</div>
+        <p>1. Map the obstacles to the distance markers.<br>
+           2. Reach the Evacuation Gate.<br>
+           3. The world goes dark. Return to the start hatch.<br>
+           Dying will instantly rewind you to retry the sector.</p>
+        <button class="menu-btn" id="startBtn">Initiate Trial</button>
+    </div>
+
+    <!-- Victory Screen -->
+    <div id="victoryScreen" class="screen hidden">
+        <h1 style="color: var(--ui-gold); text-shadow: 0 0 20px var(--ui-gold);">TRIAL COMPLETE</h1>
+        <p>You have arrived back at your destination. Your memory is flawless.</p>
+        <button class="menu-btn" id="fullRestartBtn">Restart Sequence</button>
+    </div>
+
+<script>
+/**
+ * MEMORY TRAIL: THE RETURN - Refined Physics Edition
+ */
+
+// --- Audio System ---
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+const Sound = {
+    play: (type) => {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        const now = audioCtx.currentTime;
+        
+        switch (type) {
+            case 'jump':
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(200, now);
+                osc.frequency.exponentialRampToValueAtTime(400, now + 0.15);
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now); osc.stop(now + 0.15);
+                break;
+            case 'bump': 
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(50, now + 0.2);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now); osc.stop(now + 0.2);
+                break;
+            case 'thud':
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(100, now);
+                osc.frequency.exponentialRampToValueAtTime(20, now + 0.1);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+                break;
+            case 'level_win': 
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(600, now + 0.2);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.4);
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.2, now + 0.2);
+                gain.gain.linearRampToValueAtTime(0, now + 0.6);
+                osc.start(now); osc.stop(now + 0.6);
+                break;
+            case 'rewind': 
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(50, now);
+                osc.frequency.exponentialRampToValueAtTime(1200, now + 0.4);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                osc.start(now); osc.stop(now + 0.4);
+                break;
+            case 'phase':
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.8);
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.3, now + 0.4);
+                gain.gain.linearRampToValueAtTime(0, now + 0.8);
+                osc.start(now); osc.stop(now + 0.8);
+                break;
+            case 'win':
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.setValueAtTime(600, now + 0.1);
+                osc.frequency.setValueAtTime(800, now + 0.2);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.5);
+                osc.start(now); osc.stop(now + 0.5);
+                break;
+        }
+    }
+};
+
+// --- Config & State ---
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d', { alpha: false });
+
+const ZOOM = 0.75; 
+let GAME_WIDTH = 0;
+let GAME_HEIGHT = 0;
+let floorY = 0;
+
+const C = {
+    groundTop: '#ff9900',
+    groundFill: '#110011',
+    player: '#ffffff',
+    playerGlow: '#00ffff',
+    solid: '#00ccff',
+    fire: '#ff3300',
+    wall: '#ff0055',
+    text: '#aaaaaa',
+    hatch: '#222233',
+    bgSkyTop: '#100520',
+    bgSkyMid: '#401040',
+    bgSkyBot: '#ff6633',
+    mountainsFar: '#2d113b',
+    mountainsNear: '#16051f',
+    trees: '#0a0210'
+};
+
+const STATE = { MENU: 0, PLAYING: 1, VICTORY: 2 };
+
+let gameState = STATE.MENU;
+let lastTime = 0;
+let camera = { x: 0, y: 0 };
+
+let savedLevel = parseInt(localStorage.getItem('memoryTrailLvl')) || 1;
+if (savedLevel > 10) savedLevel = 1;
+
+let currentLevel = savedLevel;
+const MAX_LEVELS = 10;
+
+// Dimensions & Layout
+const HATCH_CENTER = 150;
+const HATCH_W = 80; // Reduced width
+const START_SAFE = 400;
+const START_BUFFER = 800; 
+const END_SAFE = 400;
+const END_BUFFER = 800;
+const BASE_THICKNESS = 12;
+
+let phase = 'forward'; 
+let phaseTransitioning = false;
+let hatchOpenAnim = 0; 
+let timeLeft = 0;
+let levelLength = 0;
+
+let obstacles = [];
+let particles = [];
+let parallaxObjects = { bgMountains: [], fgMountains: [], trees: [] };
+
+const keys = { left: false, right: false, up: false };
+
+if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+    document.getElementById('touchControls').style.display = 'block';
+}
+
+function resize() {
+    canvas.width = window.innerWidth || document.documentElement.clientWidth || 800;
+    canvas.height = window.innerHeight || document.documentElement.clientHeight || 600;
+    GAME_WIDTH = canvas.width / ZOOM;
+    GAME_HEIGHT = canvas.height / ZOOM;
+    floorY = GAME_HEIGHT * 0.65; 
+}
+window.addEventListener('resize', resize);
+resize();
+
+// --- Robust Input Handling ---
+window.addEventListener('keydown', (e) => {
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+    if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+    if (e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'Space') keys.up = true;
+});
+window.addEventListener('keyup', (e) => {
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+    if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+    if (e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'Space') keys.up = false;
+});
+
+// Pointer events guarantee release even if finger slides off the element
+const bindBtn = (id, key) => {
+    const btn = document.getElementById(id);
+    const press = (e) => { e.preventDefault(); keys[key] = true; btn.classList.add('active'); };
+    const release = (e) => { e.preventDefault(); keys[key] = false; btn.classList.remove('active'); };
+    
+    btn.addEventListener('pointerdown', press);
+    btn.addEventListener('pointerup', release);
+    btn.addEventListener('pointercancel', release);
+    btn.addEventListener('pointerout', release);
+    btn.addEventListener('pointerleave', release);
+    
+    // Prevent default touch behaviors (like zooming/scrolling) entirely
+    btn.addEventListener('touchstart', (e) => e.preventDefault(), {passive: false});
+};
+bindBtn('btnLeft', 'left');
+bindBtn('btnRight', 'right');
+bindBtn('btnJump', 'up');
+
+// --- Particles ---
+class Particle {
+    constructor(x, y, color, speed, life, size, gravity = false) {
+        this.x = x; this.y = y;
+        this.vx = (Math.random() - 0.5) * speed;
+        this.vy = (Math.random() - 0.5) * speed;
+        this.color = color;
+        this.life = life; this.maxLife = life;
+        this.size = size;
+        this.gravity = gravity;
+    }
+    update(dt) {
+        if (this.gravity) this.vy += 800 * dt;
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+        this.life -= dt;
+    }
+    draw(ctx) {
+        ctx.fillStyle = this.color;
+        ctx.globalAlpha = Math.max(0, this.life / this.maxLife);
+        ctx.fillRect(this.x - camera.x, this.y, this.size, this.size);
+        ctx.globalAlpha = 1.0;
+    }
+}
+
+function spawnParticles(x, y, color, count, speed, life, size, gravity=false) {
+    for (let i = 0; i < count; i++) {
+        particles.push(new Particle(x, y, color, speed, life, size, gravity));
+    }
+}
+
+// --- Player ---
+const player = {
+    x: 150, y: 0, w: 24, h: 24,
+    vx: 0, vy: 0,
+    speed: 400,
+    jumpForce: -600,
+    gravity: 1600,
+    grounded: false,
+    coyoteTimer: 0,
+    jumpBufferTimer: 0,
+    lastJumpState: false,
+
+    update(dt) {
+        if (phase === 'home') {
+            let targetVx = 0;
+            if (keys.left) targetVx = -this.speed;
+            if (keys.right) targetVx = this.speed;
+            
+            this.vx += (targetVx - this.vx) * 12 * dt;
+            this.vy += this.gravity * dt;
+            this.x += this.vx * dt;
+            this.y += this.vy * dt;
+            this.grounded = false;
+
+            if (this.y + this.h >= floorY) {
+                if (this.vy > 500) Sound.play('thud');
+                this.y = floorY - this.h;
+                this.vy = 0;
+                this.grounded = true;
+            }
+            if (this.x < 0) this.x = 0;
+            return;
+        }
+
+        if (phase === 'rewinding') {
+            let targetX = HATCH_CENTER - this.w/2;
+            let targetY = floorY - this.h;
+            this.x += (targetX - this.x) * 10 * dt;
+            this.y += (targetY - this.y) * 10 * dt;
+            
+            spawnParticles(this.x + this.w/2, this.y + this.h/2, C.playerGlow, 3, 200, 0.4, 3);
+            
+            if (Math.abs(this.x - targetX) < 5 && Math.abs(this.y - targetY) < 5) {
+                this.x = targetX; this.y = targetY;
+                this.vx = 0; this.vy = 0;
+                this.lastJumpState = false; // Reset input state to clear stuck inputs from death
+                resetLevel(); 
+            }
+            return;
+        }
+
+        if (phase === 'falling') {
+            this.x += ((HATCH_CENTER - this.w/2) - this.x) * 8 * dt;
+            this.vx = 0;
+            
+            if (hatchOpenAnim > 0.8) {
+                this.vy += this.gravity * dt;
+                this.y += this.vy * dt;
+                if (this.y > floorY + GAME_HEIGHT + 100) {
+                    if (currentLevel === MAX_LEVELS) loadHome();
+                    else {
+                        currentLevel++;
+                        localStorage.setItem('memoryTrailLvl', currentLevel);
+                        loadLevel(currentLevel, true); 
+                    }
+                }
+            } else {
+                this.y = floorY - this.h;
+            }
+            return;
+        }
+
+        // Standard movement logic
+        let targetVx = 0;
+        if (keys.left) targetVx = -this.speed;
+        if (keys.right) targetVx = this.speed;
+        
+        this.vx += (targetVx - this.vx) * 12 * dt;
+        this.vy += this.gravity * dt;
+
+        // -- Jump Execution with Buffering & Coyote Time --
+        this.coyoteTimer -= dt;
+        this.jumpBufferTimer -= dt;
+
+        if (this.grounded) {
+            this.coyoteTimer = 0.15; // 150ms allowance to jump after walking off edges
+        }
+
+        if (keys.up && !this.lastJumpState) {
+            this.jumpBufferTimer = 0.15; // 150ms buffer to catch early jump presses
+        }
+        this.lastJumpState = keys.up;
+
+        if (this.jumpBufferTimer > 0 && this.coyoteTimer > 0) {
+            this.vy = this.jumpForce;
+            this.grounded = false;
+            this.coyoteTimer = 0;
+            this.jumpBufferTimer = 0;
+            Sound.play('jump');
+            spawnParticles(this.x + this.w/2, this.y + this.h, '#fff', 15, 100, 0.4, 3);
+        }
+
+        // --- X Movement & Collision ---
+        this.x += this.vx * dt;
+        
+        if (phase === 'forward') {
+            if (this.x < 0) this.x = 0;
+            if (this.x + this.w >= levelLength) {
+                this.x = levelLength - this.w;
+                triggerPhaseReturn();
+            }
+        } else if (phase === 'return') {
+            if (this.x + this.w > levelLength) this.x = levelLength - this.w;
+            if (this.x <= HATCH_CENTER + 20 && this.grounded) {
+                triggerHatch();
+                return;
+            }
+        }
+
+        // X Collisions (Shrunk Y bounds by 4px prevents snagging on top of blocks)
+        for (let obs of obstacles) {
+            if (this.x < obs.x + obs.w && this.x + this.w > obs.x &&
+                this.y + 4 < obs.y + obs.h && this.y + this.h - 4 > obs.y) {
+                
+                if (obs.type === 'fire') {
+                    triggerRewind(); return;
+                } else if (obs.type === 'solid') {
+                    if (this.vx > 0) this.x = obs.x - this.w;
+                    else if (this.vx < 0) this.x = obs.x + obs.w;
+                    this.vx = 0;
+                    
+                    if (phase === 'return' && obs.flashTime <= 0) {
+                        obs.flashTime = 0.5;
+                        Sound.play('bump');
+                        spawnParticles(this.x + (this.vx>0?this.w:0), this.y + this.h/2, C.solid, 8, 80, 0.3, 3);
+                    }
+                }
+            }
+        }
+
+        // --- Y Movement & Collision ---
+        this.y += this.vy * dt;
+        this.grounded = false;
+
+        // Floor collision 
+        if (phase !== 'falling' && this.y + this.h >= floorY) {
+            if (this.vy > 500) { Sound.play('thud'); spawnParticles(this.x + this.w/2, floorY, C.groundTop, 20, 150, 0.5, 3); }
+            this.y = floorY - this.h;
+            this.vy = 0;
+            this.grounded = true;
+        }
+
+        // Y Collisions (Shrunk X bounds by 2px prevents snagging on corners)
+        for (let obs of obstacles) {
+            if (this.x + 2 < obs.x + obs.w && this.x + this.w - 2 > obs.x &&
+                this.y < obs.y + obs.h && this.y + this.h >= obs.y) {
+                
+                if (obs.type === 'fire') {
+                    triggerRewind(); return;
+                } else if (obs.type === 'solid') {
+                    if (this.vy > 0) { 
+                        this.y = obs.y - this.h;
+                        this.vy = 0;
+                        this.grounded = true; 
+                        if (phase === 'return' && obs.flashTime <= 0) {
+                            obs.flashTime = 0.5; Sound.play('bump');
+                        }
+                    } else if (this.vy < 0) { 
+                        this.y = obs.y + obs.h;
+                        this.vy = 0;
+                    }
+                }
+            }
+        }
+
+        if (this.grounded && Math.abs(this.vx) > 50 && Math.random() > 0.6) {
+            particles.push(new Particle(this.x + this.w/2, this.y + this.h, C.playerGlow, 50, 0.2, 2));
+        }
+    },
+
+    draw(ctx) {
+        ctx.fillStyle = (phase === 'rewinding') ? C.playerGlow : C.player;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = C.playerGlow;
+        
+        let drawW = this.w; let drawH = this.h;
+        if (!this.grounded && phase !== 'rewinding') {
+            if (this.vy > 0) { drawH += 4; drawW -= 2; }
+            else { drawH += 2; drawW -= 1; }
+        }
+        ctx.fillRect(this.x - camera.x + (this.w - drawW)/2, this.y + (this.h - drawH), drawW, drawH);
+        ctx.shadowBlur = 0;
+    }
+};
+
+// --- Level Generation ---
+function generateParallax() {
+    parallaxObjects.bgMountains = [];
+    parallaxObjects.fgMountains = [];
+    parallaxObjects.trees = [];
+    
+    for(let i=-2000; i<30000; i+=300 + Math.random()*300) {
+        parallaxObjects.bgMountains.push({ x: i, w: 500 + Math.random()*500, h: 300 + Math.random()*200 });
+    }
+    for(let i=-2000; i<30000; i+=200 + Math.random()*200) {
+        parallaxObjects.fgMountains.push({ x: i, w: 300 + Math.random()*400, h: 150 + Math.random()*150 });
+    }
+    for(let i=-2000; i<30000; i+=60 + Math.random()*120) {
+        parallaxObjects.trees.push({ x: i, w: 25 + Math.random()*20, h: 100 + Math.random()*150 });
+    }
+}
+
+function loadLevel(lvl, fallingFromSky = false) {
+    currentLevel = lvl;
+    phase = 'forward';
+    phaseTransitioning = false;
+    hatchOpenAnim = 0;
+    
+    levelLength = 2000 + (lvl * 800);
+    timeLeft = 30 + (lvl * 6);
+    
+    player.x = HATCH_CENTER - player.w/2; 
+    
+    if (fallingFromSky) {
+        player.y = -300; 
+        player.vy = 800;
+        player.grounded = false;
+    } else {
+        player.y = floorY - player.h;
+        player.vy = 0;
+    }
+    player.vx = 0;
+    
+    camera.x = player.x - GAME_WIDTH * 0.25;
+    
+    obstacles = [];
+    particles = [];
+
+    let minGap = Math.max(180, 400 - (lvl * 15));
+    let maxGap = Math.max(350, 550 - (lvl * 15));
+
+    let cursorX = START_SAFE; 
+    while (cursorX < levelLength - END_SAFE) {
+        let gap = minGap + Math.random() * (maxGap - minGap);
+        cursorX += gap;
+        if (cursorX >= levelLength - END_SAFE) break; 
+
+        let inBuffer = (cursorX < START_BUFFER) || (cursorX > levelLength - END_BUFFER);
+        let isFire = !inBuffer && (lvl > 1) && Math.random() < Math.min(0.6, 0.1 + (lvl * 0.05));
+        
+        let w = isFire ? 60 + Math.random() * 50 : 40 + Math.random() * 50;
+        let h = isFire ? 20 : 40 + Math.random() * 40;
+
+        obstacles.push({
+            x: cursorX, y: floorY - h, w: w, h: h,
+            type: isFire ? 'fire' : 'solid', flashTime: 0, animOffset: Math.random() * 10
+        });
+
+        if (!isFire && !inBuffer && lvl > 3 && Math.random() < 0.3) {
+            obstacles.push({
+                x: cursorX + w + 10, y: floorY - 20, w: 70, h: 20,
+                type: 'fire', flashTime: 0, animOffset: Math.random() * 10
+            });
+            cursorX += w + 90;
+        }
+    }
+
+    updateHUD();
+    let alertUI = document.getElementById('uiAlert');
+    alertUI.style.display = 'block';
+    alertUI.style.color = C.groundTop;
+    alertUI.innerText = `SECTOR ${currentLevel} SECURED`;
+    setTimeout(() => { if(phase==='forward') alertUI.style.display = 'none'; }, 2000);
+    
+    gameState = STATE.PLAYING;
+    lastTime = performance.now();
+    requestAnimationFrame(gameLoop);
+}
+
+function loadHome() {
+    phase = 'home';
+    currentLevel = 11; // Special indicator
+    levelLength = 800;
+    
+    player.x = 200 - player.w/2;
+    player.y = -300;
+    player.vy = 800;
+    player.grounded = false;
+    
+    camera.x = player.x - GAME_WIDTH * 0.25;
+    obstacles = [];
+    particles = [];
+    hatchOpenAnim = 0;
+    
+    updateHUD();
+    let alertUI = document.getElementById('uiAlert');
+    alertUI.style.display = 'block';
+    alertUI.style.color = C.cyan;
+    alertUI.innerText = "ARRIVAL";
+}
+
+// --- Game Flow Methods ---
+function triggerPhaseReturn() {
+    phase = 'return';
+    phaseTransitioning = true; // Initiates smooth camera pan
+    Sound.play('phase');
+    timeLeft += 20 + (currentLevel * 5); 
+    
+    let alertUI = document.getElementById('uiAlert');
+    alertUI.style.display = 'block';
+    alertUI.style.color = C.red;
+    alertUI.innerText = "PHASE 2: RETURN BLIND";
+    
+    spawnParticles(levelLength, floorY - 100, C.wall, 100, 400, 1.5, 5, true);
+}
+
+function triggerHatch() {
+    phase = 'falling';
+    phaseTransitioning = true; // Initiates smooth camera pan back to center
+    Sound.play('level_win');
+    
+    let alertUI = document.getElementById('uiAlert');
+    alertUI.style.display = 'block';
+    alertUI.style.color = C.cyan;
+    alertUI.innerText = "SECTOR COMPLETE - DESCENDING";
+}
+
+function triggerRewind() {
+    if (phase === 'rewinding') return;
+    phase = 'rewinding';
+    Sound.play('rewind');
+    
+    let alertUI = document.getElementById('uiAlert');
+    alertUI.style.display = 'block';
+    alertUI.style.color = C.fire;
+    alertUI.innerText = "CONNECTION LOST - REWINDING";
+}
+
+function resetLevel() {
+    phase = 'forward';
+    timeLeft = 30 + (currentLevel * 6);
+    obstacles.forEach(o => o.flashTime = 0);
+    hatchOpenAnim = 0;
+    document.getElementById('uiAlert').style.display = 'none';
+}
+
+function updateHUD() {
+    if (phase === 'home') {
+        document.getElementById('uiLevel').innerText = `HOME`;
+        document.getElementById('uiTime').innerText = `--`;
+        document.getElementById('uiTime').style.color = C.groundTop;
+        return;
+    }
+    
+    document.getElementById('uiLevel').innerText = `${currentLevel} / ${MAX_LEVELS}`;
+    document.getElementById('uiTime').innerText = Math.ceil(timeLeft) + "s";
+    
+    if (timeLeft <= 10 && phase !== 'rewinding' && phase !== 'falling') {
+        document.getElementById('uiTime').style.color = C.fire;
+    } else {
+        document.getElementById('uiTime').style.color = C.groundTop;
+    }
+}
+
+// --- Main Loop ---
+function gameLoop(timestamp) {
+    if (gameState !== STATE.PLAYING) return;
+    
+    let dt = (timestamp - lastTime) / 1000;
+    if (dt > 0.1) dt = 0.1;
+    lastTime = timestamp;
+
+    if (phase === 'forward' || phase === 'return') {
+        timeLeft -= dt;
+        if (timeLeft <= 0) {
+            timeLeft = 0;
+            triggerRewind();
+        }
+    }
+    updateHUD();
+
+    if (phase === 'falling' && hatchOpenAnim < 1) {
+        hatchOpenAnim += dt * 2.5; 
+        if (hatchOpenAnim > 1) hatchOpenAnim = 1;
+    }
+
+    player.update(dt);
+
+    for (let p of particles) p.update(dt);
+    particles = particles.filter(p => p.life > 0);
+
+    for (let obs of obstacles) {
+        if (obs.flashTime > 0) obs.flashTime -= dt;
+    }
+
+    // --- Camera Control with Smooth Panning ---
+    let targetCamX = player.x - GAME_WIDTH * 0.25; 
+    if (phase === 'return') targetCamX = player.x - GAME_WIDTH * 0.75;
+    if (phase === 'falling' || phase === 'home') targetCamX = player.x - GAME_WIDTH * 0.5;
+    
+    if (phaseTransitioning) {
+        camera.x += (targetCamX - camera.x) * 4 * dt;
+        if (Math.abs(targetCamX - camera.x) < 5) phaseTransitioning = false;
+    } else {
+        camera.x = targetCamX;
+    }
+
+    // --- Render ---
+    ctx.save(); 
+    ctx.scale(ZOOM, ZOOM); 
+
+    let grad = ctx.createLinearGradient(0, 0, 0, floorY);
+    grad.addColorStop(0, C.bgSkyTop);
+    grad.addColorStop(0.5, C.bgSkyMid);
+    grad.addColorStop(1, C.bgSkyBot);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+    ctx.fillStyle = '#ffcc00';
+    ctx.shadowBlur = 50;
+    ctx.shadowColor = '#ff3300';
+    ctx.beginPath();
+    ctx.arc(GAME_WIDTH/2 - (camera.x * 0.02), floorY - 80, 120, 0, Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = C.mountainsFar;
+    for (let m of parallaxObjects.bgMountains) {
+        let drawX = m.x - (camera.x * 0.1);
+        if (drawX + m.w < 0 || drawX > GAME_WIDTH) continue;
+        ctx.beginPath(); ctx.moveTo(drawX, floorY); ctx.lineTo(drawX + m.w/2, floorY - m.h); ctx.lineTo(drawX + m.w, floorY); ctx.fill();
+    }
+    ctx.fillStyle = C.mountainsNear;
+    for (let m of parallaxObjects.fgMountains) {
+        let drawX = m.x - (camera.x * 0.25);
+        if (drawX + m.w < 0 || drawX > GAME_WIDTH) continue;
+        ctx.beginPath(); ctx.moveTo(drawX, floorY); ctx.lineTo(drawX + m.w/2, floorY - m.h); ctx.lineTo(drawX + m.w, floorY); ctx.fill();
+    }
+    ctx.fillStyle = C.trees;
+    for (let t of parallaxObjects.trees) {
+        let drawX = t.x - (camera.x * 0.4);
+        if (drawX + t.w < 0 || drawX > GAME_WIDTH) continue;
+        ctx.fillRect(drawX, floorY - t.h, t.w, t.h);
+    }
+
+    // --- Ground & Sliding Hatch Drawing Sequence ---
+    let leftGroundEnd = HATCH_CENTER - HATCH_W/2;
+    let rightGroundStart = HATCH_CENTER + HATCH_W/2;
+    let hatchX = leftGroundEnd - (HATCH_W * hatchOpenAnim);
+
+    ctx.fillStyle = '#010103';
+    ctx.fillRect(leftGroundEnd - camera.x, floorY, HATCH_W, GAME_HEIGHT);
+
+    if (phase !== 'home') {
+        ctx.fillStyle = C.groundFill;
+        ctx.fillRect(hatchX - camera.x, floorY, HATCH_W, GAME_HEIGHT); 
+        
+        ctx.fillStyle = C.groundTop; 
+        ctx.shadowBlur = 15; 
+        ctx.shadowColor = C.groundTop;
+        ctx.fillRect(hatchX - camera.x, floorY, HATCH_W, BASE_THICKNESS);
+        ctx.shadowBlur = 0;
+        
+        ctx.fillStyle = '#000';
+        ctx.globalAlpha = 0.5;
+        for(let i=10; i<HATCH_W; i+=20) {
+            ctx.fillRect(hatchX - camera.x + i, floorY + 2, 4, BASE_THICKNESS - 4);
+        }
+        ctx.globalAlpha = 1.0;
+    }
+
+    ctx.fillStyle = C.groundFill;
+    ctx.fillRect(-2000 - camera.x, floorY, 2000 + leftGroundEnd, GAME_HEIGHT);
+    ctx.fillRect(rightGroundStart - camera.x, floorY, levelLength + 4000, GAME_HEIGHT);
+
+    ctx.fillStyle = C.groundTop;
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = C.groundTop;
+    ctx.fillRect(-2000 - camera.x, floorY, 2000 + leftGroundEnd, BASE_THICKNESS);
+    ctx.fillRect(rightGroundStart - camera.x, floorY, levelLength + 4000, BASE_THICKNESS);
+    ctx.shadowBlur = 0;
+
+    // Distance Markers
+    if (phase !== 'home') {
+        ctx.fillStyle = C.text;
+        ctx.font = "16px Orbitron";
+        ctx.textAlign = "center";
+        let startMark = Math.floor(camera.x / 100) * 100;
+        let endMark = startMark + GAME_WIDTH + 100;
+        for (let i = startMark; i <= endMark; i += 100) {
+            if (i < 0 || i > levelLength) continue;
+            let screenX = i - camera.x;
+            ctx.fillRect(screenX - 1, floorY, 2, 12);
+            ctx.fillText((i/100).toString(), screenX, floorY + 30);
+        }
+
+        ctx.fillStyle = 'rgba(0, 255, 255, 0.1)';
+        ctx.fillRect(-camera.x, floorY - 300, START_SAFE, 300); 
+        ctx.fillStyle = '#00ffff';
+        ctx.font = "bold 20px Orbitron";
+        if (phase === 'return' || phase === 'falling') {
+            ctx.fillText(phase === 'falling' ? "DESCENDING..." : "THE HATCH", HATCH_CENTER - camera.x, floorY - 100);
+        } else {
+            ctx.fillText("START ZONE", (START_SAFE/2) - camera.x, floorY - 150);
+        }
+
+        let wallScreenX = levelLength - camera.x;
+        ctx.fillStyle = 'rgba(255, 0, 85, 0.1)';
+        ctx.fillRect(wallScreenX - END_SAFE, floorY - 300, END_SAFE, 300); 
+        ctx.fillStyle = phase === 'forward' ? C.wall : '#331122';
+        ctx.shadowBlur = phase === 'forward' ? 30 : 0;
+        ctx.shadowColor = C.wall;
+        ctx.fillRect(wallScreenX, floorY - 500, 100, 500); 
+        ctx.shadowBlur = 0;
+        if (phase === 'forward') {
+            ctx.fillStyle = '#fff';
+            ctx.font = "bold 28px Orbitron";
+            ctx.fillText("EVACUATION GATE", wallScreenX - (END_SAFE/2), floorY - 150);
+        }
+    }
+
+    if (phase === 'home') {
+        let homeX = 600 - camera.x;
+        
+        ctx.fillStyle = 'rgba(0, 255, 255, 0.1)';
+        ctx.fillRect(homeX, floorY - 200, 250, 200); 
+        
+        ctx.fillStyle = '#112233'; 
+        ctx.fillRect(homeX + 50, floorY - 150, 150, 150); 
+        
+        ctx.fillStyle = C.ui_purple; 
+        ctx.beginPath();
+        ctx.moveTo(homeX + 20, floorY - 150);
+        ctx.lineTo(homeX + 125, floorY - 250);
+        ctx.lineTo(homeX + 230, floorY - 150);
+        ctx.fill();
+        
+        ctx.fillStyle = C.groundTop; 
+        ctx.fillRect(homeX + 100, floorY - 80, 50, 80);
+        
+        ctx.fillStyle = '#fff'; 
+        ctx.font = "bold 35px Orbitron";
+        ctx.fillText("HOME", homeX + 125, floorY - 280);
+
+        if (player.x > 650 && player.grounded) {
+            gameState = STATE.VICTORY;
+            Sound.play('win');
+            document.getElementById('victoryScreen').classList.remove('hidden');
+            localStorage.setItem('memoryTrailLvl', 1); 
+        }
+    }
+
+    if (phase !== 'home') {
+        for (let obs of obstacles) {
+            let drawX = obs.x - camera.x;
+            if (drawX + obs.w < 0 || drawX > GAME_WIDTH) continue;
+
+            let isVisible = (phase === 'forward') || (obs.flashTime > 0);
+            if (!isVisible) continue;
+
+            let alpha = 1.0;
+            if (phase === 'return') alpha = Math.min(1, obs.flashTime * 2); 
+
+            ctx.globalAlpha = alpha;
+            if (obs.type === 'solid') {
+                ctx.fillStyle = C.solid;
+                ctx.shadowBlur = 15 * alpha;
+                ctx.shadowColor = C.solid;
+                ctx.fillRect(drawX, obs.y, obs.w, obs.h);
+                ctx.fillStyle = '#fff';
+                ctx.globalAlpha = alpha * 0.8;
+                ctx.fillRect(drawX + 3, obs.y + 3, obs.w - 6, 5);
+            } else if (obs.type === 'fire') {
+                ctx.fillStyle = C.fire;
+                ctx.shadowBlur = 20 * alpha;
+                ctx.shadowColor = C.fire;
+                let timeOffset = (performance.now() / 150) + obs.animOffset;
+                ctx.beginPath();
+                ctx.moveTo(drawX, obs.y + obs.h);
+                for(let p = 0; p <= obs.w; p += 10) {
+                    let spikeH = obs.y + (Math.sin(timeOffset + p) * 8);
+                    ctx.lineTo(drawX + p, spikeH);
+                }
+                ctx.lineTo(drawX + obs.w, obs.y + obs.h);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1.0;
+            ctx.shadowBlur = 0;
+        }
+    }
+
+    for (let p of particles) p.draw(ctx);
+    player.draw(ctx);
+
+    ctx.restore(); 
+    requestAnimationFrame(gameLoop);
+}
+
+// --- Init & Start Menu Configuration ---
+generateParallax();
+
+if (savedLevel > 1) {
+    document.getElementById('startBtn').innerText = `Resume Sector ${savedLevel}`;
+}
+
+document.getElementById('startBtn').addEventListener('click', () => {
+    document.getElementById('startScreen').classList.add('hidden');
+    loadLevel(savedLevel, false);
+});
+
+document.getElementById('fullRestartBtn').addEventListener('click', () => {
+    document.getElementById('victoryScreen').classList.add('hidden');
+    savedLevel = 1;
+    localStorage.setItem('memoryTrailLvl', 1);
+    loadLevel(1, false);
+});
+</script>
+</body>
+</html>

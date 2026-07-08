@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Voltage Lab · Advanced Circuit Builder</title>
+    <style>
+        :root {
+            --bg-dark: #0b0e17;
+            --bg-panel: #131a2b;
+            --bg-canvas: #0f1625;
+            --accent-glow: #4ade80;
+            --accent-warn: #fbbf24;
+            --text-main: #e0e7ff;
+            --text-muted: #9aa9d0;
+            --border-color: #2a3a5c;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            overflow: hidden;
+            height: 100vh;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* --- START SCREEN (Popup/Modal) --- */
+        #startScreen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(11, 14, 23, 0.5); /* Semi-transparent overlay */
+            backdrop-filter: blur(8px); /* Blurs the game behind it */
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            transition: opacity 0.4s ease-out;
+        }
+        .start-modal {
+            background: linear-gradient(145deg, rgba(30, 42, 68, 0.85), rgba(19, 26, 43, 0.95));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+            border-radius: 24px;
+            padding: 40px 30px;
+            max-width: 450px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            backdrop-filter: blur(15px);
+        }
+        .logo {
+            font-size: 2.2rem;
+            background: linear-gradient(135deg, #fbbf24, #f472b6, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            text-align: center;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+        .rules-container {
+            width: 100%;
+            margin: 20px 0 30px 0;
+            color: var(--text-muted);
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+        .rules-container p.welcome {
+            text-align: center;
+            font-size: 1.05rem;
+            color: var(--text-main);
+            margin-bottom: 20px;
+        }
+        .rules-container ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .rules-container li {
+            margin-bottom: 12px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .rules-container li::before {
+            content: '⚡';
+            position: absolute;
+            left: 0;
+            top: 2px;
+            font-size: 0.85rem;
+        }
+        .rules-container strong {
+            color: var(--accent-warn);
+        }
+        #startGameBtn {
+            background: var(--accent-glow);
+            color: #0b0e17;
+            font-size: 1.1rem;
+            font-weight: bold;
+            padding: 14px 40px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(74, 222, 128, 0.3);
+            transition: all 0.2s;
+            width: 100%;
+        }
+        #startGameBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(74, 222, 128, 0.4);
+        }
+
+        /* --- APP LAYOUT --- */
+        .app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .header {
+            flex: 0 0 auto;
+            background: var(--bg-panel);
+            padding: 12px 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border-bottom: 1px solid var(--border-color);
+            z-index: 10;
+            width: 100%;
+        }
+        .header h1 {
+            font-size: 1.3rem;
+            text-align: center;
+            background: linear-gradient(135deg, #fbbf24, #f472b6, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 1px;
+            margin: 0;
+        }
+        
+        .task-container {
+            width: 100%;
+            background: rgba(30, 42, 68, 0.6);
+            padding: 10px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            font-size: 0.95rem;
+            color: #c7d2fe;
+            white-space: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .task-container::-webkit-scrollbar { display: none; }
+        .task-container strong { color: #fbbf24; }
+        
+        .header-controls {
+            display: flex;
+            width: 100%;
+            gap: 8px;
+            justify-content: space-between;
+        }
+        .header-controls button {
+            flex: 1;
+            background: var(--border-color);
+            border: none;
+            color: white;
+            padding: 10px 4px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+        .header-controls button:active { transform: scale(0.96); }
+        .header-controls .wire-btn.active {
+            background: #fbbf24;
+            color: #000;
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.4);
+        }
+        .header-controls .delete-btn.active {
+            background: #ef4444;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+        }
+        #validateBtn { background: var(--accent-glow); color: #0b0e17; font-weight: bold; }
+
+        .panel {
+            flex: 0 0 auto;
+            height: 95px;
+            display: flex;
+            background: #111927;
+            padding: 12px 15px;
+            border-bottom: 2px solid var(--border-color);
+            overflow-x: auto;
+            overflow-y: hidden;
+            gap: 12px;
+            align-items: center;
+            z-index: 5;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-color) transparent;
+            touch-action: pan-x; 
+        }
+        .panel::-webkit-scrollbar { height: 6px; }
+        .panel::-webkit-scrollbar-thumb { background-color: var(--border-color); border-radius: 10px; }
+        
+        .panel-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #6b7aa8;
+            margin-right: 5px;
+            display: flex;
+            align-items: center;
+            height: 100%;
+        }
+        .panel-item {
+            background: #1a2440;
+            border-radius: 12px;
+            min-width: 68px;
+            height: 68px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: grab;
+            border: 1px solid var(--border-color);
+            flex-shrink: 0;
+            position: relative;
+            touch-action: none;
+        }
+        .panel-item:active {
+            cursor: grabbing;
+            background: #25335a;
+            border-color: #4a6a9a;
+        }
+        .panel-item .icon { font-size: 1.6rem; margin-bottom: 2px; pointer-events: none; }
+        .panel-item .label { font-size: 0.55rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; pointer-events: none; }
+
+        .workspace {
+            flex: 1 1 auto;
+            position: relative;
+            background: var(--bg-canvas);
+            overflow: hidden;
+        }
+        #circuitCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            touch-action: none; 
+        }
+
+        .status-bar {
+            flex: 0 0 auto;
+            height: 40px;
+            background: var(--bg-panel);
+            padding: 0 15px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #8b9ac8;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        
+        .drag-ghost {
+            position: fixed;
+            pointer-events: none;
+            background: rgba(37, 51, 90, 0.9);
+            border: 2px solid #818cf8;
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.5rem;
+            z-index: 1000;
+            opacity: 0;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+            transform: translate(-50%, -50%);
+            transition: opacity 0.15s;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: #1e2a44;
+            padding: 12px 24px;
+            border-radius: 30px;
+            border: 1px solid #4a6a9a;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+            z-index: 999;
+            font-size: 0.9rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            white-space: nowrap;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .mode-indicator {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            background: rgba(26, 36, 64, 0.8);
+            backdrop-filter: blur(4px);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+            pointer-events: none;
+        }
+
+        @media (max-width: 850px) {
+            .header { gap: 8px; }
+            .header h1 { font-size: 1.1rem; }
+            .header-controls button { padding: 6px 12px; font-size: 0.75rem; }
+            .panel { padding: 8px 10px; height: 85px; }
+            .panel-item { min-width: 60px; height: 60px; }
+            .panel-item .icon { font-size: 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- START SCREEN -->
+    <div id="startScreen">
+        <div class="start-modal">
+            <div class="logo">⚡ Voltage Lab</div>
+            <div class="rules-container">
+                <p class="welcome">Welcome to the Advanced Circuit Builder!</p>
+                <ul>
+                    <li>Drag components from the top panel onto the canvas.</li>
+                    <li>Use the <strong>Wire</strong> tool to connect terminals.</li>
+                    <li><strong>Double-Tap</strong> any component on the canvas to rotate it.</li>
+                    <li>Match polarities! Connecting a <strong>+ to +</strong> or <strong>- to -</strong> will cause a Short Circuit.</li>
+                    <li>Press <strong>🚀 Run</strong> when you are ready to test your design.</li>
+                </ul>
+            </div>
+            <button id="startGameBtn">Start Building</button>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div class="app">
+        <div class="header">
+            <h1>⚡ Voltage Lab</h1>
+            <div class="task-container">
+                <span id="taskIcon">📋</span> <strong id="taskText">Loading mission...</strong>
+            </div>
+            <div class="header-controls">
+                <button class="wire-btn" id="wireModeBtn">〰️ Wire</button>
+                <button class="delete-btn" id="deleteModeBtn">✕ Del</button>
+                <button id="clearBtn" style="background:#6b7aa8">🧹 Clear</button>
+                <button id="validateBtn">🚀 Run</button>
+            </div>
+        </div>
+
+        <div class="panel" id="componentPanel">
+            <div class="panel-label">Parts</div>
+            <!-- Populated by JS -->
+        </div>
+
+        <div class="workspace">
+            <canvas id="circuitCanvas"></canvas>
+            <div class="mode-indicator" id="modeIndicator">✋ Select / Dbl-Tap to Rotate</div>
+        </div>
+
+        <div class="status-bar">
+            <span id="statusMsg">Drag parts to begin. Dbl-Tap to rotate!</span>
+            <span id="powerStatus">🔌 Disconnected</span>
+        </div>
+    </div>
+
+    <div class="drag-ghost" id="dragGhost">🔌</div>
+    <div class="toast" id="toast"></div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // --- DATA & DEFINITIONS ---
+            const COMPONENTS = {
+                battery: { 
+                    id: 'battery', label: 'Battery 9V', icon: '🔋', type: 'source', color: '#4ade80',
+                    terminals: [{ x: -45, y: 0, label: '+' }, { x: 45, y: 0, label: '-' }]
+                },
+                battery12: { 
+                    id: 'battery12', label: 'Battery 12V', icon: '🔋', type: 'source', color: '#60a5fa',
+                    terminals: [{ x: -45, y: 0, label: '+' }, { x: 45, y: 0, label: '-' }]
+                },
+                bulb: { 
+                    id: 'bulb', label: 'Bulb 9V', icon: '💡', type: 'load', color: '#fbbf24',
+                    terminals: [{ x: -35, y: 0, label: '+' }, { x: 35, y: 0, label: '-' }] 
+                },
+                fan: { 
+                    id: 'fan', label: 'Fan', icon: '🌀', type: 'motor', color: '#34d399',
+                    terminals: [{ x: -35, y: 0, label: '+' }, { x: 35, y: 0, label: '-' }]
+                },
+                motor: { 
+                    id: 'motor', label: 'Motor', icon: '⚙️', type: 'motor', color: '#a78bfa',
+                    terminals: [{ x: -35, y: 0, label: '+' }, { x: 35, y: 0, label: '-' }]
+                },
+                switch: { 
+                    id: 'switch', label: 'Switch', icon: '🕹️', type: 'switch', color: '#f472b6',
+                    terminals: [{ x: -35, y: 0, label: '+' }, { x: 35, y: 0, label: '-' }]
+                },
+                resistor: { 
+                    id: 'resistor', label: 'Resistor', icon: '⚡', type: 'passive', color: '#fb923c',
+                    terminals: [{ x: -40, y: 0, label: '+' }, { x: 40, y: 0, label: '-' }]
+                },
+                connector: {
+                    id: 'connector', label: 'Connector', icon: '➕', type: 'connector', color: '#818cf8',
+                    terminals: [{ x: -25, y: 0 }, { x: 25, y: 0 }, { x: 0, y: -25 }, { x: 0, y: 25 }]
+                }
+            };
+
+            const TASKS = [
+                {
+                    id: 1,
+                    desc: 'Let there be light! Connect a battery directly to a bulb.',
+                    success: 'Great! The circuit is complete and power is flowing.',
+                    check: () => hasPoweredType('load') && !hasComponent('switch')
+                },
+                {
+                    id: 2,
+                    desc: 'Control the flow: Add a Switch between a battery and a fan.',
+                    success: 'Perfect! You can now toggle the fan on and off.',
+                    check: () => hasPoweredType('motor') && hasComponent('switch')
+                },
+                {
+                    id: 3,
+                    desc: 'Parallel Power: Light up TWO bulbs using one battery.',
+                    success: 'Awesome! Both bulbs are drawing power independently.',
+                    check: () => getPoweredCount('load') >= 2
+                },
+                {
+                    id: 4,
+                    desc: 'Use a Connector to cleanly branch power to a motor and a lightbulb.',
+                    success: 'Master Electrician! You properly utilized a junction block.',
+                    check: () => hasPoweredType('motor') && hasPoweredType('load') && hasComponent('connector')
+                }
+            ];
+
+            let currentTask = 0;
+
+            // --- STATE ---
+            let placedComponents = []; 
+            let wires = []; 
+            
+            let idCounter = 0;
+            let wireIdCounter = 0;
+            
+            let isWiringMode = false;
+            let isDeleteMode = false;
+            let selectedTerminal = null;
+            
+            let isDragging = false;
+            let isSimulating = false; 
+            let dragData = null;
+            let pointerPos = { x: 0, y: 0 };
+            let dragStartPos = { x: 0, y: 0 };
+
+            // Double Tap Tracking
+            let lastTapTime = 0;
+            let lastTapId = null;
+
+            // DOM
+            const canvas = document.getElementById('circuitCanvas');
+            const ctx = canvas.getContext('2d');
+            const ghost = document.getElementById('dragGhost');
+            const toast = document.getElementById('toast');
+            let canvasRect;
+
+            // --- INITIALIZATION ---
+            function init() {
+                // Start screen logic
+                document.getElementById('startGameBtn').addEventListener('click', () => {
+                    const startScreen = document.getElementById('startScreen');
+                    startScreen.style.opacity = '0';
+                    setTimeout(() => startScreen.style.display = 'none', 500);
+                });
+
+                buildPanel();
+                resizeCanvas();
+                window.addEventListener('resize', resizeCanvas);
+                
+                canvas.addEventListener('pointerdown', onCanvasPointerDown);
+                window.addEventListener('pointermove', onPointerMove);
+                window.addEventListener('pointerup', onPointerUp);
+                
+                document.getElementById('wireModeBtn').addEventListener('click', toggleWireMode);
+                document.getElementById('deleteModeBtn').addEventListener('click', toggleDeleteMode);
+                document.getElementById('clearBtn').addEventListener('click', clearCanvas);
+                document.getElementById('validateBtn').addEventListener('click', toggleSimulation);
+                
+                loadTask();
+                requestAnimationFrame(gameLoop);
+            }
+
+            function buildPanel() {
+                const panel = document.getElementById('componentPanel');
+                Object.values(COMPONENTS).forEach(comp => {
+                    const el = document.createElement('div');
+                    el.className = 'panel-item';
+                    el.innerHTML = `<div class="icon">${comp.icon}</div><div class="label">${comp.label}</div>`;
+                    
+                    el.addEventListener('pointerdown', (e) => {
+                        e.preventDefault(); 
+                        startDragNew(e, comp);
+                    });
+                    panel.appendChild(el);
+                });
+            }
+
+            function resizeCanvas() {
+                canvasRect = canvas.parentElement.getBoundingClientRect();
+                canvas.width = canvasRect.width * window.devicePixelRatio;
+                canvas.height = canvasRect.height * window.devicePixelRatio;
+                ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            }
+
+            // --- DRAG & DROP LOGIC ---
+            function startDragNew(e, comp) {
+                isDragging = true;
+                dragData = { component: comp, type: 'new' };
+                ghost.textContent = comp.icon;
+                ghost.style.opacity = '1';
+                moveGhost(e.clientX, e.clientY);
+            }
+
+            function moveGhost(x, y) {
+                if (!isDragging) return;
+                ghost.style.left = x + 'px';
+                ghost.style.top = y + 'px';
+            }
+
+            function endDrag(e) {
+                if (!isDragging) return;
+                isDragging = false;
+                ghost.style.opacity = '0';
+                
+                const x = e.clientX - canvasRect.left;
+                const y = e.clientY - canvasRect.top;
+                
+                if (x > 0 && x < canvasRect.width && y > 0 && y < canvasRect.height) {
+                    if (dragData.type === 'new') {
+                        placedComponents.push({
+                            id: idCounter++,
+                            x: x, y: y,
+                            rotation: 0, 
+                            component: dragData.component,
+                            state: { closed: false, rotation: 0 },
+                            isPowered: false,
+                            isShort: false
+                        });
+                        resetSimulation();
+                    }
+                }
+                dragData = null;
+            }
+
+            // --- INTERACTION HANDLING ---
+            function onCanvasPointerDown(e) {
+                const x = e.clientX - canvasRect.left;
+                const y = e.clientY - canvasRect.top;
+                dragStartPos = { x, y };
+
+                if (isDeleteMode) {
+                    const w = getWireAt(x, y);
+                    if (w) { 
+                        wires = wires.filter(wire => wire.id !== w.id); 
+                        resetSimulation(); 
+                        return; 
+                    }
+                    const c = getComponentAt(x, y);
+                    if (c) {
+                        wires = wires.filter(wire => wire.from.compId !== c.id && wire.to.compId !== c.id);
+                        placedComponents = placedComponents.filter(pc => pc.id !== c.id);
+                        resetSimulation();
+                    }
+                    return;
+                }
+
+                if (isWiringMode) {
+                    const t = getTerminalAt(x, y);
+                    if (t) {
+                        if (!selectedTerminal) {
+                            selectedTerminal = t;
+                        } else {
+                            if (selectedTerminal.compId !== t.compId) {
+                                addWire(selectedTerminal, t);
+                            }
+                            selectedTerminal = null;
+                        }
+                    } else {
+                        selectedTerminal = null;
+                    }
+                    return;
+                }
+
+                const c = getComponentAt(x, y);
+                if (c) {
+                    dragData = { type: 'move', pc: c, offsetX: c.x - x, offsetY: c.y - y };
+                }
+            }
+
+            function onPointerMove(e) {
+                const x = e.clientX - canvasRect.left;
+                const y = e.clientY - canvasRect.top;
+                pointerPos = { x, y };
+
+                if (dragData && dragData.type === 'move') {
+                    const dist = Math.hypot(pointerPos.x - dragStartPos.x, pointerPos.y - dragStartPos.y);
+                    if (!isDragging && dist > 5) { 
+                        isDragging = true;
+                    }
+                    if (isDragging) {
+                        dragData.pc.x = x + dragData.offsetX;
+                        dragData.pc.y = y + dragData.offsetY;
+                        resetSimulation();
+                    }
+                } 
+                else if (dragData && dragData.type === 'new') {
+                    moveGhost(e.clientX, e.clientY);
+                }
+
+                if (e.target === canvas && !isDragging && !isWiringMode && !isDeleteMode) {
+                    const c = getComponentAt(x, y);
+                    canvas.style.cursor = (c && c.component.type === 'switch') ? 'pointer' : 'default';
+                }
+            }
+
+            function onPointerUp(e) {
+                const x = e.clientX - canvasRect.left;
+                const y = e.clientY - canvasRect.top;
+                const dist = Math.hypot(x - dragStartPos.x, y - dragStartPos.y);
+                
+                if (isDragging) {
+                    endDrag(e);
+                } 
+                else if (!isWiringMode && !isDeleteMode && dist <= 5 && e.target === canvas) {
+                    const c = getComponentAt(x, y);
+                    if (c) {
+                        let now = Date.now();
+                        if (now - lastTapTime < 300 && lastTapId === c.id) {
+                            c.rotation = (c.rotation || 0) + Math.PI / 2;
+                            if (c.component.type === 'switch') c.state.closed = !c.state.closed; 
+                            showToast('🔄 Rotated Component');
+                            resetSimulation();
+                            lastTapTime = 0; 
+                        } else {
+                            lastTapTime = now;
+                            lastTapId = c.id;
+                            if (c.component.type === 'switch') {
+                                c.state.closed = !c.state.closed;
+                                if (isSimulating) validateCircuit(); 
+                            }
+                        }
+                    }
+                    dragData = null; 
+                }
+            }
+
+            // --- VALIDATION & PATHFINDING LOGIC ---
+            function toggleSimulation() {
+                if (isSimulating) {
+                    resetSimulation();
+                } else {
+                    isSimulating = true;
+                    const btn = document.getElementById('validateBtn');
+                    btn.innerHTML = '🛑 Stop';
+                    btn.style.background = '#ef4444';
+                    btn.style.color = '#fff';
+                    validateCircuit();
+                }
+            }
+
+            function resetSimulation() {
+                isSimulating = false;
+                const btn = document.getElementById('validateBtn');
+                btn.innerHTML = '🚀 Run';
+                btn.style.background = 'var(--accent-glow)';
+                btn.style.color = '#0b0e17';
+                
+                document.getElementById('powerStatus').innerHTML = '🔌 Disconnected';
+                document.getElementById('powerStatus').style.color = '#8b9ac8';
+                
+                placedComponents.forEach(c => { c.isPowered = false; c.isShort = false; });
+                wires.forEach(w => w.isPowered = false);
+            }
+
+            function validateCircuit() {
+                placedComponents.forEach(c => { c.isPowered = false; c.isShort = false; });
+                wires.forEach(w => w.isPowered = false);
+
+                let sources = placedComponents.filter(c => c.component.type === 'source');
+                if (sources.length === 0) {
+                    showToast("⚠️ Add a battery to power your circuit!");
+                    resetSimulation();
+                    return;
+                }
+
+                // 1. DEFERRED POLARITY CHECK 
+                // Any wire directly connecting a + to a + or a - to a - causes an immediate short circuit
+                let hasPolarityError = false;
+                wires.forEach(w => {
+                    const pc1 = placedComponents.find(c => c.id === w.from.compId);
+                    const pc2 = placedComponents.find(c => c.id === w.to.compId);
+                    const t1 = pc1.component.terminals[w.from.tIdx];
+                    const t2 = pc2.component.terminals[w.to.tIdx];
+
+                    if (t1.label && t2.label && t1.label === t2.label) {
+                        hasPolarityError = true;
+                        pc1.isShort = true;
+                        pc2.isShort = true;
+                    }
+                });
+
+                if (hasPolarityError) {
+                    showToast("💥 POLARITY ERROR! You cannot connect + to + or - to -.");
+                    const powerStatus = document.getElementById('powerStatus');
+                    powerStatus.innerHTML = '⚠️ Polarity Error';
+                    powerStatus.style.color = '#ef4444';
+                    return; 
+                }
+
+                // Build Graph for Pathfinding
+                let adj = {}; 
+                const addEdge = (u, v, edgeData) => {
+                    if(!adj[u]) adj[u] = []; if(!adj[v]) adj[v] = [];
+                    adj[u].push({ to: v, ...edgeData });
+                    adj[v].push({ to: u, ...edgeData });
+                };
+
+                // External edges (wires)
+                wires.forEach(w => {
+                    addEdge(`${w.from.compId}_${w.from.tIdx}`, `${w.to.compId}_${w.to.tIdx}`, { wire: w });
+                });
+
+                // Internal edges (Components)
+                placedComponents.forEach(pc => {
+                    let isLoad = (pc.component.type === 'load' || pc.component.type === 'motor' || pc.component.type === 'passive');
+                    
+                    if (pc.component.type === 'connector') {
+                        // Connectors short all their pins together
+                        for(let i=0; i<pc.component.terminals.length; i++){
+                            for(let j=i+1; j<pc.component.terminals.length; j++){
+                                addEdge(`${pc.id}_${i}`, `${pc.id}_${j}`, { component: pc, isLoad: false });
+                            }
+                        }
+                    } 
+                    else {
+                        // Standard 2-pin components
+                        let conducts = false;
+                        if (pc.component.type === 'switch') conducts = pc.state.closed;
+                        else if (pc.component.type !== 'source') conducts = true; 
+                        
+                        if (conducts) {
+                            addEdge(`${pc.id}_0`, `${pc.id}_1`, { component: pc, isLoad: isLoad });
+                        }
+                    }
+                });
+
+                let isShortCircuitGlobal = false;
+                let validPathsExist = false;
+                let poweredComps = new Set();
+                let poweredWires = new Set();
+
+                // Pathfind for Shorts & Loads
+                sources.forEach(batt => {
+                    const startNode = `${batt.id}_0`;
+                    const endNode = `${batt.id}_1`;
+                    
+                    let queue = [ { node: startNode, comps: [], wires: [], loadCount: 0 } ];
+                    let minLoadToNode = new Map();
+                    minLoadToNode.set(startNode, 0);
+                    
+                    let localShort = false;
+                    let localPaths = [];
+
+                    while (queue.length > 0) {
+                        let curr = queue.shift();
+
+                        if (curr.node === endNode) {
+                            if (curr.loadCount === 0) {
+                                localShort = true;
+                            } else {
+                                localPaths.push(curr);
+                            }
+                            continue;
+                        }
+
+                        (adj[curr.node] || []).forEach(edge => {
+                            if (curr.node === startNode && edge.to === endNode) return; // Prevent traversing own battery internally
+
+                            let nextLoadCount = curr.loadCount + (edge.isLoad ? 1 : 0);
+                            let nextComps = [...curr.comps];
+                            let nextWires = [...curr.wires];
+
+                            if (edge.component && edge.component.id !== batt.id) nextComps.push(edge.component.id);
+                            if (edge.wire) nextWires.push(edge.wire.id);
+
+                            if (!minLoadToNode.has(edge.to) || minLoadToNode.get(edge.to) > nextLoadCount) {
+                                minLoadToNode.set(edge.to, nextLoadCount);
+                                queue.push({
+                                    node: edge.to,
+                                    comps: nextComps,
+                                    wires: nextWires,
+                                    loadCount: nextLoadCount
+                                });
+                            }
+                        });
+                    }
+
+                    if (localShort) {
+                        batt.isShort = true;
+                        isShortCircuitGlobal = true;
+                    } else if (localPaths.length > 0) {
+                        batt.isPowered = true;
+                        validPathsExist = true;
+                        localPaths.forEach(p => {
+                            p.comps.forEach(id => poweredComps.add(id));
+                            p.wires.forEach(id => poweredWires.add(id));
+                        });
+                    }
+                });
+
+                const powerStatus = document.getElementById('powerStatus');
+                if (isShortCircuitGlobal) {
+                    showToast("💥 SHORT CIRCUIT! Current bypassed the load.");
+                    powerStatus.innerHTML = '⚠️ Short Circuit';
+                    powerStatus.style.color = '#ef4444';
+                } else if (validPathsExist) {
+                    placedComponents.forEach(pc => { if (poweredComps.has(pc.id)) pc.isPowered = true; });
+                    wires.forEach(w => { if (poweredWires.has(w.id)) w.isPowered = true; });
+                    
+                    powerStatus.innerHTML = '⚡ Power Active';
+                    powerStatus.style.color = '#4ade80';
+                    checkTaskProgress();
+                } else {
+                    showToast("🔌 Open Circuit. Connections are incomplete.");
+                    powerStatus.innerHTML = '🔌 Open Circuit';
+                    powerStatus.style.color = '#8b9ac8';
+                }
+            }
+
+            // --- GAME LOOP & DRAWING ---
+            function gameLoop() {
+                placedComponents.forEach(pc => {
+                    if (pc.isPowered && (pc.component.type === 'motor' || pc.component.type === 'load' && pc.component.id === 'fan')) {
+                        pc.state.rotation = (pc.state.rotation || 0) + 0.15;
+                    }
+                });
+
+                draw();
+                requestAnimationFrame(gameLoop);
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw Grid
+                ctx.strokeStyle = '#1a2440';
+                ctx.lineWidth = 1;
+                for (let x = 0; x < canvas.width; x += 50) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
+                for (let y = 0; y < canvas.height; y += 50) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
+
+                // 1. Draw Wires (Underneath terminals)
+                wires.forEach(w => {
+                    const p1 = getTerminalWorldPos(w.from.compId, w.from.tIdx);
+                    const p2 = getTerminalWorldPos(w.to.compId, w.to.tIdx);
+                    if (!p1 || !p2) return;
+
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    
+                    if (w.isPowered && isSimulating) {
+                        ctx.strokeStyle = '#4ade80';
+                        ctx.lineWidth = 4;
+                        ctx.shadowColor = '#4ade80';
+                        ctx.shadowBlur = 10;
+                    } else {
+                        ctx.strokeStyle = '#4a5a8a';
+                        ctx.lineWidth = 3;
+                        ctx.shadowBlur = 0;
+                    }
+                    ctx.stroke();
+                    ctx.shadowBlur = 0; 
+                });
+
+                // Active wiring preview line
+                if (isWiringMode && selectedTerminal) {
+                    const startP = getTerminalWorldPos(selectedTerminal.compId, selectedTerminal.tIdx);
+                    if (startP) {
+                        ctx.beginPath();
+                        ctx.moveTo(startP.x, startP.y);
+                        let lineX = pointerPos.x > 0 ? pointerPos.x : startP.x;
+                        let lineY = pointerPos.y > 0 ? pointerPos.y : startP.y;
+                        ctx.lineTo(lineX, lineY);
+                        ctx.strokeStyle = '#fbbf24';
+                        ctx.lineWidth = 2;
+                        ctx.setLineDash([5, 5]);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                    }
+                }
+
+                // 2. Draw Component Bodies
+                placedComponents.forEach(pc => {
+                    const x = pc.x;
+                    const y = pc.y;
+                    const c = pc.component;
+
+                    ctx.save();
+                    ctx.translate(x, y);
+
+                    // Apply User Rotation
+                    ctx.rotate(pc.rotation || 0);
+
+                    // Short Circuit Sparks
+                    if (pc.isShort) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = '#ef4444';
+                        ctx.fillStyle = 'rgba(239, 68, 68, 0.5)';
+                        ctx.lineWidth = 2;
+                        for (let i=0; i<10; i++) {
+                            let angle = (i / 10) * Math.PI * 2 + Math.random() * 0.2;
+                            let r = 40 + Math.random() * 20;
+                            ctx.lineTo(Math.cos(angle)*r, Math.sin(angle)*r);
+                            let angle2 = ((i + 0.5) / 10) * Math.PI * 2;
+                            let r2 = 30 + Math.random() * 5;
+                            ctx.lineTo(Math.cos(angle2)*r2, Math.sin(angle2)*r2);
+                        }
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.stroke();
+                    }
+
+                    // Glow effect if powered load
+                    if (pc.isPowered && c.type === 'load') {
+                        const grad = ctx.createRadialGradient(0, 0, 10, 0, 0, 45);
+                        grad.addColorStop(0, 'rgba(251, 191, 36, 0.8)');
+                        grad.addColorStop(1, 'rgba(251, 191, 36, 0)');
+                        ctx.fillStyle = grad;
+                        ctx.beginPath();
+                        ctx.arc(0, 0, 45, 0, Math.PI*2);
+                        ctx.fill();
+                    }
+
+                    // --- SHAPE RENDERING BASED ON COMPONENT TYPE ---
+                    ctx.fillStyle = '#1e2a44';
+                    ctx.strokeStyle = c.color;
+                    ctx.lineWidth = 2;
+
+                    if (c.type === 'source') {
+                        ctx.fillRect(-35, -20, 70, 40);
+                        ctx.strokeRect(-35, -20, 70, 40);
+                        ctx.fillStyle = c.color;
+                        ctx.fillRect(25, -20, 10, 40); 
+                        ctx.font = '24px sans-serif';
+                        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                        ctx.fillText(c.icon, -5, 2);
+                    } 
+                    else if (c.type === 'passive') {
+                        ctx.fillRect(-30, -12, 60, 24);
+                        ctx.strokeRect(-30, -12, 60, 24);
+                        ctx.beginPath();
+                        ctx.moveTo(-25, 0); ctx.lineTo(-15, -6); ctx.lineTo(-5, 6);
+                        ctx.lineTo(5, -6); ctx.lineTo(15, 6); ctx.lineTo(25, 0);
+                        ctx.strokeStyle = c.color;
+                        ctx.stroke();
+                    }
+                    else if (c.type === 'connector') {
+                        ctx.fillRect(-15, -15, 30, 30);
+                        ctx.strokeRect(-15, -15, 30, 30);
+                        ctx.font = '16px sans-serif';
+                        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                        ctx.fillText(c.icon, 0, 2);
+                    }
+                    else {
+                        ctx.beginPath();
+                        ctx.arc(0, 0, 28, 0, Math.PI*2);
+                        ctx.fill();
+                        ctx.stroke();
+
+                        if (c.type === 'motor') {
+                            ctx.save();
+                            ctx.rotate(pc.state.rotation || 0);
+                            ctx.fillStyle = c.color;
+                            ctx.font = '32px sans-serif';
+                            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                            ctx.fillText(c.id === 'fan' ? '🌀' : '⚙️', 0, 0);
+                            ctx.restore();
+                        } else if (c.type === 'switch') {
+                            ctx.strokeStyle = c.color;
+                            ctx.lineWidth = 4;
+                            ctx.lineCap = 'round';
+                            ctx.beginPath();
+                            ctx.moveTo(-15, 0);
+                            if (pc.state.closed) ctx.lineTo(15, 0); 
+                            else ctx.lineTo(10, -15); 
+                            ctx.stroke();
+                            ctx.fillStyle = '#fff';
+                            ctx.beginPath(); ctx.arc(-15, 0, 4, 0, Math.PI*2); ctx.fill();
+                            ctx.beginPath(); ctx.arc(15, 0, 4, 0, Math.PI*2); ctx.fill();
+                        } else {
+                            ctx.font = '28px sans-serif';
+                            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                            ctx.fillText(c.icon, 0, 2);
+                        }
+                    }
+                    ctx.restore();
+                });
+
+                // 3. Draw Terminals + Labels
+                placedComponents.forEach(pc => {
+                    const c = pc.component;
+                    c.terminals.forEach((term, idx) => {
+                        const wPos = getTerminalWorldPos(pc.id, idx);
+                        
+                        ctx.beginPath();
+                        ctx.arc(wPos.x, wPos.y, 7, 0, Math.PI*2);
+                        ctx.fillStyle = '#0f1625';
+                        ctx.fill();
+                        
+                        if (selectedTerminal && selectedTerminal.compId === pc.id && selectedTerminal.tIdx === idx) {
+                            ctx.strokeStyle = '#fbbf24';
+                            ctx.lineWidth = 3;
+                            ctx.stroke();
+                        } else {
+                            ctx.strokeStyle = '#4a6a9a';
+                            ctx.lineWidth = 2;
+                            ctx.stroke();
+                        }
+
+                        if (term.label) {
+                            const angle = pc.rotation || 0;
+                            const termAngle = angle + Math.atan2(term.y, term.x); 
+                            const offX = Math.cos(termAngle) * 16;
+                            const offY = Math.sin(termAngle) * 16;
+
+                            ctx.fillStyle = '#9aa9d0';
+                            ctx.font = 'bold 13px monospace';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText(term.label, wPos.x + offX, wPos.y + offY);
+                        }
+                    });
+                });
+            }
+
+            // --- GEOMETRY & HELPERS ---
+            function getComponentAt(x, y) {
+                return placedComponents.find(pc => Math.hypot(pc.x - x, pc.y - y) < 35);
+            }
+
+            function getTerminalWorldPos(compId, tIdx) {
+                const pc = placedComponents.find(c => c.id === compId);
+                if (!pc) return null;
+                const term = pc.component.terminals[tIdx];
+                const cos = Math.cos(pc.rotation || 0);
+                const sin = Math.sin(pc.rotation || 0);
+                return { 
+                    x: pc.x + (term.x * cos - term.y * sin), 
+                    y: pc.y + (term.x * sin + term.y * cos) 
+                };
+            }
+
+            function getTerminalAt(x, y) {
+                for (let pc of placedComponents) {
+                    for (let i = 0; i < pc.component.terminals.length; i++) {
+                        const wPos = getTerminalWorldPos(pc.id, i);
+                        if (Math.hypot(wPos.x - x, wPos.y - y) < 15) {
+                            return { compId: pc.id, tIdx: i };
+                        }
+                    }
+                }
+                return null;
+            }
+
+            function addWire(t1, t2) {
+                // Frontline validation removed, allowing user to make incorrect connections
+                const exists = wires.some(w => 
+                    (w.from.compId === t1.compId && w.from.tIdx === t1.tIdx && w.to.compId === t2.compId && w.to.tIdx === t2.tIdx) ||
+                    (w.from.compId === t2.compId && w.from.tIdx === t2.tIdx && w.to.compId === t1.compId && w.to.tIdx === t1.tIdx)
+                );
+                
+                if (!exists) {
+                    wires.push({ id: wireIdCounter++, from: t1, to: t2, isPowered: false });
+                    resetSimulation();
+                }
+            }
+
+            function getWireAt(x, y) {
+                for (let w of wires) {
+                    const p1 = getTerminalWorldPos(w.from.compId, w.from.tIdx);
+                    const p2 = getTerminalWorldPos(w.to.compId, w.to.tIdx);
+                    if(!p1 || !p2) continue;
+                    
+                    const A = x - p1.x; const B = y - p1.y;
+                    const C = p2.x - p1.x; const D = p2.y - p1.y;
+                    const dot = A * C + B * D;
+                    const lenSq = C * C + D * D;
+                    let param = -1;
+                    if (lenSq !== 0) param = dot / lenSq;
+                    
+                    let xx, yy;
+                    if (param < 0) { xx = p1.x; yy = p1.y; }
+                    else if (param > 1) { xx = p2.x; yy = p2.y; }
+                    else { xx = p1.x + param * C; yy = p1.y + param * D; }
+                    
+                    if (Math.hypot(x - xx, y - yy) < 10) return w;
+                }
+                return null;
+            }
+
+            // --- LOGICAL VALIDATION HELPERS ---
+            function hasComponent(type) { return placedComponents.some(c => c.component.type === type); }
+            function hasPoweredType(type) { return placedComponents.some(c => c.component.type === type && c.isPowered); }
+            function getPoweredCount(type) { return placedComponents.filter(c => c.component.type === type && c.isPowered).length; }
+
+            // --- UI & TASKS ---
+            function toggleWireMode() {
+                isWiringMode = !isWiringMode;
+                isDeleteMode = false;
+                selectedTerminal = null;
+                updateModeUI();
+            }
+            
+            function toggleDeleteMode() {
+                isDeleteMode = !isDeleteMode;
+                isWiringMode = false;
+                selectedTerminal = null;
+                updateModeUI();
+            }
+
+            function updateModeUI() {
+                document.getElementById('wireModeBtn').className = isWiringMode ? 'wire-btn active' : 'wire-btn';
+                document.getElementById('deleteModeBtn').className = isDeleteMode ? 'delete-btn active' : 'delete-btn';
+                
+                const ind = document.getElementById('modeIndicator');
+                if (isWiringMode) ind.innerHTML = '〰️ Wiring Mode (Connect terminals)';
+                else if (isDeleteMode) ind.innerHTML = '✕ Delete Mode (Click item)';
+                else ind.innerHTML = '✋ Select / Dbl-Tap to Rotate';
+            }
+
+            function clearCanvas() {
+                placedComponents = [];
+                wires = [];
+                selectedTerminal = null;
+                resetSimulation();
+                showToast("Workspace Cleared");
+            }
+
+            function loadTask() {
+                const task = TASKS[currentTask];
+                document.getElementById('taskText').innerText = task.desc;
+                document.getElementById('taskIcon').innerText = '📋';
+                document.getElementById('taskText').style.color = '#c7d2fe';
+            }
+
+            function checkTaskProgress() {
+                const task = TASKS[currentTask];
+                
+                if (task.check()) {
+                    showToast("✅ " + task.success);
+                    document.getElementById('taskIcon').innerText = '⭐';
+                    document.getElementById('taskText').innerText = "Mission Accomplished!";
+                    document.getElementById('taskText').style.color = '#4ade80';
+                    
+                    setTimeout(() => {
+                        currentTask = (currentTask + 1) % TASKS.length;
+                        clearCanvas();
+                        loadTask();
+                        showToast("Next Mission Loaded!");
+                    }, 4000);
+                }
+            }
+
+            function showToast(msg) {
+                toast.textContent = msg;
+                toast.classList.add('show');
+                clearTimeout(toast.timer);
+                toast.timer = setTimeout(() => toast.classList.remove('show'), 3000);
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+
+        })();
+    </script>
+</body>
+</html>

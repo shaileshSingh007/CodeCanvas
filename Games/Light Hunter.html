@@ -1,0 +1,1305 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LIGHT HUNTER</title>
+    <style>
+        :root {
+            --neon-blue: #00f3ff;
+            --neon-red: #ff003c;
+            --neon-yellow: #ffee00;
+            --neon-green: #00ff66;
+            --neon-magenta: #ff00ff;
+        }
+        
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            overflow: hidden;
+            font-family: 'Courier New', Courier, monospace;
+            color: white;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            z-index: 10;
+        }
+
+        .hud {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            text-shadow: 0 0 5px var(--neon-blue);
+            transition: opacity 0.3s;
+        }
+
+        .hud-left, .hud-right {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .hud-right {
+            text-align: right;
+        }
+
+        .energy-container {
+            width: 200px;
+            height: 10px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--neon-blue);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        #energy-bar {
+            height: 100%;
+            width: 100%;
+            background: var(--neon-blue);
+            box-shadow: 0 0 10px var(--neon-blue);
+            transition: width 0.1s linear, background-color 0.3s;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+            text-align: center;
+            z-index: 20;
+        }
+
+        h1 {
+            font-size: 4rem;
+            margin: 0 0 20px 0;
+            color: var(--neon-blue);
+            text-shadow: 0 0 20px var(--neon-blue), 0 0 40px var(--neon-blue);
+            letter-spacing: 5px;
+        }
+
+        h2 {
+            font-size: 2rem;
+            color: var(--neon-red);
+            text-shadow: 0 0 10px var(--neon-red);
+        }
+
+        p {
+            font-size: 1.2rem;
+            max-width: 600px;
+            line-height: 1.5;
+            margin-bottom: 20px;
+            color: #ccc;
+        }
+
+        button {
+            background: transparent;
+            color: var(--neon-blue);
+            border: 2px solid var(--neon-blue);
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            font-family: inherit;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.2s;
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.2) inset;
+            pointer-events: auto;
+        }
+
+        button:hover {
+            background: var(--neon-blue);
+            color: black;
+            box-shadow: 0 0 20px var(--neon-blue);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Permanently Visible Joystick */
+        #joystick-container {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: rgba(0, 243, 255, 0.05);
+            border: 2px solid rgba(0, 243, 255, 0.3);
+            pointer-events: auto;
+            touch-action: none;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
+        }
+
+        #joystick-knob {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 243, 255, 0.5);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 15px var(--neon-blue);
+            pointer-events: none;
+            transition: transform 0.05s linear;
+        }
+
+        #event-text {
+            position: absolute;
+            top: 30%;
+            width: 100%;
+            text-align: center;
+            font-size: 2rem;
+            color: var(--neon-red);
+            text-shadow: 0 0 10px var(--neon-red);
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; }
+            p { font-size: 1rem; padding: 0 20px; }
+            #joystick-container { bottom: 20px; left: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Main Rendering Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="ui-layer">
+        <div class="hud hidden" id="hud">
+            <div class="hud-left">
+                <div>SCORE: <span id="score">0</span></div>
+                <div>ENERGY
+                    <div class="energy-container">
+                        <div id="energy-bar"></div>
+                    </div>
+                </div>
+                <div id="powerup-status" style="color: var(--neon-magenta); margin-top: 5px;"></div>
+            </div>
+            <div class="hud-right">
+                <div>TIME: <span id="time">00:00</span></div>
+                <div>AWAKENED: <span id="hunters">0</span></div>
+            </div>
+        </div>
+        
+        <div id="event-text">THE DARKNESS GROWS</div>
+
+        <!-- Visible UI Controls -->
+        <div id="joystick-container">
+            <div id="joystick-knob"></div>
+        </div>
+
+        <div class="overlay" id="main-menu">
+            <h1>LIGHT HUNTER</h1>
+            <p>You are in complete darkness. Your torch is your only guide. Explore, collect energy stars, and survive. Beware of what the light reveals.</p>
+            <p style="font-size: 0.9rem; color: #888;">Desktop: WASD/Arrows | Mobile: Use the Joystick</p>
+            <button id="start-btn">INITIATE</button>
+        </div>
+
+        <div class="overlay hidden" id="game-over">
+            <h2>SIGNAL LOST</h2>
+            <p id="death-reason">You were consumed by the darkness.</p>
+            <div style="margin: 20px 0; font-size: 1.5rem;">
+                FINAL SCORE: <span id="final-score" style="color: var(--neon-blue);">0</span><br>
+                HIGH SCORE: <span id="high-score" style="color: var(--neon-yellow);">0</span>
+            </div>
+            <button id="restart-btn">REBOOT</button>
+        </div>
+    </div>
+
+<script>
+/** * LIGHT HUNTER - Minimalist Vector Arcade Game
+ * Self-contained HTML5 Canvas Implementation
+ */
+
+// --- Audio System (Web Audio API) ---
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+const Sound = {
+    enabled: false,
+    init: function() {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        this.enabled = true;
+        this.startHum();
+    },
+    playTone: function(freq, type, duration, vol, slideFreq = null) {
+        if (!this.enabled) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        if (slideFreq) {
+            osc.frequency.exponentialRampToValueAtTime(slideFreq, audioCtx.currentTime + duration);
+        }
+        
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    },
+    humOsc: null,
+    humGain: null,
+    startHum: function() {
+        if (this.humOsc) return;
+        this.humOsc = audioCtx.createOscillator();
+        this.humGain = audioCtx.createGain();
+        this.humOsc.type = 'sine';
+        this.humOsc.frequency.value = 50;
+        this.humGain.gain.value = 0.05;
+        this.humOsc.connect(this.humGain);
+        this.humGain.connect(audioCtx.destination);
+        this.humOsc.start();
+    },
+    updateHum: function(energyRatio) {
+        if(this.humGain) {
+            this.humOsc.frequency.setTargetAtTime(40 + (energyRatio * 20), audioCtx.currentTime, 0.1);
+            this.humGain.gain.setTargetAtTime(0.02 + (energyRatio * 0.05), audioCtx.currentTime, 0.1);
+        }
+    },
+    stopHum: function() {
+        if(this.humGain) this.humGain.gain.setTargetAtTime(0.001, audioCtx.currentTime, 0.5);
+    },
+    chime: () => Sound.playTone(800, 'sine', 0.5, 0.1, 1200),
+    battery: () => Sound.playTone(400, 'square', 0.8, 0.1, 800),
+    hunterWake: () => Sound.playTone(150, 'sawtooth', 1.0, 0.1, 50),
+    mineTick: () => Sound.playTone(600, 'square', 0.1, 0.05),
+    explosion: () => Sound.playTone(100, 'square', 1.0, 0.2, 10),
+    powerup: () => Sound.playTone(1000, 'triangle', 1.0, 0.1, 2000),
+    death: () => Sound.playTone(200, 'sawtooth', 2.0, 0.2, 20),
+    heartbeatTime: 0,
+    heartbeat: function(closestDist) {
+        if(!this.enabled) return;
+        let rate = Math.max(0.2, closestDist / 500); 
+        let now = audioCtx.currentTime;
+        if(now - this.heartbeatTime > rate) {
+            this.playTone(60, 'sine', 0.3, 0.3 - (rate * 0.2));
+            this.heartbeatTime = now;
+        }
+    }
+};
+
+// --- Game Engine Setup ---
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// Offscreen canvas for lighting mask calculation
+const lightCanvas = document.createElement('canvas');
+const lightCtx = lightCanvas.getContext('2d');
+
+let cw, ch;
+
+function resize() {
+    cw = window.innerWidth;
+    ch = window.innerHeight;
+    canvas.width = cw;
+    canvas.height = ch;
+    lightCanvas.width = cw;
+    lightCanvas.height = ch;
+}
+window.addEventListener('resize', resize);
+resize();
+
+// --- Constants ---
+const CHUNK_SIZE = 1000;
+const BASE_RADIUS = 350;
+const MAX_ENERGY = 100;
+const COLORS = {
+    player: '#ffffff',
+    hunter: '#ff003c',
+    star: '#ffee00',
+    battery: '#00ff66',
+    mine: '#ff8800',
+    wall: '#00aaff', // Brighter cyan for walls
+    powerup: '#ff00ff',
+    pit: '#220033'
+};
+
+// --- Input Handling ---
+const Input = {
+    keys: {},
+    x: 0, y: 0,
+};
+
+// Keyboard Logic
+window.addEventListener('keydown', e => { Input.keys[e.code] = true; updateInputFromKeys(); });
+window.addEventListener('keyup', e => { Input.keys[e.code] = false; updateInputFromKeys(); });
+
+function updateInputFromKeys() {
+    if(Joystick.active) return; // Prioritize joystick if actively used
+    Input.x = 0; Input.y = 0;
+    if(Input.keys['KeyA'] || Input.keys['ArrowLeft']) Input.x -= 1;
+    if(Input.keys['KeyD'] || Input.keys['ArrowRight']) Input.x += 1;
+    if(Input.keys['KeyW'] || Input.keys['ArrowUp']) Input.y -= 1;
+    if(Input.keys['KeyS'] || Input.keys['ArrowDown']) Input.y += 1;
+    
+    // Normalize diagonal
+    if(Input.x !== 0 && Input.y !== 0) {
+        let length = Math.sqrt(Input.x*Input.x + Input.y*Input.y);
+        Input.x /= length;
+        Input.y /= length;
+    }
+}
+
+// Visible Joystick Logic
+const jContainer = document.getElementById('joystick-container');
+const jKnob = document.getElementById('joystick-knob');
+
+const Joystick = {
+    active: false,
+    center: {x: 0, y: 0},
+    start: function(e) {
+        e.preventDefault();
+        this.active = true;
+        const rect = jContainer.getBoundingClientRect();
+        this.center = { x: rect.left + rect.width/2, y: rect.top + rect.height/2 };
+        this.move(e);
+    },
+    move: function(e) {
+        if(!this.active) return;
+        e.preventDefault();
+        let touch = e.type.includes('mouse') ? e : e.touches[0];
+        
+        let dx = touch.clientX - this.center.x;
+        let dy = touch.clientY - this.center.y;
+        let dist = Math.sqrt(dx*dx + dy*dy);
+        let maxDist = 60; // Max visual travel distance for knob
+        
+        if (dist > maxDist) {
+            dx = (dx/dist) * maxDist;
+            dy = (dy/dist) * maxDist;
+        }
+        
+        jKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+        
+        // Output normalized vector
+        Input.x = dx / maxDist;
+        Input.y = dy / maxDist;
+    },
+    end: function(e) {
+        if(!this.active) return;
+        e.preventDefault();
+        this.active = false;
+        jKnob.style.transform = `translate(-50%, -50%)`;
+        Input.x = 0;
+        Input.y = 0;
+        updateInputFromKeys(); // Fallback if keys are still held
+    }
+};
+
+// Bind Joystick Events (Mouse & Touch)
+jContainer.addEventListener('mousedown', Joystick.start.bind(Joystick));
+window.addEventListener('mousemove', Joystick.move.bind(Joystick));
+window.addEventListener('mouseup', Joystick.end.bind(Joystick));
+
+jContainer.addEventListener('touchstart', Joystick.start.bind(Joystick), {passive: false});
+window.addEventListener('touchmove', Joystick.move.bind(Joystick), {passive: false});
+window.addEventListener('touchend', Joystick.end.bind(Joystick));
+
+// Start Audio Context on any interaction
+['click', 'touchstart'].forEach(evt => 
+    document.body.addEventListener(evt, () => { if(Game.state === 'MENU') Sound.init(); }, {once: true})
+);
+
+// --- Math Helpers ---
+function dist(x1, y1, x2, y2) { return Math.hypot(x2-x1, y2-y1); }
+function circleRectCollide(cx, cy, cr, rx, ry, rw, rh) {
+    let testX = cx, testY = cy;
+    if (cx < rx) testX = rx; else if (cx > rx + rw) testX = rx + rw;
+    if (cy < ry) testY = ry; else if (cy > ry + rh) testY = ry + rh;
+    let distX = cx - testX, distY = cy - testY;
+    return (distX*distX + distY*distY) <= (cr*cr);
+}
+
+// --- Game Objects ---
+class Player {
+    constructor() {
+        this.x = 0;
+        this.y = 0;
+        this.vx = 0;
+        this.vy = 0;
+        this.radius = 12;
+        this.speed = 250;
+        this.energy = MAX_ENERGY;
+        
+        // Torch properties
+        this.lightRadius = BASE_RADIUS;
+        this.angle = 0; // Direction torch is pointing
+        this.coneSpread = Math.PI * 0.55; // ~100 degree cone for slightly better visibility
+
+        // Powerups
+        this.shield = false;
+        this.speedMult = 1;
+        this.lightMult = 1;
+        this.pulseActive = false;
+        
+        this.powerupTimers = { speed: 0, light: 0, pulse: 0, freeze: 0 };
+    }
+
+    update(dt) {
+        this.vx = Input.x * this.speed * this.speedMult;
+        this.vy = Input.y * this.speed * this.speedMult;
+
+        // Update torch angle if moving
+        if (Input.x !== 0 || Input.y !== 0) {
+            this.angle = Math.atan2(Input.y, Input.x);
+        }
+
+        let nextX = this.x + this.vx * dt;
+        let nextY = this.y + this.vy * dt;
+
+        // Wall Collision
+        let collisionX = false, collisionY = false;
+        for (let wall of Game.chunks.getVisibleWalls()) {
+            if (circleRectCollide(nextX, this.y, this.radius, wall.x, wall.y, wall.w, wall.h)) collisionX = true;
+            if (circleRectCollide(this.x, nextY, this.radius, wall.x, wall.y, wall.w, wall.h)) collisionY = true;
+        }
+
+        if (!collisionX) this.x = nextX;
+        if (!collisionY) this.y = nextY;
+
+        // Energy drain
+        if (Game.state === 'PLAYING') {
+            this.energy -= Game.drainRate * dt;
+            if (this.energy <= 0) {
+                this.energy = 0;
+                Game.triggerOutage();
+            }
+        }
+
+        // Powerup Timers
+        for(let key in this.powerupTimers) {
+            if(this.powerupTimers[key] > 0) {
+                this.powerupTimers[key] -= dt;
+                if(this.powerupTimers[key] <= 0) this.removePowerup(key);
+            }
+        }
+    }
+
+    applyPowerup(type) {
+        Sound.powerup();
+        switch(type) {
+            case 0: // Mega Light
+                this.lightMult = 2.5;
+                this.powerupTimers.light = 10;
+                Game.ui.showEvent("MEGA TORCH");
+                break;
+            case 1: // Speed
+                this.speedMult = 1.8;
+                this.powerupTimers.speed = 10;
+                Game.ui.showEvent("SPEED BOOST");
+                break;
+            case 2: // Pulse
+                this.pulseActive = true;
+                this.powerupTimers.pulse = 2.0;
+                Game.ui.showEvent("PULSE SCAN");
+                break;
+            case 3: // Shield
+                this.shield = true;
+                Game.ui.showEvent("SHIELD ACTIVE");
+                break;
+            case 4: // Freeze
+                this.powerupTimers.freeze = 4;
+                Game.ui.showEvent("TIME FREEZE");
+                break;
+        }
+        Game.ui.updateHUD();
+    }
+
+    removePowerup(key) {
+        if(key === 'light') this.lightMult = 1;
+        if(key === 'speed') this.speedMult = 1;
+        if(key === 'pulse') this.pulseActive = false;
+        Game.ui.updateHUD();
+    }
+
+    draw(ctx) {
+        // Player Body
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = COLORS.player;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = COLORS.player;
+        ctx.fill();
+
+        // Direction / Torch holder indicator
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y);
+        ctx.lineTo(this.x + Math.cos(this.angle) * (this.radius + 6), this.y + Math.sin(this.angle) * (this.radius + 6));
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        if (this.shield) {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius + 6, 0, Math.PI * 2);
+            ctx.strokeStyle = COLORS.player;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+    }
+}
+
+class Entity {
+    constructor(x, y) {
+        this.x = x; this.y = y;
+        this.active = true;
+    }
+}
+
+class Star extends Entity {
+    constructor(x, y) { super(x, y); this.radius = 6; this.pulse = 0; }
+    update(dt) { this.pulse += dt * 5; }
+    draw(ctx) {
+        let r = this.radius + Math.sin(this.pulse) * 2;
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y - r);
+        for (let i = 0; i < 5; i++) {
+            ctx.lineTo(this.x + Math.cos((18+i*72)/180*Math.PI)*r, this.y - Math.sin((18+i*72)/180*Math.PI)*r);
+            ctx.lineTo(this.x + Math.cos((54+i*72)/180*Math.PI)*(r/2), this.y - Math.sin((54+i*72)/180*Math.PI)*(r/2));
+        }
+        ctx.closePath();
+        ctx.fillStyle = COLORS.star;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = COLORS.star;
+        ctx.fill();
+    }
+}
+
+class Battery extends Entity {
+    constructor(x, y) { super(x, y); this.w = 12; this.h = 20; }
+    draw(ctx) {
+        ctx.fillStyle = COLORS.battery;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = COLORS.battery;
+        ctx.fillRect(this.x - this.w/2, this.y - this.h/2, this.w, this.h);
+        ctx.fillRect(this.x - 4, this.y - this.h/2 - 4, 8, 4);
+    }
+}
+
+class PowerUp extends Entity {
+    constructor(x, y, type) { 
+        super(x, y); 
+        this.radius = 10; 
+        this.type = type; 
+        this.rot = 0;
+    }
+    update(dt) { this.rot += dt * 2; }
+    draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rot);
+        ctx.strokeStyle = COLORS.powerup;
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = COLORS.powerup;
+        ctx.beginPath();
+        ctx.moveTo(-10, -10); ctx.lineTo(10, 10);
+        ctx.moveTo(10, -10); ctx.lineTo(-10, 10);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0,0, this.radius, 0, Math.PI*2);
+        ctx.stroke();
+        ctx.restore();
+    }
+}
+
+class Wall {
+    constructor(x, y, w, h) {
+        this.x = x; this.y = y; this.w = w; this.h = h;
+    }
+    draw(ctx) {
+        // Solid dark blue base to block out the floor grid behind it
+        ctx.fillStyle = '#020510';
+        ctx.fillRect(this.x, this.y, this.w, this.h);
+
+        // Glowing outer border
+        ctx.strokeStyle = COLORS.wall;
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = COLORS.wall;
+        ctx.strokeRect(this.x, this.y, this.w, this.h);
+        
+        // Pseudo 3D wireframe inner edge (no blur to save performance)
+        ctx.shadowBlur = 0;
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = 'rgba(0, 170, 255, 0.4)';
+        
+        // Draw inner rectangle
+        let inset = 8;
+        if(this.w > inset*2 && this.h > inset*2) {
+            ctx.strokeRect(this.x + inset, this.y + inset, this.w - inset*2, this.h - inset*2);
+            
+            // Connect corners to give it a techy 3D depth look
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y); ctx.lineTo(this.x + inset, this.y + inset);
+            ctx.moveTo(this.x + this.w, this.y); ctx.lineTo(this.x + this.w - inset, this.y + inset);
+            ctx.moveTo(this.x, this.y + this.h); ctx.lineTo(this.x + inset, this.y + this.h - inset);
+            ctx.moveTo(this.x + this.w, this.y + this.h); ctx.lineTo(this.x + this.w - inset, this.y + this.h - inset);
+            ctx.stroke();
+        }
+    }
+}
+
+class Pit extends Entity {
+    constructor(x, y, r) { super(x, y); this.radius = r; }
+    draw(ctx) {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
+        ctx.fillStyle = '#000';
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = COLORS.pit;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = COLORS.pit;
+        ctx.stroke();
+    }
+}
+
+class Mine extends Entity {
+    constructor(x, y) {
+        super(x, y);
+        this.radius = 10;
+        this.state = 'hidden';
+        this.timer = 5;
+        this.blink = 0;
+    }
+    update(dt) {
+        if(this.state === 'ticking') {
+            this.timer -= dt;
+            this.blink += dt * (6 - this.timer);
+            if(Math.floor(this.blink) % 2 === 0 && this.timer % 1 < 0.1) Sound.mineTick();
+
+            if(this.timer <= 0) {
+                this.state = 'exploded';
+                this.active = false;
+                Game.createExplosion(this.x, this.y);
+            }
+        }
+    }
+    draw(ctx) {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
+        if (this.state === 'ticking') {
+            let isRed = Math.floor(this.blink) % 2 === 0;
+            ctx.fillStyle = isRed ? COLORS.hunter : COLORS.mine;
+            ctx.shadowColor = isRed ? COLORS.hunter : COLORS.mine;
+        } else {
+            ctx.fillStyle = COLORS.mine;
+            ctx.shadowColor = COLORS.mine;
+        }
+        ctx.shadowBlur = 10;
+        ctx.fill();
+        ctx.fillStyle = '#000';
+        ctx.beginPath(); ctx.arc(this.x, this.y, 3, 0, Math.PI*2); ctx.fill();
+    }
+}
+
+class Hunter extends Entity {
+    constructor(x, y) {
+        super(x, y);
+        this.radius = 12;
+        this.state = 'sleeping';
+        this.angle = 0;
+        this.speed = 110; // Slower speed so players can escape
+    }
+    
+    wakeUp() {
+        if(this.state === 'sleeping') {
+            this.state = 'active';
+            Game.stats.huntersAwakened++;
+            Sound.hunterWake();
+            Game.ui.updateHUD();
+        }
+    }
+
+    update(dt) {
+        if(this.state !== 'active' || Game.player.powerupTimers.freeze > 0) return;
+
+        let dx = Game.player.x - this.x;
+        let dy = Game.player.y - this.y;
+        this.angle = Math.atan2(dy, dx);
+        
+        let vx = Math.cos(this.angle) * this.speed * Game.hunterSpeedMult;
+        let vy = Math.sin(this.angle) * this.speed * Game.hunterSpeedMult;
+
+        let nextX = this.x + vx * dt;
+        let nextY = this.y + vy * dt;
+
+        let collisionX = false, collisionY = false;
+        for (let wall of Game.chunks.getVisibleWalls()) {
+            if (circleRectCollide(nextX, this.y, this.radius, wall.x, wall.y, wall.w, wall.h)) collisionX = true;
+            if (circleRectCollide(this.x, nextY, this.radius, wall.x, wall.y, wall.w, wall.h)) collisionY = true;
+        }
+
+        if (!collisionX) this.x = nextX;
+        if (!collisionY) this.y = nextY;
+    }
+
+    draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        
+        ctx.beginPath();
+        ctx.moveTo(15, 0);
+        ctx.lineTo(-10, 10);
+        ctx.lineTo(-10, -10);
+        ctx.closePath();
+
+        ctx.fillStyle = '#000';
+        ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = COLORS.hunter;
+        ctx.shadowBlur = this.state === 'active' ? 15 : 2;
+        ctx.shadowColor = COLORS.hunter;
+        ctx.stroke();
+        ctx.restore();
+    }
+}
+
+class Particle {
+    constructor(x, y, color, life, speed) {
+        this.x = x; this.y = y;
+        let angle = Math.random() * Math.PI * 2;
+        let s = Math.random() * speed;
+        this.vx = Math.cos(angle) * s;
+        this.vy = Math.sin(angle) * s;
+        this.color = color;
+        this.life = life;
+        this.maxLife = life;
+        this.size = Math.random() * 3 + 1;
+    }
+    update(dt) {
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+        this.life -= dt;
+    }
+    draw(ctx) {
+        ctx.globalAlpha = Math.max(0, this.life / this.maxLife);
+        ctx.fillStyle = this.color;
+        ctx.shadowBlur = 5;
+        ctx.shadowColor = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+    }
+}
+
+// --- Chunk Generation System ---
+const Chunks = {
+    map: new Map(),
+    
+    getChunkKey(x, y) {
+        let cx = Math.floor(x / CHUNK_SIZE);
+        let cy = Math.floor(y / CHUNK_SIZE);
+        return `${cx},${cy}`;
+    },
+
+    update() {
+        let cx = Math.floor(Game.player.x / CHUNK_SIZE);
+        let cy = Math.floor(Game.player.y / CHUNK_SIZE);
+
+        for(let i = -1; i <= 1; i++) {
+            for(let j = -1; j <= 1; j++) {
+                let key = `${cx+i},${cy+j}`;
+                if(!this.map.has(key)) this.generateChunk(cx+i, cy+j, key);
+            }
+        }
+    },
+
+    generateChunk(cx, cy, key) {
+        let startX = cx * CHUNK_SIZE;
+        let startY = cy * CHUNK_SIZE;
+        let chunk = { walls: [], entities: [] };
+        let isStartChunk = (cx === 0 && cy === 0);
+        let difficulty = Game.difficultyLevel;
+
+        let numWalls = isStartChunk ? 2 : 4 + Math.random() * 3 * difficulty;
+        for(let i=0; i<numWalls; i++) {
+            let isVert = Math.random() > 0.5;
+            let w = isVert ? 20 + Math.random()*20 : 100 + Math.random()*200;
+            let h = isVert ? 100 + Math.random()*200 : 20 + Math.random()*20;
+            let x = startX + Math.random() * (CHUNK_SIZE - w);
+            let y = startY + Math.random() * (CHUNK_SIZE - h);
+            chunk.walls.push(new Wall(x, y, w, h));
+        }
+
+        if(!isStartChunk) {
+            let numHunters = 1 + Math.random() * 2 * difficulty;
+            for(let i=0; i<numHunters; i++) chunk.entities.push(new Hunter(startX + Math.random()*CHUNK_SIZE, startY + Math.random()*CHUNK_SIZE));
+            
+            let numMines = Math.random() * 3 * difficulty;
+            for(let i=0; i<numMines; i++) chunk.entities.push(new Mine(startX + Math.random()*CHUNK_SIZE, startY + Math.random()*CHUNK_SIZE));
+            
+            if(Math.random() < 0.3 * difficulty) chunk.entities.push(new Pit(startX + Math.random()*CHUNK_SIZE, startY + Math.random()*CHUNK_SIZE, 30 + Math.random()*40));
+        }
+
+        let numStars = 3 + Math.random() * 4;
+        for(let i=0; i<numStars; i++) chunk.entities.push(new Star(startX + Math.random()*CHUNK_SIZE, startY + Math.random()*CHUNK_SIZE));
+
+        if(Math.random() < 0.1) chunk.entities.push(new Battery(startX + Math.random()*CHUNK_SIZE, startY + Math.random()*CHUNK_SIZE));
+        if(Math.random() < 0.15) chunk.entities.push(new PowerUp(startX + Math.random()*CHUNK_SIZE, startY + Math.random()*CHUNK_SIZE, Math.floor(Math.random()*5)));
+
+        this.map.set(key, chunk);
+    },
+
+    getVisibleChunks() {
+        let cx = Math.floor(Game.player.x / CHUNK_SIZE);
+        let cy = Math.floor(Game.player.y / CHUNK_SIZE);
+        let visible = [];
+        for(let i = -1; i <= 1; i++) {
+            for(let j = -1; j <= 1; j++) {
+                let chunk = this.map.get(`${cx+i},${cy+j}`);
+                if(chunk) visible.push(chunk);
+            }
+        }
+        return visible;
+    },
+
+    getVisibleWalls() {
+        let walls = [];
+        this.getVisibleChunks().forEach(c => walls.push(...c.walls));
+        return walls;
+    },
+    
+    getVisibleEntities() {
+        let ents = [];
+        this.getVisibleChunks().forEach(c => ents.push(...c.entities));
+        return ents;
+    }
+};
+
+// --- Main Game Logic ---
+const Game = {
+    state: 'MENU',
+    lastTime: 0,
+    player: null,
+    chunks: Chunks,
+    particles: [],
+    
+    baseRadius: BASE_RADIUS,
+    drainRate: 2,
+    difficultyLevel: 1,
+    hunterSpeedMult: 1,
+    timeAlive: 0,
+    nextDifficultySpike: 30,
+
+    stats: {
+        score: 0,
+        highScore: localStorage.getItem('lighthunter_hs') || 0,
+        huntersAwakened: 0
+    },
+
+    ui: {
+        menu: document.getElementById('main-menu'),
+        hud: document.getElementById('hud'),
+        gameOver: document.getElementById('game-over'),
+        score: document.getElementById('score'),
+        energyBar: document.getElementById('energy-bar'),
+        time: document.getElementById('time'),
+        hunters: document.getElementById('hunters'),
+        eventText: document.getElementById('event-text'),
+        deathReason: document.getElementById('death-reason'),
+        fScore: document.getElementById('final-score'),
+        hScore: document.getElementById('high-score'),
+        pStatus: document.getElementById('powerup-status'),
+        
+        updateHUD: function() {
+            this.score.innerText = Game.stats.score;
+            let ePct = (Game.player.energy / MAX_ENERGY) * 100;
+            this.energyBar.style.width = ePct + '%';
+            this.energyBar.style.backgroundColor = ePct > 50 ? 'var(--neon-blue)' : (ePct > 20 ? 'var(--neon-yellow)' : 'var(--neon-red)');
+            this.energyBar.style.boxShadow = `0 0 10px ${this.energyBar.style.backgroundColor}`;
+            this.hunters.innerText = Game.stats.huntersAwakened;
+            
+            let m = Math.floor(Game.timeAlive / 60).toString().padStart(2, '0');
+            let s = Math.floor(Game.timeAlive % 60).toString().padStart(2, '0');
+            this.time.innerText = `${m}:${s}`;
+
+            let activePowers = [];
+            if(Game.player.lightMult > 1) activePowers.push("TORCH x2.5");
+            if(Game.player.speedMult > 1) activePowers.push("SPEED ++");
+            if(Game.player.pulseActive) activePowers.push("PULSE");
+            if(Game.player.shield) activePowers.push("SHIELD");
+            if(Game.player.powerupTimers.freeze > 0) activePowers.push("FREEZE");
+            this.pStatus.innerHTML = activePowers.join(' | ');
+        },
+        
+        showEvent: function(text) {
+            this.eventText.innerText = text;
+            this.eventText.style.opacity = 1;
+            setTimeout(() => { this.eventText.style.opacity = 0; }, 2000);
+        }
+    },
+
+    init() {
+        this.player = new Player();
+        this.chunks.map.clear();
+        this.particles = [];
+        this.state = 'PLAYING';
+        this.timeAlive = 0;
+        this.nextDifficultySpike = 30;
+        this.drainRate = 2;
+        this.baseRadius = BASE_RADIUS;
+        this.difficultyLevel = 1;
+        this.hunterSpeedMult = 1;
+        
+        this.stats.score = 0;
+        this.stats.huntersAwakened = 0;
+
+        this.ui.menu.classList.add('hidden');
+        this.ui.gameOver.classList.add('hidden');
+        this.ui.hud.classList.remove('hidden');
+        
+        Sound.init();
+        this.lastTime = performance.now();
+        requestAnimationFrame(this.loop.bind(this));
+    },
+
+    triggerOutage() {
+        this.state = 'OUT_OF_POWER';
+        Sound.stopHum();
+        Sound.death();
+        setTimeout(() => {
+            if(this.state === 'OUT_OF_POWER') this.endGame("BATTERY DEPLETED.");
+        }, 2000);
+    },
+
+    endGame(reason) {
+        this.state = 'GAME_OVER';
+        Sound.stopHum();
+        Sound.death();
+        if(this.stats.score > this.stats.highScore) {
+            this.stats.highScore = this.stats.score;
+            localStorage.setItem('lighthunter_hs', this.stats.highScore);
+        }
+        
+        this.ui.hud.classList.add('hidden');
+        this.ui.gameOver.classList.remove('hidden');
+        this.ui.deathReason.innerText = reason;
+        this.ui.fScore.innerText = this.stats.score;
+        this.ui.hScore.innerText = this.stats.highScore;
+        
+        // Reset joystick cleanly
+        Joystick.active = false;
+        jKnob.style.transform = `translate(-50%, -50%)`;
+        Input.x = 0; Input.y = 0;
+    },
+
+    createExplosion(x, y) {
+        Sound.explosion();
+        for(let i=0; i<30; i++) {
+            this.particles.push(new Particle(x, y, COLORS.mine, 1, 300));
+            this.particles.push(new Particle(x, y, '#fff', 0.5, 150));
+        }
+        let d = dist(this.player.x, this.player.y, x, y);
+        if(d < 120) {
+            if(this.player.shield) {
+                this.player.shield = false;
+                this.ui.showEvent("SHIELD DESTROYED");
+            } else {
+                this.endGame("CAUGHT IN EXPLOSION.");
+            }
+        }
+        this.chunks.getVisibleEntities().forEach(e => {
+            if(e instanceof Hunter && dist(e.x, e.y, x, y) < 120) {
+                e.active = false;
+                this.stats.score += 50;
+            }
+        });
+    },
+
+    update(dt) {
+        if(this.state === 'GAME_OVER') return;
+        
+        this.timeAlive += dt;
+
+        // Difficulty Progression
+        if(this.timeAlive > this.nextDifficultySpike) {
+            this.nextDifficultySpike += 30;
+            this.difficultyLevel += 0.5;
+            this.drainRate += 0.5;
+            this.hunterSpeedMult += 0.1;
+            this.baseRadius = Math.max(150, this.baseRadius - 10);
+            this.ui.showEvent("THE DARKNESS GROWS");
+            Sound.playTone(80, 'square', 1.0, 0.2);
+        }
+
+        if(this.state === 'PLAYING') {
+            this.player.update(dt);
+            this.chunks.update();
+            this.stats.score += dt * 10;
+            Sound.updateHum(this.player.energy / MAX_ENERGY);
+        }
+
+        let activeEnts = this.chunks.getVisibleEntities();
+        let closestHunterDist = Infinity;
+        let pRadius = this.player.lightRadius * this.player.lightMult;
+        let isPulse = this.player.pulseActive;
+
+        activeEnts.forEach(ent => {
+            if(!ent.active) return;
+            
+            let d = dist(this.player.x, this.player.y, ent.x, ent.y);
+            
+            // Check if entity is inside the torch cone or immediate safety circle
+            let inLight = false;
+            if (isPulse || this.state === 'OUT_OF_POWER') {
+                inLight = true; 
+            } else if (d < pRadius) {
+                // Calculate angle difference
+                let dirToEnt = Math.atan2(ent.y - this.player.y, ent.x - this.player.x);
+                let diff = Math.abs(dirToEnt - this.player.angle);
+                if (diff > Math.PI) diff = 2 * Math.PI - diff;
+                
+                if (diff < this.player.coneSpread / 2 || d < 30) {
+                    inLight = true;
+                }
+            }
+
+            if (this.state === 'PLAYING') {
+                if(ent instanceof Hunter) {
+                    if(inLight && ent.state === 'sleeping') ent.wakeUp();
+                    ent.update(dt);
+                    if(ent.state === 'active') {
+                        closestHunterDist = Math.min(closestHunterDist, d);
+                        if(d < this.player.radius + ent.radius) {
+                            if(this.player.shield) {
+                                this.player.shield = false;
+                                ent.active = false;
+                                this.createExplosion(ent.x, ent.y);
+                                this.ui.showEvent("SHIELD DESTROYED");
+                            } else {
+                                this.endGame("HUNTED.");
+                            }
+                        }
+                    }
+                } 
+                else if(ent instanceof Mine) {
+                    if(inLight && ent.state === 'hidden') ent.state = 'ticking';
+                    ent.update(dt);
+                }
+                else if(ent instanceof Star) {
+                    ent.update(dt);
+                    if(d < this.player.radius + ent.radius) {
+                        ent.active = false;
+                        this.player.energy = Math.min(MAX_ENERGY, this.player.energy + 10);
+                        this.stats.score += 100;
+                        Sound.chime();
+                        if(Math.random() < 0.1) {
+                            this.baseRadius = Math.min(450, this.baseRadius + 5);
+                            this.ui.showEvent("TORCH UPGRADED");
+                        }
+                    }
+                }
+                else if(ent instanceof Battery) {
+                    if(d < this.player.radius + Math.max(ent.w, ent.h)) {
+                        ent.active = false;
+                        this.player.energy = MAX_ENERGY;
+                        this.stats.score += 250;
+                        Sound.battery();
+                        this.ui.showEvent("BATTERY FULL");
+                    }
+                }
+                else if(ent instanceof PowerUp) {
+                    ent.update(dt);
+                    if(d < this.player.radius + ent.radius) {
+                        ent.active = false;
+                        this.player.applyPowerup(ent.type);
+                        this.stats.score += 50;
+                    }
+                }
+                else if(ent instanceof Pit) {
+                    if(d < ent.radius - 5) {
+                        this.endGame("FELL INTO THE ABYSS.");
+                    }
+                }
+            }
+        });
+
+        // Heartbeat purely based on distance (can hear them in the dark)
+        if(closestHunterDist < 800) Sound.heartbeat(closestHunterDist);
+
+        for(let i=this.particles.length-1; i>=0; i--) {
+            this.particles[i].update(dt);
+            if(this.particles[i].life <= 0) this.particles.splice(i, 1);
+        }
+
+        if(Math.random() < 0.05) {
+            this.chunks.getVisibleChunks().forEach(c => { c.entities = c.entities.filter(e => e.active); });
+        }
+
+        this.player.lightRadius = this.baseRadius;
+        this.ui.updateHUD();
+    },
+
+    draw() {
+        // Clear Base
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, cw, ch);
+
+        if(this.state === 'GAME_OVER') return;
+
+        let camX = this.player.x - cw/2;
+        let camY = this.player.y - ch/2;
+
+        ctx.save();
+        ctx.translate(-camX, -camY);
+
+        // --- NEW: SCI-FI FLOOR PATTERN ---
+        ctx.strokeStyle = 'rgba(0, 200, 255, 0.15)'; // Neon blue grid lines
+        ctx.lineWidth = 2;
+        let gSize = 50; // Grid size
+        let startX = Math.floor(camX / gSize) * gSize;
+        let startY = Math.floor(camY / gSize) * gSize;
+        
+        ctx.beginPath();
+        for(let x = startX; x < camX + cw; x += gSize) { 
+            ctx.moveTo(x, camY); 
+            ctx.lineTo(x, camY + ch); 
+        }
+        for(let y = startY; y < camY + ch; y += gSize) { 
+            ctx.moveTo(camX, y); 
+            ctx.lineTo(camX + cw, y); 
+        }
+        ctx.stroke();
+
+        // Floor dots at intersections for texture
+        ctx.fillStyle = 'rgba(0, 255, 255, 0.3)';
+        for(let x = startX; x <= camX + cw; x += gSize) { 
+            for(let y = startY; y <= camY + ch; y += gSize) { 
+                ctx.fillRect(x - 2, y - 2, 4, 4);
+            }
+        }
+        // ------------------------------------
+
+        // Draw entire world within bounds (Lighting Mask handles visibility)
+        this.chunks.getVisibleWalls().forEach(w => w.draw(ctx));
+        this.chunks.getVisibleEntities().forEach(ent => {
+            if(ent.active) ent.draw(ctx);
+        });
+        this.particles.forEach(p => p.draw(ctx));
+        
+        this.player.draw(ctx);
+        ctx.restore();
+
+        // --- DYNAMIC LIGHTING MASK (CONICAL TORCH) ---
+        let pRadius = this.player.lightRadius * this.player.lightMult;
+        let isPulse = this.player.pulseActive;
+        let pScreenX = cw/2;
+        let pScreenY = ch/2;
+        let spread = this.player.coneSpread;
+        let currentRadius = pRadius;
+
+        if (this.state === 'OUT_OF_POWER') {
+            spread = Math.PI * 2;
+            currentRadius = 25; // Tiny circle when dead
+        } else if (isPulse) {
+            spread = Math.PI * 2;
+            currentRadius = Math.max(cw, ch); // Reveal everything
+        }
+
+        // 1. Fill offscreen canvas with pitch black
+        lightCtx.globalCompositeOperation = 'source-over';
+        lightCtx.fillStyle = 'rgba(0,0,0,1)';
+        lightCtx.fillRect(0, 0, cw, ch);
+
+        // 2. Erase the light cone shape from the black mask
+        lightCtx.globalCompositeOperation = 'destination-out';
+        
+        // Main torch cone
+        let grad = lightCtx.createRadialGradient(pScreenX, pScreenY, 0, pScreenX, pScreenY, currentRadius);
+        grad.addColorStop(0, 'rgba(255,255,255,1)');
+        grad.addColorStop(0.7, 'rgba(255,255,255,0.8)'); // Slightly stronger light further out
+        grad.addColorStop(1, 'rgba(255,255,255,0)');
+        
+        lightCtx.fillStyle = grad;
+        lightCtx.beginPath();
+        lightCtx.moveTo(pScreenX, pScreenY);
+        lightCtx.arc(pScreenX, pScreenY, currentRadius, this.player.angle - spread/2, this.player.angle + spread/2, false);
+        lightCtx.fill();
+
+        // Small circle so player always sees themselves and immediate surroundings slightly
+        lightCtx.fillStyle = 'rgba(255,255,255,1)';
+        lightCtx.beginPath();
+        lightCtx.arc(pScreenX, pScreenY, 35, 0, Math.PI * 2);
+        lightCtx.fill();
+        
+        // 3. Draw the mask over the main game canvas to hide the world
+        ctx.drawImage(lightCanvas, 0, 0);
+
+        // Pulse visual tint overlay
+        if (isPulse) {
+            ctx.fillStyle = 'rgba(0, 243, 255, 0.05)';
+            ctx.fillRect(0,0,cw,ch);
+        }
+    },
+
+    loop(timestamp) {
+        let dt = (timestamp - this.lastTime) / 1000;
+        if(dt > 0.1) dt = 0.1; 
+        this.lastTime = timestamp;
+
+        this.update(dt);
+        this.draw();
+
+        requestAnimationFrame(this.loop.bind(this));
+    }
+};
+
+// UI Listeners
+document.getElementById('start-btn').addEventListener('click', () => Game.init());
+document.getElementById('restart-btn').addEventListener('click', () => Game.init());
+
+// Initial clear
+ctx.fillStyle = '#000';
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+</script>
+</body>
+</html>
+
+
+```

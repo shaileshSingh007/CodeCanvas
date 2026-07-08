@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Glitch Twins — Find the Difference</title>
+<style>
+  :root{
+    --bg-0:#060810;
+    --bg-1:#0d1326;
+    --panel:rgba(255,255,255,0.045);
+    --panel-border:rgba(255,255,255,0.10);
+    --panel-shadow:0 10px 30px rgba(0,0,0,0.45);
+    --text-0:#EAF0FF;
+    --text-1:#8C93B0;
+    --prime:#4FE3D0;
+    --echo:#FF4FA3;
+    --danger:#FF4C5E;
+    --gold:#FFD56B;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;
+    height:100%;
+    width:100%;
+    background:radial-gradient(circle at 50% 0%, var(--bg-1), var(--bg-0) 65%);
+    color:var(--text-0);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    overflow:hidden;
+    -webkit-tap-highlight-color:transparent;
+  }
+  #app{
+    height:100vh;
+    height:100dvh;
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:8px 10px;
+    overflow:hidden;
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    width:100%;
+    max-width:1040px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    flex-shrink:0;
+  }
+  h1{
+    margin:2px 0 0;
+    font-size:clamp(16px,4.4vw,28px);
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    font-weight:800;
+    position:relative;
+    color:var(--text-0);
+  }
+  h1[data-text]::before,h1[data-text]::after{
+    content:attr(data-text);
+    position:absolute;
+    left:0;top:0;
+    width:100%;
+    opacity:0.7;
+    mix-blend-mode:screen;
+  }
+  h1[data-text]::before{ color:var(--prime); animation:glitchA 5.2s infinite; }
+  h1[data-text]::after{ color:var(--echo); animation:glitchB 5.2s infinite; }
+  @keyframes glitchA{
+    0%,91%,100%{ transform:translate(0,0); }
+    92%{ transform:translate(-2px,1px); }
+    94%{ transform:translate(2px,-1px); }
+    96%{ transform:translate(-1px,0); }
+  }
+  @keyframes glitchB{
+    0%,91%,100%{ transform:translate(0,0); }
+    92%{ transform:translate(2px,-1px); }
+    94%{ transform:translate(-2px,1px); }
+    96%{ transform:translate(1px,0); }
+  }
+  .tagline{
+    color:var(--text-1);
+    font-size:11px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+  }
+  @media (max-width:760px){ .tagline{ display:none; } }
+
+  .hud{
+    width:100%;
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    margin-top:4px;
+  }
+  .pill{
+    background:var(--panel);
+    border:1px solid var(--panel-border);
+    backdrop-filter:blur(10px);
+    border-radius:999px;
+    padding:5px 11px;
+    font-size:10.5px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--text-1);
+    display:flex;
+    align-items:center;
+    gap:6px;
+    white-space:nowrap;
+  }
+  .pill b{ color:var(--text-0); font-size:11.5px; letter-spacing:.02em; }
+  .stability{ display:flex; gap:3px; }
+  .stability .bar{
+    width:7px;height:11px;border-radius:2px;
+    background:linear-gradient(180deg,var(--prime),var(--echo));
+    box-shadow:0 0 6px rgba(79,227,208,.5);
+  }
+  .stability .bar.cracked{ background:rgba(255,255,255,0.08); box-shadow:none; }
+  .icon-btn{
+    background:var(--panel);
+    border:1px solid var(--panel-border);
+    color:var(--text-0);
+    border-radius:999px;
+    width:28px;height:28px;
+    font-size:13px;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+  }
+  .icon-btn:focus-visible, button:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
+
+  /* ---------- Boards ---------- */
+  .boards-wrap{
+    flex:1 1 auto;
+    min-height:0;
+    width:100%;
+    max-width:1040px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+  }
+  .board-card{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:3px;
+    min-height:0;
+    flex-shrink:1;
+  }
+  .board-label{
+    display:flex;align-items:center;gap:6px;
+    font-size:11px;font-weight:700;
+    letter-spacing:.14em;text-transform:uppercase;
+    color:var(--text-1);
+    line-height:1;
+  }
+  .board-label .dot{ width:7px;height:7px;border-radius:50%; box-shadow:0 0 8px currentColor; }
+  .board-label.prime .dot{ background:var(--prime); color:var(--prime); }
+  .board-label.echo .dot{ background:var(--echo); color:var(--echo); }
+
+  .ring-board{
+    position:relative;
+    border-radius:50%;
+    background:radial-gradient(circle at 50% 45%, rgba(255,255,255,0.06), rgba(255,255,255,0.015) 70%);
+    border:1px solid var(--panel-border);
+    box-shadow:var(--panel-shadow);
+    flex-shrink:0;
+  }
+  .cell{
+    position:absolute;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    line-height:1;
+    user-select:none;
+    cursor:pointer;
+    background:rgba(255,255,255,0.05);
+    border:2px solid transparent;
+    transform:translate(-50%,-50%);
+    transition = "transform .28s cubic-bezier(.2,.9,.3,1.3), opacity .2s";
+    will-change:transform,opacity;
+  }
+  @media (hover:hover){
+    .cell:hover{ background:rgba(255,255,255,0.14); transform:translate(-50%,-50%) scale(1.3); z-index:3; }
+  }
+  .cell.wrong{
+    animation:shakeAnim .5s ease, wrongFlash 1.8s ease forwards;
+    pointer-events:none;
+  }
+  .cell.burst{
+    animation:burstPop .5s cubic-bezier(.2,.9,.3,1.4) forwards;
+    pointer-events:none;
+    z-index:4;
+  }
+  @keyframes shakeAnim{
+    0%,100%{ transform:translate(-50%,-50%) rotate(0deg); }
+    20%{ transform:translate(-50%,-50%) rotate(-10deg); }
+    40%{ transform:translate(-50%,-50%) rotate(9deg); }
+    60%{ transform:translate(-50%,-50%) rotate(-7deg); }
+    80%{ transform:translate(-50%,-50%) rotate(6deg); }
+  }
+  @keyframes wrongFlash{
+    0%{ border-color:rgba(255,76,94,0); box-shadow:0 0 0 0 rgba(255,76,94,0); }
+    8%{ border-color:#ff4c5e; box-shadow:0 0 14px 3px rgba(255,76,94,.9); background:rgba(255,76,94,.45); }
+    75%{ border-color:#ff4c5e; box-shadow:0 0 14px 3px rgba(255,76,94,.75); background:rgba(255,76,94,.4); }
+    100%{ border-color:rgba(255,76,94,0); box-shadow:0 0 0 0 rgba(255,76,94,0); background:rgba(255,76,94,.18); opacity:.5; }
+  }
+  @keyframes burstPop{
+    0%{ transform:translate(-50%,-50%) scale(1); opacity:1; filter:drop-shadow(0 0 0 rgba(255,213,107,0)); }
+    40%{ transform:translate(-50%,-50%) scale(1.9) rotate(20deg); opacity:1; filter:drop-shadow(0 0 14px rgba(255,213,107,1)); }
+    100%{ transform:translate(-50%,-50%) scale(0) rotate(35deg); opacity:0; }
+  }
+  .particle{
+    position:absolute;
+    border-radius:50%;
+    pointer-events:none;
+    transform:translate(-50%,-50%);
+    animation:particleFly .65s ease-out forwards;
+    z-index:5;
+  }
+  @keyframes particleFly{
+    0%{ transform:translate(-50%,-50%) scale(1); opacity:1; }
+    100%{ transform:translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.2); opacity:0; }
+  }
+
+  .seam{
+    width:42%;
+    height:3px;
+    border-radius:3px;
+    background:linear-gradient(90deg,var(--prime),var(--gold),var(--echo));
+    background-size:200% 100%;
+    box-shadow:0 0 12px rgba(255,213,107,.4);
+    animation:seamFlow 3.6s linear infinite;
+    flex-shrink:0;
+  }
+  @keyframes seamFlow{ 0%{background-position:0% 50%;} 100%{background-position:200% 50%;} }
+
+  @media (min-width:760px){
+    .boards-wrap{ flex-direction:row; align-items:center; justify-content:center; gap:18px; }
+    .seam{ width:3px; height:42%; background-size:100% 200%; animation:seamFlowV 3.6s linear infinite; }
+    @keyframes seamFlowV{ 0%{background-position:50% 0%;} 100%{background-position:50% 200%;} }
+  }
+
+  /* ---------- Overlays ---------- */
+  .overlay{
+    position:fixed; inset:0;
+    background:rgba(4,5,10,0.8);
+    backdrop-filter:blur(6px);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    z-index:50;
+  }
+  .overlay.visible{ display:flex; }
+  .card{
+    background:linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02));
+    border:1px solid var(--panel-border);
+    border-radius:20px;
+    padding:26px 24px;
+    max-width:400px;
+    width:100%;
+    max-height:88vh;
+    overflow-y:auto;
+    text-align:center;
+    box-shadow:0 20px 60px rgba(0,0,0,0.55);
+  }
+  .card h2{ margin:0 0 8px; font-size:20px; letter-spacing:.05em; text-transform:uppercase; }
+  .card p{ color:var(--text-1); font-size:13.5px; line-height:1.6; margin:8px 0; }
+  .card ul{ text-align:left; color:var(--text-1); font-size:13px; line-height:1.65; padding-left:18px; margin:12px 0; }
+  .card ul li b{ color:var(--text-0); }
+  .stat-line{ color:var(--text-0); font-size:13.5px; margin:12px 0; }
+  .btn{
+    border:none;border-radius:999px;
+    padding:12px 24px;font-size:13px;font-weight:700;
+    letter-spacing:.07em;text-transform:uppercase;
+    cursor:pointer;margin:6px 4px 0;
+  }
+  .btn-primary{ background:linear-gradient(90deg,var(--prime),var(--echo)); color:#06080f; }
+  .btn-ghost{ background:transparent; border:1px solid var(--panel-border); color:var(--text-0); }
+  .trophy{ font-size:40px; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation:none !important; transition:none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <h1 data-text="GLITCH TWINS">GLITCH TWINS</h1>
+    <div class="tagline">Two realities. Find where they diverge.</div>
+    <div class="hud">
+      <span class="pill">Sector <b id="sectorLabel">01/09</b></span>
+      <span class="pill">Stability <span class="stability" id="stabilityEl"></span></span>
+      <span class="pill">Glitches <b id="glitchLabel">0/0</b></span>
+      <span class="pill">Score <b id="scoreLabel">0</b></span>
+      <button class="icon-btn" id="muteBtn" title="Toggle sound" aria-label="Toggle sound">🔊</button>
+      <button class="icon-btn" id="helpBtn" title="How to play" aria-label="How to play">?</button>
+      <button class="icon-btn" id="restartSectorBtn" title="Reshuffle this sector" aria-label="Reshuffle this sector">↻</button>
+    </div>
+  </header>
+
+  <div class="boards-wrap">
+    <div class="board-card">
+      <div class="board-label prime"><span class="dot"></span>Prime</div>
+      <div class="ring-board" id="boardPrime"></div>
+    </div>
+    <div class="seam"></div>
+    <div class="board-card">
+      <div class="board-label echo"><span class="dot"></span>Echo</div>
+      <div class="ring-board" id="boardEcho"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Start overlay -->
+<div class="overlay visible" id="startOverlay">
+  <div class="card">
+    <h2>Glitch Twins</h2>
+    <p>Prime and Echo are the same reality — almost. A few tiles have glitched out of sync.</p>
+    <ul>
+      <li><b>Tap a tile</b> on either ring to scan it.</li>
+      <li>If it's <b>identical</b> on both boards, both flash red and you lose stability.</li>
+      <li>If it's a <b>glitch</b> (different on each board), both burst — one found!</li>
+      <li>Every sector hides exactly <b>5 glitches</b>. Rings and emoji variety grow each sector.</li>
+    </ul>
+    <button class="btn btn-primary" id="startBtn">Begin Scan</button>
+  </div>
+</div>
+
+<!-- Help overlay -->
+<div class="overlay" id="helpOverlay">
+  <div class="card">
+    <h2>How To Scan</h2>
+    <ul>
+      <li><b>Tap a tile</b> on either board to scan it.</li>
+      <li>Identical tile → red border flash, <b>-1 stability</b>.</li>
+      <li>Glitched tile → burst effect, <b>+1 glitch found</b>.</li>
+      <li>Find all 5 glitches to advance. Rings grow from 5 upward; emoji variety from 5 to 45 types.</li>
+    </ul>
+    <button class="btn btn-primary" id="helpCloseBtn">Got It</button>
+  </div>
+</div>
+
+<!-- Level complete overlay -->
+<div class="overlay" id="levelCompleteOverlay">
+  <div class="card">
+    <div class="trophy">🟢</div>
+    <h2>Sector Stabilized</h2>
+    <p class="stat-line" id="lcStatsEl"></p>
+    <button class="btn btn-primary" id="nextSectorBtn">Next Sector</button>
+  </div>
+</div>
+
+<!-- Victory overlay -->
+<div class="overlay" id="victoryOverlay">
+  <div class="card">
+    <div class="trophy">🏆</div>
+    <h2>All Sectors Stabilized</h2>
+    <p>You traced every divergence across all nine sectors.</p>
+    <p class="stat-line">Total score: <b id="finalScoreEl">0</b></p>
+    <button class="btn btn-primary" id="restartFromVictoryBtn">Restart Simulation</button>
+  </div>
+</div>
+
+<!-- Game over overlay -->
+<div class="overlay" id="gameOverOverlay">
+  <div class="card">
+    <div class="trophy">💥</div>
+    <h2>Reality Collapsed</h2>
+    <p class="stat-line" id="goStatsEl"></p>
+    <button class="btn btn-primary" id="retrySectorBtn">Retry Sector</button>
+    <button class="btn btn-ghost" id="restartFromGameOverBtn">Restart Simulation</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- Emoji pool (interleaved categories for variety at every level) ---------- */
+  var CATS = {
+    faces:   ["😀","😂","😍","😎","🤔","😭","😡","🥳","😴","🤩"],
+    animals: ["🐶","🐱","🐵","🦁","🐸","🐧","🐦","🦄","🐢","🐙"],
+    food:    ["🍎","🍌","🍕","🍔","🍩","🍇","🍉","🍓","🥑","🌽"],
+    objects: ["⚽","🏀","🎮","🎲","🎸","🎨","🚀","🚗","✈️","⛵"],
+    nature:  ["🌸","🌵","🌈","⭐","🔥","💧","❄️","🌙","☀️","🍀"]
+  };
+  var EMOJI_POOL = [];
+  for (var i=0;i<10;i++){
+    EMOJI_POOL.push(CATS.faces[i],CATS.animals[i],CATS.food[i],CATS.objects[i],CATS.nature[i]);
+  }
+
+  /* ---------- Level configuration: rings 5+, fixed 5 diffs/level, emoji variety 5->45 ---------- */
+  var LIVES_TABLE = [5,5,6,6,7,7,8,8,9];
+  var LEVELS = [];
+  for (var lv=1; lv<=7; lv++){
+    LEVELS.push({
+      rings: 2+lv,
+      emojiCount: Math.min(45, 5*lv),
+      diffCount: 5,
+      lives: LIVES_TABLE[lv-1]
+    });
+  }
+
+  /* ---------- DOM refs ---------- */
+  var headerEl     = document.querySelector("header");
+  var seamEl       = document.querySelector(".seam");
+  var labelEls     = document.querySelectorAll(".board-label");
+  var boardPrimeEl = document.getElementById("boardPrime");
+  var boardEchoEl  = document.getElementById("boardEcho");
+  var sectorLabel  = document.getElementById("sectorLabel");
+  var glitchLabel  = document.getElementById("glitchLabel");
+  var scoreLabel   = document.getElementById("scoreLabel");
+  var stabilityEl  = document.getElementById("stabilityEl");
+  var muteBtn      = document.getElementById("muteBtn");
+
+  var startOverlay         = document.getElementById("startOverlay");
+  var helpOverlay          = document.getElementById("helpOverlay");
+  var levelCompleteOverlay = document.getElementById("levelCompleteOverlay");
+  var victoryOverlay       = document.getElementById("victoryOverlay");
+  var gameOverOverlay      = document.getElementById("gameOverOverlay");
+
+  var lcStatsEl    = document.getElementById("lcStatsEl");
+  var goStatsEl    = document.getElementById("goStatsEl");
+  var finalScoreEl = document.getElementById("finalScoreEl");
+
+  /* ---------- Game state ---------- */
+  var GAME = {
+    levelIndex:0,
+    lives:0,
+    maxLives:0,
+    diffSet:new Set(),
+    foundSet:new Set(),
+    resolved:new Set(),
+    cellEls1:[],
+    cellEls2:[],
+    positions:[],
+    ringCount:5,
+    totalScore:0,
+    muted:false
+  };
+  var inputLocked = false;
+
+  /* ---------- Audio (synthesized, no external files) ---------- */
+  var audioCtx = null;
+  function ensureAudio(){
+    if (!audioCtx){
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch(e){ audioCtx = null; }
+    } else if (audioCtx.state === "suspended"){
+      audioCtx.resume();
+    }
+  }
+  function beep(freq, dur, type, vol, delay){
+    if (!audioCtx || GAME.muted) return;
+    var t0 = audioCtx.currentTime + (delay || 0);
+    var osc = audioCtx.createOscillator();
+    var gain = audioCtx.createGain();
+    osc.type = type || "sine";
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(0, t0);
+    gain.gain.linearRampToValueAtTime(vol || 0.18, t0 + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(t0); osc.stop(t0 + dur + 0.03);
+  }
+  function playCorrectSound(){ beep(880,0.12,"sine",0.18,0); beep(1320,0.16,"sine",0.16,0.07); }
+  function playWrongSound(){ beep(220,0.22,"sawtooth",0.16,0); beep(150,0.26,"sawtooth",0.14,0.05); }
+
+  muteBtn.addEventListener("click", function(){
+    GAME.muted = !GAME.muted;
+    muteBtn.textContent = GAME.muted ? "🔇" : "🔊";
+  });
+
+  function pickRandom(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+  /* ---------- Ring layout: rings nested to cover the whole circle, normalized to radius 1 ---------- */
+  function buildPositions(ringCount){
+    var positions = [];
+    var baseCells = 8;
+    for (var r=1; r<=ringCount; r++){
+      var cellsInRing = Math.max(1, Math.round(baseCells*r));
+      var rotOffset = r*0.35;
+      var normRadius = r/ringCount;
+      for (var j=0;j<cellsInRing;j++){
+        var angle = (j/cellsInRing)*2*Math.PI + rotOffset;
+        positions.push({ x:Math.cos(angle)*normRadius, y:Math.sin(angle)*normRadius });
+      }
+    }
+    // Center emoji
+     positions.push({x: 0,y: 0});
+    return positions;
+  }
+
+  function buildLevel(cfg){
+    var positions = buildPositions(cfg.rings);
+    var total = positions.length;
+    var pool = EMOJI_POOL.slice(0, cfg.emojiCount);
+    var grid1 = new Array(total);
+    for (var i=0;i<total;i++){ grid1[i] = pickRandom(pool); }
+    var grid2 = grid1.slice();
+    var diffSet = new Set();
+    var guard = 0;
+    while (diffSet.size < cfg.diffCount && guard < total*6){
+      guard++;
+      var idx = Math.floor(Math.random()*total);
+      if (diffSet.has(idx)) continue;
+      if (pool.length < 2) break;
+      var newEmoji, tries=0;
+      do { newEmoji = pickRandom(pool); tries++; } while (newEmoji === grid1[idx] && tries < 20);
+      if (newEmoji === grid1[idx]) continue;
+      grid2[idx] = newEmoji;
+      diffSet.add(idx);
+    }
+    return { ringCount:cfg.rings, positions:positions, total:total, grid1:grid1, grid2:grid2, diffSet:diffSet };
+  }
+
+  function renderBoards(level){
+    var html1=[], html2=[];
+    for (var i=0;i<level.total;i++){
+      html1.push('<div class="cell" data-idx="'+i+'">'+level.grid1[i]+'</div>');
+      html2.push('<div class="cell" data-idx="'+i+'">'+level.grid2[i]+'</div>');
+    }
+    boardPrimeEl.innerHTML = html1.join("");
+    boardEchoEl.innerHTML  = html2.join("");
+    GAME.cellEls1 = Array.prototype.slice.call(boardPrimeEl.children);
+    GAME.cellEls2 = Array.prototype.slice.call(boardEchoEl.children);
+    GAME.positions = level.positions;
+    GAME.ringCount = level.ringCount;
+    layoutAll();
+  }
+
+  function computeDiameter(){
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var isMobile = vw <= 760;
+    var headerH = headerEl.getBoundingClientRect().height;
+    var labelH  = labelEls.length ? labelEls[0].getBoundingClientRect().height : 18;
+    var d;
+    if (isMobile){
+      var seamH = seamEl.getBoundingClientRect().height || 3;
+      var reserve = headerH + (labelH*2) + seamH + 40; /* gaps + safety margin */
+      var available = (vh - reserve) / 2;
+      d = Math.min(vw*0.92, available);
+    } else {
+      var seamW = seamEl.getBoundingClientRect().width || 3;
+      var availableW = (vw - 32 - seamW - 56) / 2;
+      var availableH = vh - headerH - labelH - 36;
+      d = Math.min(availableW, availableH);
+    }
+    return Math.max(130, Math.floor(d));
+  }
+
+  function layoutBoard(boardEl, cellEls, diameter, positions, ringCount) {
+  
+  boardEl.style.width = diameter + "px";
+  boardEl.style.height = diameter + "px";
+  
+  var maxR = diameter / 2 * 0.94;
+  var arcLength = (2 * Math.PI * maxR) / (6 * ringCount);
+  var radialGap = maxR / ringCount;
+  var itemSize = Math.max(7, Math.min(28, Math.min(arcLength, radialGap) * 0.84));
+  
+  var cx = diameter / 2;
+  var cy = diameter / 2;
+  
+  for (var i = 0; i < positions.length; i++) {
+    
+    var p = positions[i];
+    var el = cellEls[i];
+    
+    if (!el) continue;
+    
+    el.style.left = (cx + p.x * maxR) + "px";
+    el.style.top = (cy + p.y * maxR) + "px";
+    
+    el.style.width = itemSize + "px";
+    el.style.height = itemSize + "px";
+    el.style.fontSize = (itemSize * 0.64) + "px";
+    
+    // Initial state
+    el.style.transition = "none";
+    el.style.opacity = "0";
+    el.style.transform = "translate(-50%,-50%) scale(0.2)";
+    
+    // Force browser to paint initial state
+    el.offsetWidth;
+    
+    el.style.transition =
+      "transform .35s cubic-bezier(.22,1,.36,1), opacity .25s";
+    
+    (function(cell, index) {
+      
+      setTimeout(function() {
+  
+  cell.style.opacity = "1";
+  cell.style.transform = "translate(-50%,-50%) scale(1.5)";
+  
+  requestAnimationFrame(() => {
+    
+    setTimeout(() => {
+      cell.style.transform = "translate(-50%,-50%) scale(1)";
+    }, 300);
+    
+  });
+  
+}, index * 18);
+      
+    })(el, i);
+  }
+}
+
+  function layoutAll(){
+    if (!GAME.positions.length) return;
+    var d = computeDiameter();
+    layoutBoard(boardPrimeEl, GAME.cellEls1, d, GAME.positions, GAME.ringCount);
+    layoutBoard(boardEchoEl,  GAME.cellEls2, d, GAME.positions, GAME.ringCount);
+  }
+
+  function renderStabilityBars(){
+    stabilityEl.innerHTML = "";
+    for (var i=0;i<GAME.maxLives;i++){
+      var bar = document.createElement("div");
+      bar.className = "bar" + (i < GAME.lives ? "" : " cracked");
+      stabilityEl.appendChild(bar);
+    }
+  }
+
+  function updateHUD(){
+    sectorLabel.textContent = pad(GAME.levelIndex+1) + "/" + pad(LEVELS.length);
+    glitchLabel.textContent = GAME.foundSet.size + "/" + GAME.diffSet.size;
+    scoreLabel.textContent  = GAME.totalScore;
+    renderStabilityBars();
+  }
+  function pad(n){ return n < 10 ? "0"+n : ""+n; }
+
+  function showOverlay(el){
+    [startOverlay,helpOverlay,levelCompleteOverlay,victoryOverlay,gameOverOverlay].forEach(function(o){
+      o.classList.remove("visible");
+    });
+    el.classList.add("visible");
+  }
+  function hideAllOverlays(){
+    [startOverlay,helpOverlay,levelCompleteOverlay,victoryOverlay,gameOverOverlay].forEach(function(o){
+      o.classList.remove("visible");
+    });
+  }
+
+  function startLevel(idx){
+    ensureAudio();
+    GAME.levelIndex = idx;
+    var cfg = LEVELS[idx];
+    var level = buildLevel(cfg);
+    GAME.diffSet  = level.diffSet;
+    GAME.foundSet = new Set();
+    GAME.resolved = new Set();
+    GAME.lives    = cfg.lives;
+    GAME.maxLives = cfg.lives;
+    renderBoards(level);
+    updateHUD();
+    hideAllOverlays();
+    inputLocked = false;
+  }
+
+  function spawnBurst(boardEl, x, y){
+    for (var k=0;k<8;k++){
+      var p = document.createElement("div");
+      p.className = "particle";
+      var angle = (k/8)*2*Math.PI + Math.random()*0.3;
+      var dist = 14 + Math.random()*16;
+      var size = 4 + Math.random()*3;
+      p.style.left = x+"px";
+      p.style.top  = y+"px";
+      p.style.width = size+"px";
+      p.style.height = size+"px";
+      p.style.background = "#FFD56B";
+      p.style.setProperty("--dx", (Math.cos(angle)*dist)+"px");
+      p.style.setProperty("--dy", (Math.sin(angle)*dist)+"px");
+      boardEl.appendChild(p);
+      (function(pp){ setTimeout(function(){ if(pp.parentNode) pp.parentNode.removeChild(pp); }, 680); })(p);
+    }
+  }
+
+  function handleCellClick(idx){
+    if (inputLocked) return;
+    if (GAME.resolved.has(idx)) return;
+    GAME.resolved.add(idx);
+    var c1 = GAME.cellEls1[idx], c2 = GAME.cellEls2[idx];
+    if (!c1 || !c2) return;
+
+    if (GAME.diffSet.has(idx)){
+      c1.classList.add("burst");
+      c2.classList.add("burst");
+      spawnBurst(boardPrimeEl, parseFloat(c1.style.left), parseFloat(c1.style.top));
+      spawnBurst(boardEchoEl,  parseFloat(c2.style.left), parseFloat(c2.style.top));
+      playCorrectSound();
+      GAME.foundSet.add(idx);
+      GAME.totalScore++;
+      updateHUD();
+      if (GAME.foundSet.size === GAME.diffSet.size){
+        inputLocked = true;
+        setTimeout(onLevelComplete, 550);
+      }
+    } else {
+      c1.classList.add("wrong");
+      c2.classList.add("wrong");
+      playWrongSound();
+      GAME.lives--;
+      updateHUD();
+      if (GAME.lives <= 0){
+        inputLocked = true;
+        setTimeout(onGameOver, 500);
+      }
+    }
+  }
+
+  function onLevelComplete(){
+    if (GAME.levelIndex === LEVELS.length-1){
+      finalScoreEl.textContent = GAME.totalScore;
+      showOverlay(victoryOverlay);
+    } else {
+      lcStatsEl.innerHTML = "Sector " + (GAME.levelIndex+1) + " stabilized — 5 glitches purged.";
+      showOverlay(levelCompleteOverlay);
+    }
+  }
+
+  function onGameOver(){
+    goStatsEl.innerHTML = "Reached Sector " + (GAME.levelIndex+1) + " · " + GAME.totalScore + " glitches purged in total.";
+    showOverlay(gameOverOverlay);
+  }
+
+  function onBoardClick(e){
+    var cell = e.target.closest(".cell");
+    if (!cell) return;
+    handleCellClick(parseInt(cell.dataset.idx, 10));
+  }
+  boardPrimeEl.addEventListener("click", onBoardClick);
+  boardEchoEl.addEventListener("click", onBoardClick);
+
+  /* ---------- Overlay buttons ---------- */
+  document.getElementById("startBtn").addEventListener("click", function(){
+    GAME.totalScore = 0;
+    startLevel(0);
+  });
+  document.getElementById("helpBtn").addEventListener("click", function(){
+    helpOverlay.classList.add("visible");
+  });
+  document.getElementById("helpCloseBtn").addEventListener("click", function(){
+    helpOverlay.classList.remove("visible");
+  });
+  document.getElementById("restartSectorBtn").addEventListener("click", function(){
+    if (gameInProgress()) startLevel(GAME.levelIndex);
+  });
+  document.getElementById("nextSectorBtn").addEventListener("click", function(){
+    startLevel(GAME.levelIndex+1);
+  });
+  document.getElementById("retrySectorBtn").addEventListener("click", function(){
+    startLevel(GAME.levelIndex);
+  });
+  document.getElementById("restartFromGameOverBtn").addEventListener("click", function(){
+    GAME.totalScore = 0;
+    startLevel(0);
+  });
+  document.getElementById("restartFromVictoryBtn").addEventListener("click", function(){
+    GAME.totalScore = 0;
+    startLevel(0);
+  });
+
+  function gameInProgress(){
+    return !startOverlay.classList.contains("visible") &&
+           !victoryOverlay.classList.contains("visible") &&
+           !gameOverOverlay.classList.contains("visible");
+  }
+
+  /* ---------- Resize handling (repositions only — never regenerates the puzzle) ---------- */
+  var resizeTimer = null;
+  window.addEventListener("resize", function(){
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(layoutAll, 100);
+  });
+  window.addEventListener("orientationchange", function(){
+    setTimeout(layoutAll, 200);
+  });
+
+  updateHUD();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Atom Architect — Build the Elements</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#0b0e14;
+    --panel:#121826;
+    --panel-line:#27324a;
+    --chalk:#e8e6da;
+    --chalk-dim:#9aa3b8;
+    --proton:#ff5d5d;
+    --neutron:#8fa3b0;
+    --electron:#5de0ff;
+    --amber:#f2b544;
+    --good:#5ee08a;
+    --bad:#ff6f6f;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;height:100%;width:100%;
+    background:var(--void);
+    color:var(--chalk);
+    font-family:'Inter',system-ui,sans-serif;
+    overflow:hidden;
+    -webkit-tap-highlight-color:transparent;
+  }
+  #renderCanvas{
+    position:fixed;inset:0;
+    width:100%;height:100%;
+    touch-action:none;
+    outline:none;
+    display:block;
+  }
+  #uiLayer{
+    position:fixed;inset:0;
+    pointer-events:none;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    z-index:5;
+  }
+  .panel{
+    pointer-events:auto;
+    background:rgba(18,24,38,0.82);
+    border:1px solid var(--panel-line);
+    border-radius:var(--radius);
+    backdrop-filter:blur(8px);
+    box-shadow:0 6px 24px rgba(0,0,0,0.35);
+  }
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif;margin:0;letter-spacing:0.01em;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  button{
+    font-family:'Inter',sans-serif;
+    touch-action:manipulation;
+    cursor:pointer;
+    border:none;
+    color:var(--chalk);
+  }
+  button:focus-visible, .panel:focus-visible{
+    outline:2px solid var(--amber);
+    outline-offset:2px;
+  }
+
+  /* ---------- TOP BAR ---------- */
+  #topBar{
+    margin:calc(env(safe-area-inset-top,0px) + 10px) 10px 0;
+    padding:8px 14px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    font-size:13px;
+  }
+  #topBar .stat{display:flex;flex-direction:column;align-items:center;min-width:54px;}
+  #topBar .stat .lbl{font-size:9px;letter-spacing:0.08em;color:var(--chalk-dim);text-transform:uppercase;}
+  #topBar .stat .val{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:16px;color:var(--amber);}
+  #infoBtn{
+    width:34px;height:34px;border-radius:50%;
+    background:rgba(255,255,255,0.06);
+    color:var(--chalk);font-size:16px;
+    display:flex;align-items:center;justify-content:center;
+  }
+
+  /* ---------- TARGET CARD ---------- */
+  #targetCard{
+    position:absolute;
+    top:calc(env(safe-area-inset-top,0px) + 64px);
+    left:10px;right:10px;
+    max-width:380px;
+    margin:0 auto;
+    padding:10px 14px;
+    pointer-events:auto;
+    font-size:13px;
+    display:none;
+  }
+  #targetCard .row{display:flex;justify-content:space-between;align-items:baseline;}
+  #targetCard h2{font-size:18px;color:var(--electron);}
+  #targetCard .tag{font-size:11px;color:var(--chalk-dim);}
+  #targetCard .specs{
+    display:flex;gap:14px;margin-top:6px;font-family:'JetBrains Mono',monospace;font-size:13px;
+  }
+  #targetCard .specs span b{color:var(--amber);}
+  #targetCard .tip{
+    margin-top:6px;font-size:11.5px;color:var(--chalk-dim);font-style:italic;
+  }
+
+  /* ---------- BOTTOM PANEL ---------- */
+  #bottomPanel{
+    margin:0 10px calc(env(safe-area-inset-bottom,0px) + 10px);
+    padding:10px 12px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  #readout{
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:11.5px;color:var(--chalk-dim);
+    padding:0 2px 4px;border-bottom:1px solid var(--panel-line);
+  }
+  #readout b{color:var(--chalk);font-family:'JetBrains Mono',monospace;}
+  #counters{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:8px;
+  }
+  .counter{
+    display:flex;flex-direction:column;align-items:center;
+    background:rgba(255,255,255,0.03);
+    border-radius:10px;
+    padding:6px 4px 8px;
+  }
+  .counter .clabel{font-size:10px;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:2px;}
+  .counter.proton .clabel{color:var(--proton);}
+  .counter.neutron .clabel{color:var(--neutron);}
+  .counter.electron .clabel{color:var(--electron);}
+  .counter .ctrl{display:flex;align-items:center;gap:6px;}
+  .counter .ctrl button{
+    width:32px;height:32px;border-radius:8px;
+    background:rgba(255,255,255,0.08);
+    font-size:18px;font-weight:700;line-height:1;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .counter .ctrl button:active{background:rgba(255,255,255,0.18);}
+  .counter .count{
+    min-width:30px;text-align:center;
+    font-family:'JetBrains Mono',monospace;font-weight:700;font-size:17px;
+  }
+  .counter .hint{height:13px;font-size:10px;margin-top:3px;font-weight:600;}
+  .hint.ok{color:var(--good);}
+  .hint.up{color:var(--amber);}
+  .hint.down{color:var(--amber);}
+  #submitBtn{
+    margin-top:2px;
+    width:100%;
+    padding:13px;
+    border-radius:10px;
+    background:linear-gradient(135deg,#2b6f7a,#1c4a55);
+    color:#eafcff;
+    font-weight:700;font-size:15px;
+    font-family:'Space Grotesk',sans-serif;
+    letter-spacing:0.02em;
+  }
+  #submitBtn:active{filter:brightness(1.15);}
+  #feedback{
+    text-align:center;font-size:13px;font-weight:600;min-height:16px;
+  }
+  #feedback.good{color:var(--good);}
+  #feedback.bad{color:var(--bad);}
+  #quizTimerWrap{
+    display:none;
+    height:5px;border-radius:4px;background:rgba(255,255,255,0.08);overflow:hidden;
+  }
+  #quizTimerBar{height:100%;width:100%;background:var(--amber);transition:width 0.2s linear;}
+
+  /* ---------- OVERLAY SCREENS ---------- */
+  .screen{
+    position:fixed;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(circle at 50% 30%, rgba(20,30,48,0.92), rgba(5,7,12,0.97));
+    z-index:20;
+    pointer-events:auto;
+    padding:24px;
+  }
+  .hidden{display:none !important;}
+  .card{
+    max-width:420px;width:100%;
+    background:var(--panel);
+    border:1px solid var(--panel-line);
+    border-radius:18px;
+    padding:26px 24px;
+    text-align:center;
+    box-shadow:0 20px 60px rgba(0,0,0,0.5);
+  }
+  .card .glyph{font-size:46px;margin-bottom:6px;}
+  .card h1{font-size:26px;margin-bottom:4px;color:var(--chalk);}
+  .card .sub{color:var(--chalk-dim);font-size:13.5px;line-height:1.5;margin:10px 0 18px;}
+  .card .legend{
+    display:flex;justify-content:center;gap:16px;margin:14px 0;font-size:12px;
+  }
+  .legend .dot{width:11px;height:11px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle;}
+  .primaryBtn{
+    width:100%;padding:14px;border-radius:10px;font-weight:700;font-size:15.5px;
+    font-family:'Space Grotesk',sans-serif;
+    background:linear-gradient(135deg,#f2b544,#d98f1f);
+    color:#1a1306;margin-top:6px;
+  }
+  .primaryBtn:active{filter:brightness(1.1);}
+  .secondaryBtn{
+    width:100%;padding:12px;border-radius:10px;font-weight:600;font-size:14px;
+    background:rgba(255,255,255,0.07);color:var(--chalk);margin-top:10px;
+  }
+  .closeRow{display:flex;justify-content:flex-end;margin-bottom:6px;}
+  .closeRow button{background:none;font-size:20px;color:var(--chalk-dim);padding:4px 8px;}
+  .refTable{
+    text-align:left;font-family:'JetBrains Mono',monospace;font-size:11.5px;
+    display:grid;grid-template-columns:1fr 1fr;gap:2px 14px;
+    max-height:180px;overflow-y:auto;margin-top:10px;padding-right:4px;
+  }
+  .refTable div{color:var(--chalk-dim);}
+  .refTable b{color:var(--chalk);}
+  #scoreBreak{
+    font-family:'JetBrains Mono',monospace;font-size:14px;margin:10px 0;
+    display:flex;justify-content:center;gap:18px;
+  }
+  #scoreBreak b{color:var(--amber);font-size:20px;display:block;}
+  #scoreBreak span{font-size:10px;color:var(--chalk-dim);text-transform:uppercase;}
+
+  #rotateHint{
+    position:absolute;bottom:120px;left:0;right:0;text-align:center;
+    color:var(--chalk-dim);font-size:12px;pointer-events:none;
+    transition:opacity 1s ease;
+  }
+
+  @media (max-width:380px){
+    .counter .ctrl button{width:28px;height:28px;font-size:16px;}
+    #targetCard{top:calc(env(safe-area-inset-top,0px) + 58px);}
+  }
+</style>
+</head>
+<body>
+
+<canvas id="renderCanvas"></canvas>
+
+<div id="uiLayer">
+  <div id="topBar" class="panel" style="display:none;">
+    <div class="stat"><span class="lbl">Level</span><span class="val mono" id="hudLevel">1/12</span></div>
+    <div class="stat"><span class="lbl">Score</span><span class="val mono" id="hudScore">0</span></div>
+    <div class="stat"><span class="lbl">Streak</span><span class="val mono" id="hudStreak">0</span></div>
+    <button id="exitQuizBtn" aria-label="End quiz" style="display:none;width:34px;height:34px;border-radius:50%;background:rgba(255,111,111,0.18);color:var(--bad);font-size:14px;align-items:center;justify-content:center;">✕</button>
+    <button id="infoBtn" aria-label="How to play">i</button>
+  </div>
+
+  <div id="targetCard" class="panel">
+    <div class="row">
+      <h2 id="targetName">—</h2>
+      <span class="tag mono" id="targetSym">—</span>
+    </div>
+    <div class="specs">
+      <span>Z: <b id="targetZ">0</b></span>
+      <span>A: <b id="targetA">0</b></span>
+      <span id="targetChargeWrap" style="display:none;">Charge: <b id="targetCharge">0</b></span>
+    </div>
+    <div class="tip" id="targetTip"></div>
+  </div>
+
+  <div></div>
+
+  <div id="bottomPanel" class="panel" style="display:none;">
+    <div id="readout">
+      <span>Guess: <b id="readGuess">—</b></span>
+      <span>Mass#: <b id="readMass">0</b></span>
+      <span>Shells: <b id="readShells">0</b></span>
+    </div>
+    <div id="counters">
+      <div class="counter proton">
+        <span class="clabel">Protons</span>
+        <div class="ctrl">
+          <button data-type="protons" data-d="-1" aria-label="remove proton">–</button>
+          <span class="count mono" id="cntProtons">0</span>
+          <button data-type="protons" data-d="1" aria-label="add proton">+</button>
+        </div>
+        <div class="hint" id="hintProtons"></div>
+      </div>
+      <div class="counter neutron">
+        <span class="clabel">Neutrons</span>
+        <div class="ctrl">
+          <button data-type="neutrons" data-d="-1" aria-label="remove neutron">–</button>
+          <span class="count mono" id="cntNeutrons">0</span>
+          <button data-type="neutrons" data-d="1" aria-label="add neutron">+</button>
+        </div>
+        <div class="hint" id="hintNeutrons"></div>
+      </div>
+      <div class="counter electron">
+        <span class="clabel">Electrons</span>
+        <div class="ctrl">
+          <button data-type="electrons" data-d="-1" aria-label="remove electron">–</button>
+          <span class="count mono" id="cntElectrons">0</span>
+          <button data-type="electrons" data-d="1" aria-label="add electron">+</button>
+        </div>
+        <div class="hint" id="hintElectrons"></div>
+      </div>
+    </div>
+    <div id="quizTimerWrap"><div id="quizTimerBar"></div></div>
+    <button id="submitBtn">Check Atom ✅</button>
+    <div id="feedback"></div>
+  </div>
+</div>
+
+<div id="rotateHint">🔄 Drag to rotate · Pinch to zoom</div>
+
+<!-- START SCREEN -->
+<div id="startScreen" class="screen">
+  <div class="card">
+    <div class="glyph">⚛️</div>
+    <h1>Atom Architect</h1>
+    <div class="sub">Build real elements out of protons, neutrons and electrons — then watch your atom come alive in 3D. Learn atomic number, mass number and electron shells by doing, not memorizing.</div>
+    <div class="legend">
+      <span><span class="dot" style="background:var(--proton);"></span>Proton</span>
+      <span><span class="dot" style="background:var(--neutron);"></span>Neutron</span>
+      <span><span class="dot" style="background:var(--electron);"></span>Electron</span>
+    </div>
+    <button class="primaryBtn" id="startBtn">Start Building</button>
+    <button class="secondaryBtn" id="howToBtn">How to Play</button>
+  </div>
+</div>
+
+<!-- END SCREEN -->
+<div id="endScreen" class="screen hidden">
+  <div class="card">
+    <div class="glyph" id="endGlyph">🏆</div>
+    <h1 id="endTitle">Campaign Complete!</h1>
+    <div class="sub" id="endSub">You assembled every element from Hydrogen to Calcium — including two ions.</div>
+    <div id="scoreBreak">
+      <div><b id="endScore">0</b><span>Score</span></div>
+      <div><b id="endBest">0</b><span>Best</span></div>
+    </div>
+    <button class="primaryBtn" id="quizBtn">Quiz Mode (Endless) ⚡</button>
+    <button class="secondaryBtn" id="replayBtn">Replay Campaign</button>
+  </div>
+</div>
+
+<!-- INFO MODAL -->
+<div id="infoModal" class="screen hidden">
+  <div class="card" style="max-height:86vh;overflow-y:auto;">
+    <div class="closeRow"><button id="closeInfo">✕</button></div>
+    <h1 style="font-size:20px;">How an Atom is Built</h1>
+    <div class="sub" style="text-align:left;">
+      <b style="color:var(--chalk);">Atomic Number (Z)</b> = number of protons = number of electrons in a neutral atom.<br><br>
+      <b style="color:var(--chalk);">Mass Number (A)</b> = protons + neutrons.<br><br>
+      <b style="color:var(--chalk);">Electron Shells</b> fill up in order: K-shell (2), L-shell (8), M-shell (8 for these elements), then a new shell starts.<br><br>
+      <b style="color:var(--chalk);">Ions</b>: a positive ion (cation) has <i>lost</i> electrons (fewer than protons). A negative ion (anion) has <i>gained</i> electrons (more than protons).<br><br>
+      Use the <b>+ / –</b> buttons to set each particle count, then tap <b>Check Atom</b>. Wrong tries show you whether to add or remove particles — no penalty for trying again!
+    </div>
+    <h1 style="font-size:16px;margin-top:6px;">Quick Reference (Z 1–20)</h1>
+    <div class="refTable" id="refTable"></div>
+  </div>
+</div>
+
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script>
+(function(){
+"use strict";
+
+/* ===================== DATA ===================== */
+const ELEMENTS = [null,
+  {z:1,sym:'H',name:'Hydrogen',mass:1,neutrons:0},
+  {z:2,sym:'He',name:'Helium',mass:4,neutrons:2},
+  {z:3,sym:'Li',name:'Lithium',mass:7,neutrons:4},
+  {z:4,sym:'Be',name:'Beryllium',mass:9,neutrons:5},
+  {z:5,sym:'B',name:'Boron',mass:11,neutrons:6},
+  {z:6,sym:'C',name:'Carbon',mass:12,neutrons:6},
+  {z:7,sym:'N',name:'Nitrogen',mass:14,neutrons:7},
+  {z:8,sym:'O',name:'Oxygen',mass:16,neutrons:8},
+  {z:9,sym:'F',name:'Fluorine',mass:19,neutrons:10},
+  {z:10,sym:'Ne',name:'Neon',mass:20,neutrons:10},
+  {z:11,sym:'Na',name:'Sodium',mass:23,neutrons:12},
+  {z:12,sym:'Mg',name:'Magnesium',mass:24,neutrons:12},
+  {z:13,sym:'Al',name:'Aluminium',mass:27,neutrons:14},
+  {z:14,sym:'Si',name:'Silicon',mass:28,neutrons:14},
+  {z:15,sym:'P',name:'Phosphorus',mass:31,neutrons:16},
+  {z:16,sym:'S',name:'Sulfur',mass:32,neutrons:16},
+  {z:17,sym:'Cl',name:'Chlorine',mass:35,neutrons:18},
+  {z:18,sym:'Ar',name:'Argon',mass:40,neutrons:22},
+  {z:19,sym:'K',name:'Potassium',mass:39,neutrons:20},
+  {z:20,sym:'Ca',name:'Calcium',mass:40,neutrons:20}
+];
+
+const LEVELS = [
+  {z:1, tip:'Tip: Atomic number = number of protons = number of electrons!'},
+  {z:2, tip:'Helium has a full first shell — only 2 electrons fit in the K-shell.'},
+  {z:6},
+  {z:8},
+  {z:10, tip:'Neon is a noble gas — its outer shell is completely full.'},
+  {z:11, tip:'A new shell starts once the first two shells (2+8) are full.'},
+  {z:13},
+  {z:17},
+  {z:18},
+  {z:20, tip:'Calcium starts a 4th shell — the M-shell stops filling at 8 here.'},
+  {z:11, charge:1, tip:'Ion! Na⁺ has LOST one electron — electrons < protons.'},
+  {z:17, charge:-1, tip:'Ion! Cl⁻ has GAINED one electron — electrons > protons.'}
+];
+
+function computeShells(e){
+  const caps=[2,8,8,8,2];
+  let rem=e, shells=[];
+  for(let i=0;i<caps.length;i++){
+    if(rem<=0) break;
+    const take=Math.min(rem,caps[i]);
+    shells.push(take);
+    rem-=take;
+  }
+  return shells;
+}
+
+/* ===================== STATE ===================== */
+const state = {
+  mode:'campaign',
+  levelIndex:0,
+  score:0,
+  streak:0,
+  attempts:0,
+  protons:0,
+  neutrons:0,
+  electrons:0,
+  startTime:0,
+  target:null,
+  quizRound:0,
+  quizTimer:null,
+  quizRemaining:0,
+  quizDuration:16
+};
+
+let bestScore = 0;
+try{ bestScore = parseInt(localStorage.getItem('atomArchitectBest')||'0',10) || 0; }catch(e){ bestScore = 0; }
+
+const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ===================== AUDIO ===================== */
+let audioCtx=null;
+function ensureAudio(){
+  if(audioCtx) return;
+  try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ audioCtx=null; }
+}
+function beep(freq,dur,type,vol){
+  if(!audioCtx) return;
+  try{
+    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.type=type||'sine'; o.frequency.value=freq;
+    g.gain.value=vol||0.12;
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+(dur||0.12));
+    o.stop(audioCtx.currentTime+(dur||0.12)+0.02);
+  }catch(e){}
+}
+function playClick(){ beep(440,0.05,'square',0.05); }
+function playCorrect(){ beep(660,0.12,'sine',0.12); setTimeout(()=>beep(880,0.16,'sine',0.12),110); }
+function playWrong(){ beep(170,0.2,'sawtooth',0.07); }
+function playLevelUp(){ beep(523,0.1,'sine',0.1); setTimeout(()=>beep(659,0.1,'sine',0.1),100); setTimeout(()=>beep(784,0.18,'sine',0.12),200); }
+
+/* ===================== DOM REFS ===================== */
+const $ = (id)=>document.getElementById(id);
+const els = {
+  topBar:$('topBar'), targetCard:$('targetCard'), bottomPanel:$('bottomPanel'),
+  hudLevel:$('hudLevel'), hudScore:$('hudScore'), hudStreak:$('hudStreak'),
+  targetName:$('targetName'), targetSym:$('targetSym'), targetZ:$('targetZ'), targetA:$('targetA'),
+  targetChargeWrap:$('targetChargeWrap'), targetCharge:$('targetCharge'), targetTip:$('targetTip'),
+  cntProtons:$('cntProtons'), cntNeutrons:$('cntNeutrons'), cntElectrons:$('cntElectrons'),
+  hintProtons:$('hintProtons'), hintNeutrons:$('hintNeutrons'), hintElectrons:$('hintElectrons'),
+  readGuess:$('readGuess'), readMass:$('readMass'), readShells:$('readShells'),
+  submitBtn:$('submitBtn'), feedback:$('feedback'),
+  quizTimerWrap:$('quizTimerWrap'), quizTimerBar:$('quizTimerBar'),
+  startScreen:$('startScreen'), startBtn:$('startBtn'), howToBtn:$('howToBtn'),
+  endScreen:$('endScreen'), endGlyph:$('endGlyph'), endTitle:$('endTitle'), endSub:$('endSub'),
+  endScore:$('endScore'), endBest:$('endBest'), quizBtn:$('quizBtn'), replayBtn:$('replayBtn'),
+  infoModal:$('infoModal'), infoBtn:$('infoBtn'), closeInfo:$('closeInfo'), refTable:$('refTable'),
+  rotateHint:$('rotateHint'), exitQuizBtn:$('exitQuizBtn')
+};
+
+/* Build periodic quick-reference */
+(function buildRefTable(){
+  let html='';
+  for(let z=1; z<=20; z++){
+    const el = ELEMENTS[z];
+    html += '<div><b>'+z+'. '+el.sym+'</b> — '+el.name+'</div>';
+  }
+  els.refTable.innerHTML = html;
+})();
+
+/* ===================== BABYLON SETUP ===================== */
+if(!window.BABYLON || !BABYLON.Engine.isSupported()){
+  document.body.innerHTML = '<div style="color:#e8e6da;font-family:sans-serif;padding:40px;text-align:center;">Your browser does not support WebGL, which this game needs. Please try a modern browser like Chrome, Safari or Edge.</div>';
+  return;
+}
+
+const canvas = $('renderCanvas');
+const engine = new BABYLON.Engine(canvas, true, {preserveDrawingBuffer:true, stencil:true}, true);
+const scene = new BABYLON.Scene(engine);
+scene.clearColor = new BABYLON.Color4(0.043,0.055,0.078,1);
+
+const camera = new BABYLON.ArcRotateCamera('cam', -Math.PI/2.3, Math.PI/2.5, 9.5, BABYLON.Vector3.Zero(), scene);
+camera.attachControl(canvas, true);
+camera.lowerRadiusLimit = 5;
+camera.upperRadiusLimit = 17;
+camera.wheelPrecision = 40;
+camera.pinchPrecision = 80;
+camera.panningSensibility = 0;
+camera.useAutoRotationBehavior = true;
+camera.autoRotationBehavior.idleRotationSpeed = reduceMotion ? 0 : 0.12;
+camera.autoRotationBehavior.idleRotationWaitTime = 2500;
+camera.autoRotationBehavior.idleRotationSpinupTime = 1500;
+
+const hemi = new BABYLON.HemisphericLight('hemi', new BABYLON.Vector3(0.2,1,0.1), scene);
+hemi.intensity = 0.55;
+hemi.diffuse = BABYLON.Color3.FromHexString('#e8e6da');
+hemi.groundColor = BABYLON.Color3.FromHexString('#10141f');
+
+const coreLight = new BABYLON.PointLight('coreLight', BABYLON.Vector3.Zero(), scene);
+coreLight.diffuse = BABYLON.Color3.FromHexString('#ffe7c2');
+coreLight.intensity = 0.4;
+
+//const glow = new BABYLON.GlowLayer('glow', scene);
+//glow.intensity = reduceMotion ? 0.2 : 0.4;
+
+/* Starfield */
+(function starfield(){
+  const pcs = new BABYLON.PointsCloudSystem('stars', 2, scene);
+  pcs.addPoints(220, function(particle){
+    const r = 14 + Math.random()*10;
+    const theta = Math.random()*Math.PI*2;
+    const phi = Math.acos(2*Math.random()-1);
+    particle.position = new BABYLON.Vector3(
+      r*Math.sin(phi)*Math.cos(theta),
+      r*Math.cos(phi),
+      r*Math.sin(phi)*Math.sin(theta)
+    );
+    const c = 0.5 + Math.random()*0.5;
+    particle.color = new BABYLON.Color4(c,c,c*1.05,1);
+  });
+  pcs.buildMeshAsync();
+})();
+
+/* Nucleus + shells container */
+const nucleusNode = new BABYLON.TransformNode('nucleusNode', scene);
+
+const protonMat = new BABYLON.StandardMaterial('protonMat', scene);
+protonMat.diffuseColor = BABYLON.Color3.FromHexString('#ff5d5d');
+protonMat.emissiveColor = BABYLON.Color3.FromHexString('#ff5d5d').scale(0.55);
+protonMat.specularColor = new BABYLON.Color3(0.15,0.1,0.1);
+
+const neutronMat = new BABYLON.StandardMaterial('neutronMat', scene);
+neutronMat.diffuseColor = BABYLON.Color3.FromHexString('#8fa3b0');
+neutronMat.emissiveColor = BABYLON.Color3.FromHexString('#8fa3b0').scale(0.25);
+neutronMat.specularColor = new BABYLON.Color3(0.1,0.1,0.1);
+
+const electronMat = new BABYLON.StandardMaterial('electronMat', scene);
+electronMat.diffuseColor = BABYLON.Color3.FromHexString('#5de0ff');
+electronMat.emissiveColor = BABYLON.Color3.FromHexString('#5de0ff').scale(0.95);
+electronMat.specularColor = new BABYLON.Color3(0.1,0.2,0.25);
+
+function fibonacciSpherePoint(i, total, radius){
+  const offset = 2/total;
+  const increment = Math.PI*(3-Math.sqrt(5));
+  const y = ((i*offset)-1)+(offset/2);
+  const r = Math.sqrt(Math.max(0,1-y*y));
+  const phi = i*increment;
+  const x = Math.cos(phi)*r;
+  const z = Math.sin(phi)*r;
+  return new BABYLON.Vector3(x*radius, y*radius, z*radius);
+}
+
+const NUCLEON_SLOTS_TOTAL = 46;
+const nucleonSlots = [];
+for(let i=0;i<NUCLEON_SLOTS_TOTAL;i++){
+  nucleonSlots.push(fibonacciSpherePoint(i, NUCLEON_SLOTS_TOTAL, 0.6));
+}
+
+const PROTON_POOL = 22, NEUTRON_POOL = 24, ELECTRON_POOL = 22;
+const protonMeshes = [], neutronMeshes = [], electronMeshes = [];
+
+for(let i=0;i<PROTON_POOL;i++){
+  const m = BABYLON.MeshBuilder.CreateSphere('p'+i, {diameter:0.46, segments:10}, scene);
+  m.material = protonMat;
+  m.parent = nucleusNode;
+  m.setEnabled(false);
+  protonMeshes.push(m);
+}
+for(let i=0;i<NEUTRON_POOL;i++){
+  const m = BABYLON.MeshBuilder.CreateSphere('n'+i, {diameter:0.46, segments:10}, scene);
+  m.material = neutronMat;
+  m.parent = nucleusNode;
+  m.setEnabled(false);
+  neutronMeshes.push(m);
+}
+
+const SHELL_RADIUS = [1.55, 2.35, 3.15, 3.95];
+const SHELL_TILT_X = [0, 26, -20, 14];
+const SHELL_TILT_Z = [0, -8, 12, -9];
+const SHELL_SPEED = reduceMotion ? [0.06,-0.04,0.03,-0.02] : [0.55,-0.38,0.27,-0.19];
+
+const shellPivots = [], shellRings = [];
+for(let s=0; s<4; s++){
+  const pivot = new BABYLON.TransformNode('shellPivot'+s, scene);
+  pivot.rotation.x = BABYLON.Tools.ToRadians(SHELL_TILT_X[s]);
+  pivot.rotation.z = BABYLON.Tools.ToRadians(SHELL_TILT_Z[s]);
+  shellPivots.push(pivot);
+
+  const ring = BABYLON.MeshBuilder.CreateTorus('ring'+s, {diameter:SHELL_RADIUS[s]*2, thickness:0.022, tessellation:64}, scene);
+  const ringMat = new BABYLON.StandardMaterial('ringMat'+s, scene);
+  ringMat.diffuseColor = BABYLON.Color3.FromHexString('#5de0ff');
+  ringMat.emissiveColor = BABYLON.Color3.FromHexString('#5de0ff').scale(0.35);
+  ringMat.alpha = 0.22;
+  ring.material = ringMat;
+  ring.parent = pivot;
+  ring.setEnabled(false);
+  shellRings.push(ring);
+}
+
+for(let i=0;i<ELECTRON_POOL;i++){
+  const m = BABYLON.MeshBuilder.CreateSphere('e'+i, {diameter:0.26, segments:8}, scene);
+  m.material = electronMat;
+  m.parent = shellPivots[0];
+  m.setEnabled(false);
+  electronMeshes.push(m);
+}
+
+let pulseT = 0;
+scene.onBeforeRenderObservable.add(function(){
+  const dt = engine.getDeltaTime()/1000;
+  for(let s=0;s<shellPivots.length;s++){
+    shellPivots[s].rotation.y += dt*SHELL_SPEED[s];
+  }
+  if(!reduceMotion){
+    nucleusNode.rotation.y += dt*0.18;
+    pulseT += dt;
+    const sc = 1 + Math.sin(pulseT*1.6)*0.03;
+    nucleusNode.scaling.set(sc,sc,sc);
+  }
+});
+
+engine.runRenderLoop(()=>scene.render());
+window.addEventListener('resize', ()=>engine.resize());
+
+/* ===================== ATOM VISUAL UPDATE ===================== */
+function rebuildNucleus(){
+  for(let i=0;i<protonMeshes.length;i++){
+    if(i<state.protons){
+      protonMeshes[i].position.copyFrom(nucleonSlots[i]);
+      protonMeshes[i].setEnabled(true);
+    } else protonMeshes[i].setEnabled(false);
+  }
+  for(let j=0;j<neutronMeshes.length;j++){
+    const slot = state.protons+j;
+    if(j<state.neutrons && slot<nucleonSlots.length){
+      neutronMeshes[j].position.copyFrom(nucleonSlots[slot]);
+      neutronMeshes[j].setEnabled(true);
+    } else neutronMeshes[j].setEnabled(false);
+  }
+}
+
+function rebuildElectrons(){
+  const shells = computeShells(state.electrons);
+  let idx = 0;
+  for(let s=0; s<shellPivots.length; s++){
+    const count = shells[s]||0;
+    shellRings[s].setEnabled(count>0);
+    for(let k=0;k<count && idx<electronMeshes.length;k++){
+      const mesh = electronMeshes[idx];
+      const angle = (2*Math.PI*k)/count;
+      mesh.parent = shellPivots[s];
+      mesh.position.set(SHELL_RADIUS[s]*Math.cos(angle), 0, SHELL_RADIUS[s]*Math.sin(angle));
+      mesh.setEnabled(true);
+      idx++;
+    }
+  }
+  for(; idx<electronMeshes.length; idx++){
+    electronMeshes[idx].setEnabled(false);
+  }
+}
+
+/* ===================== UI LOGIC ===================== */
+function updateReadout(){
+  const z = state.protons;
+  const el = (z>=1 && z<=20) ? ELEMENTS[z] : null;
+  els.readGuess.textContent = el ? (el.sym+' · '+el.name) : '—';
+  els.readMass.textContent = (state.protons+state.neutrons);
+  const shells = computeShells(state.electrons);
+  els.readShells.textContent = shells.length ? shells.join('-') : '0';
+  els.cntProtons.textContent = state.protons;
+  els.cntNeutrons.textContent = state.neutrons;
+  els.cntElectrons.textContent = state.electrons;
+}
+
+function clearHints(){
+  [els.hintProtons, els.hintNeutrons, els.hintElectrons].forEach(h=>{
+    h.textContent=''; h.className='hint';
+  });
+}
+
+function renderHUD(){
+  els.hudScore.textContent = state.score;
+  els.hudStreak.textContent = state.streak;
+  if(state.mode==='campaign'){
+    els.hudLevel.textContent = (state.levelIndex+1)+'/'+LEVELS.length;
+  } else {
+    els.hudLevel.textContent = 'Quiz #'+(state.quizRound);
+  }
+}
+
+function renderTargetPanel(){
+  const t = state.target;
+  els.targetName.textContent = t.name;
+  els.targetSym.textContent = t.sym;
+  els.targetZ.textContent = t.protons;
+  els.targetA.textContent = t.mass;
+  if(t.charge){
+    els.targetChargeWrap.style.display='inline';
+    els.targetCharge.textContent = (t.charge>0?'+':'')+t.charge;
+  } else {
+    els.targetChargeWrap.style.display='none';
+  }
+  els.targetTip.textContent = t.tip || '';
+  els.targetTip.style.display = t.tip ? 'block' : 'none';
+}
+
+function setTarget(z, charge, tip){
+  const el = ELEMENTS[z];
+  state.target = {
+    protons:z,
+    neutrons:el.neutrons,
+    electrons: z-(charge||0),
+    charge: charge||0,
+    name:el.name, sym:el.sym, mass:el.mass,
+    tip: tip||''
+  };
+  state.protons=0; state.neutrons=0; state.electrons=0;
+  state.attempts=0;
+  state.startTime = performance.now();
+  rebuildNucleus(); rebuildElectrons(); updateReadout(); clearHints();
+  renderTargetPanel(); renderHUD();
+  els.feedback.textContent=''; els.feedback.className='';
+}
+
+function loadLevel(idx){
+  state.levelIndex = idx;
+  const lvl = LEVELS[idx];
+  setTarget(lvl.z, lvl.charge, lvl.tip);
+}
+
+function adjust(type, delta){
+  state[type] = Math.max(0, Math.min(30, state[type]+delta));
+  if(type==='protons' || type==='neutrons') rebuildNucleus();
+  if(type==='electrons') rebuildElectrons();
+  updateReadout();
+  playClick();
+}
+
+function showFeedback(msg, cls){
+  els.feedback.textContent = msg;
+  els.feedback.className = cls||'';
+}
+
+function hintFor(diff, label){
+  if(diff===0) return {cls:'hint ok', txt:'✅ '+label+' correct'};
+  if(diff>0) return {cls:'hint down', txt:'⬇ too many '+label.toLowerCase()};
+  return {cls:'hint up', txt:'⬆ too few '+label.toLowerCase()};
+}
+
+function checkAnswer(){
+  const t = state.target;
+  state.attempts++;
+  const dp = state.protons - t.protons;
+  const dn = state.neutrons - t.neutrons;
+  const de = state.electrons - t.electrons;
+
+  const hp = hintFor(dp,'Protons'), hn = hintFor(dn,'Neutrons'), he = hintFor(de,'Electrons');
+  els.hintProtons.textContent = hp.txt; els.hintProtons.className = hp.cls;
+  els.hintNeutrons.textContent = hn.txt; els.hintNeutrons.className = hn.cls;
+  els.hintElectrons.textContent = he.txt; els.hintElectrons.className = he.cls;
+
+  if(dp===0 && dn===0 && de===0){
+    const pts = Math.max(50, 200-(state.attempts-1)*30) + (state.attempts===1 ? bumpStreak() : breakStreak());
+    state.score += pts;
+    playCorrect();
+    showFeedback('✅ Correct! +'+pts+' pts — '+t.name+' assembled!', 'good');
+    renderHUD();
+    els.submitBtn.disabled = true;
+    setTimeout(()=>{
+      els.submitBtn.disabled = false;
+      advance();
+    }, 1300);
+  } else {
+    breakStreak();
+    playWrong();
+    showFeedback('Not yet — check the hints below and try again.', 'bad');
+    renderHUD();
+  }
+}
+function bumpStreak(){ state.streak++; return state.streak>=3 ? 30 : 0; }
+function breakStreak(){ state.streak=0; return 0; }
+
+function advance(){
+  if(state.mode==='campaign'){
+    if(state.levelIndex+1 >= LEVELS.length){
+      showCampaignComplete();
+    } else {
+      playLevelUp();
+      loadLevel(state.levelIndex+1);
+    }
+  } else {
+    nextQuizRound();
+  }
+}
+
+/* ===================== SCREENS ===================== */
+function showScreen(el){ el.classList.remove('hidden'); }
+function hideScreen(el){ el.classList.add('hidden'); }
+
+function startCampaign(){
+  state.mode='campaign';
+  state.score=0; state.streak=0;
+  hideScreen(els.endScreen);
+  els.topBar.style.display='flex';
+  els.targetCard.style.display='block';
+  els.bottomPanel.style.display='flex';
+  els.quizTimerWrap.style.display='none';
+  els.exitQuizBtn.style.display='none';
+  loadLevel(0);
+}
+
+function showCampaignComplete(){
+  els.endGlyph.textContent='🏆';
+  els.endTitle.textContent='Campaign Complete!';
+  els.endSub.textContent='You assembled every element from Hydrogen to Calcium — including two ions. Solid atomic structure skills!';
+  finishRun();
+}
+
+function finishRun(){
+  if(state.score > bestScore){
+    bestScore = state.score;
+    try{ localStorage.setItem('atomArchitectBest', String(bestScore)); }catch(e){}
+  }
+  els.endScore.textContent = state.score;
+  els.endBest.textContent = bestScore;
+  showScreen(els.endScreen);
+}
+
+/* Quiz mode */
+function startQuiz(){
+  state.mode='quiz';
+  state.score=0; state.streak=0; state.quizRound=0;
+  state.quizDuration=16;
+  hideScreen(els.endScreen);
+  els.topBar.style.display='flex';
+  els.targetCard.style.display='block';
+  els.bottomPanel.style.display='flex';
+  els.quizTimerWrap.style.display='block';
+  els.exitQuizBtn.style.display='flex';
+  nextQuizRound();
+}
+
+let lastQuizZ = -1;
+function nextQuizRound(){
+  state.quizRound++;
+  let z;
+  do{ z = 1+Math.floor(Math.random()*20); } while(z===lastQuizZ);
+  lastQuizZ = z;
+  state.quizDuration = Math.max(7, 16 - state.quizRound*0.4);
+  setTarget(z, 0, 'Quiz mode: beat the clock!');
+  startQuizTimer();
+}
+
+function startQuizTimer(){
+  clearInterval(state.quizTimer);
+  state.quizRemaining = state.quizDuration;
+  els.quizTimerBar.style.width='100%';
+  els.quizTimerBar.style.background = 'var(--amber)';
+  state.quizTimer = setInterval(()=>{
+    state.quizRemaining -= 0.1;
+    const pct = Math.max(0, (state.quizRemaining/state.quizDuration)*100);
+    els.quizTimerBar.style.width = pct+'%';
+    if(pct<25) els.quizTimerBar.style.background='var(--bad)';
+    if(state.quizRemaining<=0){
+      clearInterval(state.quizTimer);
+      breakStreak();
+      playWrong();
+      const t=state.target;
+      showFeedback('⏱ Time! It was '+t.name+' (Z='+t.protons+', A='+t.mass+')', 'bad');
+      renderHUD();
+      setTimeout(()=>nextQuizRound(), 1600);
+    }
+  }, 100);
+}
+
+function endQuiz(){
+  clearInterval(state.quizTimer);
+  els.quizTimerWrap.style.display='none';
+  els.exitQuizBtn.style.display='none';
+  els.endGlyph.textContent='⚡';
+  els.endTitle.textContent='Quiz Complete';
+  els.endSub.textContent='You answered '+(state.quizRound-1)+' rounds. Keep practicing to beat your best score!';
+  finishRun();
+}
+
+/* ===================== EVENTS ===================== */
+document.querySelectorAll('#counters button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    adjust(btn.dataset.type, parseInt(btn.dataset.d,10));
+  });
+});
+
+els.submitBtn.addEventListener('click', checkAnswer);
+
+els.startBtn.addEventListener('click', ()=>{
+  ensureAudio();
+  if(audioCtx && audioCtx.state==='suspended') audioCtx.resume();
+  hideScreen(els.startScreen);
+  startCampaign();
+  fadeRotateHint();
+});
+
+els.howToBtn.addEventListener('click', ()=> showScreen(els.infoModal));
+els.infoBtn.addEventListener('click', ()=> showScreen(els.infoModal));
+els.closeInfo.addEventListener('click', ()=> hideScreen(els.infoModal));
+
+els.quizBtn.addEventListener('click', ()=>{ hideScreen(els.endScreen); startQuiz(); });
+els.replayBtn.addEventListener('click', ()=>{ hideScreen(els.endScreen); startCampaign(); });
+
+function fadeRotateHint(){
+  setTimeout(()=>{ els.rotateHint.style.opacity='0'; }, 4500);
+}
+
+els.exitQuizBtn.addEventListener('click', ()=>{
+  if(confirm('End quiz and see your score?')) endQuiz();
+});
+
+})();
+</script>
+</body>
+</html>

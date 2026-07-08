@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Fraction Cutter</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0; width: 100%; height: 100%;
+    background: radial-gradient(ellipse at 50% 0%, #1a1030 0%, #0a0512 55%, #05030a 100%);
+    overflow: hidden; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: #f2ecff; user-select: none;
+  }
+  #stage {
+    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+  }
+  #frame {
+    position: relative; height: 100%; aspect-ratio: 9 / 16; max-width: 100%;
+    box-shadow: 0 0 80px rgba(120,80,255,0.15);
+  }
+  canvas#game {
+    width: 100%; height: 100%; display: block; touch-action: none;
+    background: transparent;
+  }
+  .glass {
+    background: linear-gradient(160deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03));
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 14px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12);
+  }
+  .hud {
+    position: absolute; pointer-events: none;
+    display: flex; flex-direction: column;
+  }
+  #instruction {
+    top: 64px; left: 50%; transform: translateX(-50%);
+    padding: 8px 14px; text-align: center; width: 84%; max-width: 84%;
+    font-size: 13px; font-weight: 600; letter-spacing: 0.2px;
+  }
+  #instruction .sub { font-size: 10px; font-weight: 400; opacity: 0.65; margin-top: 2px; line-height: 1.3; }
+  #topleft { top: 10px; left: 8px; padding: 5px 9px; font-size: 9.5px; gap: 1px; line-height: 1.35; }
+  #topleft b { font-size: 12px; }
+  #topright { top: 10px; right: 8px; padding: 5px 9px; font-size: 9px; text-align: right; line-height: 1.3; }
+  #diffLabel { font-size: 11px; font-weight: 700; }
+  .btn {
+    pointer-events: auto; cursor: pointer; text-align: center;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; user-select: none; transition: transform 0.08s ease, filter 0.15s ease;
+  }
+  .btn:active { transform: scale(0.94); filter: brightness(1.3); }
+  #validateBtn {
+    position: absolute; right: 10px; bottom: 18px;
+    width: clamp(64px, 20vw, 92px); height: clamp(64px, 20vw, 92px); border-radius: 50%;
+    font-size: clamp(10px, 3vw, 13px); letter-spacing: 0.3px;
+    background: radial-gradient(circle at 35% 30%, #ffe9a8, #f0a93c 55%, #b9691c 100%);
+    color: #3a1e00; border: 2px solid rgba(255,255,255,0.5);
+    box-shadow: 0 0 24px rgba(255,180,60,0.55), 0 6px 16px rgba(0,0,0,0.4);
+  }
+  #bottomleft { position: absolute; left: 10px; bottom: 18px; display: flex; flex-direction: column; gap: 8px; }
+  .smallbtn {
+    pointer-events: auto; cursor: pointer; padding: 8px 12px; font-size: clamp(9px, 2.6vw, 12px);
+    color: #f2ecff; text-align: center; white-space: nowrap;
+  }
+  #resultOverlay {
+    position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+    background: rgba(5,3,10,0.72); pointer-events: none; flex-direction: column;
+  }
+  #resultCard {
+    pointer-events: auto; width: 78%; padding: 22px 20px; text-align: center;
+  }
+  #resultTitle { font-size: 26px; font-weight: 800; margin-bottom: 6px; }
+  #resultDetail { font-size: 12px; opacity: 0.85; line-height: 1.7; margin: 10px 0; }
+  #resultPieces { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 10px 0; }
+  .piecechip {
+    padding: 4px 9px; border-radius: 8px; font-size: 11px; font-weight: 700;
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);
+  }
+  #continueBtn {
+    margin-top: 8px; padding: 12px 30px; border-radius: 30px; display: inline-flex;
+    background: linear-gradient(160deg,#8a6bff,#5738c9); font-size: 14px;
+    box-shadow: 0 0 20px rgba(140,100,255,0.5);
+  }
+  #startOverlay {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(5,3,10,0.85); flex-direction: column; text-align: center; padding: 30px;
+  }
+  #startOverlay h1 { font-size: 30px; margin: 0 0 6px; background: linear-gradient(90deg,#ffd27a,#ff8ac6,#8ab6ff);
+    -webkit-background-clip: text; background-clip: text; color: transparent; }
+  #startOverlay p { font-size: 13px; opacity: 0.8; max-width: 280px; line-height: 1.6; }
+  #diffPicker { display: flex; gap: 8px; margin: 16px 0; }
+  .diffchip { padding: 8px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; pointer-events: auto; }
+  .diffchip.active { background: linear-gradient(160deg,#8a6bff,#5738c9); }
+  #playBtn { padding: 14px 40px; border-radius: 30px; background: linear-gradient(160deg,#ffcf6b,#f0873c);
+    color: #3a1e00; font-size: 15px; font-weight: 800; cursor: pointer; pointer-events: auto; margin-top: 6px; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="frame">
+    <canvas id="game"></canvas>
+
+    <div id="instruction" class="hud glass">
+      <div id="instrText">Get Ready</div>
+      <div class="sub" id="instrSub">Slice the object to answer</div>
+    </div>
+    <div id="topleft" class="hud glass">
+      <div>LEVEL <b id="lvlNum">1</b></div>
+      <div>SCORE <b id="scoreNum">0</b></div>
+      <div>STREAK <b id="streakNum">0</b> 🔥</div>
+    </div>
+    <div id="topright" class="hud glass">
+      <div>DIFFICULTY</div>
+      <div id="diffLabel">EASY</div>
+    </div>
+
+    <div id="validateBtn" class="btn glass">VALIDATE</div>
+    <div id="bottomleft">
+      <div id="restartBtn" class="smallbtn glass btn">↺ Restart</div>
+      <div id="undoBtn" class="smallbtn glass btn">⎌ Undo Cut</div>
+    </div>
+
+    <div id="resultOverlay">
+      <div id="resultCard" class="glass">
+        <div id="resultTitle">PASS</div>
+        <div id="resultDetail"></div>
+        <div id="resultPieces"></div>
+        <div id="continueBtn" class="btn">Continue ➜</div>
+      </div>
+    </div>
+
+    <div id="startOverlay">
+      <h1>Fraction Cutter</h1>
+      <p>Slice the hanging shapes to match the fraction, percent, or ratio shown at the top. Drag across the object to cut, then press Validate.</p>
+      <div id="diffPicker">
+        <div class="diffchip glass" data-d="0">Easy</div>
+        <div class="diffchip glass active" data-d="1">Medium</div>
+        <div class="diffchip glass" data-d="2">Hard</div>
+        <div class="diffchip glass" data-d="3">Expert</div>
+      </div>
+      <div id="playBtn">▶ Start Cutting</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+// ---------- CANVAS SETUP ----------
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const W = 720, H = 1280;
+canvas.width = W; canvas.height = H;
+
+// ---------- MATH HELPERS ----------
+function polyArea(pts){
+  let a = 0;
+  for(let i=0;i<pts.length;i++){
+    const p1 = pts[i], p2 = pts[(i+1)%pts.length];
+    a += p1.x*p2.y - p2.x*p1.y;
+  }
+  return Math.abs(a)/2;
+}
+function polyCentroid(pts){
+  let area=0, cx=0, cy=0;
+  for(let i=0;i<pts.length;i++){
+    const p1=pts[i], p2=pts[(i+1)%pts.length];
+    const cross = p1.x*p2.y - p2.x*p1.y;
+    area += cross; cx += (p1.x+p2.x)*cross; cy += (p1.y+p2.y)*cross;
+  }
+  area *= 0.5;
+  if(Math.abs(area) < 1e-6){
+    let sx=0, sy=0; pts.forEach(p=>{sx+=p.x;sy+=p.y;});
+    return {x: sx/pts.length, y: sy/pts.length};
+  }
+  return {x: cx/(6*area), y: cy/(6*area)};
+}
+function pointInPoly(pt, pts){
+  let inside = false;
+  for(let i=0,j=pts.length-1;i<pts.length;j=i++){
+    const xi=pts[i].x, yi=pts[i].y, xj=pts[j].x, yj=pts[j].y;
+    const intersect = ((yi>pt.y)!==(yj>pt.y)) &&
+      (pt.x < (xj-xi)*(pt.y-yi)/((yj-yi)||1e-9) + xi);
+    if(intersect) inside = !inside;
+  }
+  return inside;
+}
+function rot(p, ang){
+  const c = Math.cos(ang), s = Math.sin(ang);
+  return {x: p.x*c - p.y*s, y: p.x*s + p.y*c};
+}
+function maxRadius(pts){
+  let m = 0;
+  for(const p of pts) m = Math.max(m, Math.hypot(p.x,p.y));
+  return m;
+}
+// Splits a polygon (local coords) by an infinite line through a,b. Returns [polyA, polyB] or null.
+function cutPolygon(pts, a, b){
+  const dx = b.x-a.x, dy = b.y-a.y;
+  const side = p => dx*(p.y-a.y) - dy*(p.x-a.x);
+  const sides = pts.map(side);
+  const hasPos = sides.some(s=>s>1e-4), hasNeg = sides.some(s=>s<-1e-4);
+  if(!hasPos || !hasNeg) return null;
+  const n = pts.length;
+  const A=[], B=[];
+  for(let i=0;i<n;i++){
+    const cur=pts[i], curS=sides[i];
+    const nxt=pts[(i+1)%n], nxtS=sides[(i+1)%n];
+    if(curS >= 0) A.push(cur);
+    if(curS <= 0) B.push(cur);
+    if((curS>0 && nxtS<0) || (curS<0 && nxtS>0)){
+      const t = curS/(curS-nxtS);
+      const ip = {x: cur.x+t*(nxt.x-cur.x), y: cur.y+t*(nxt.y-cur.y)};
+      A.push(ip); B.push(ip);
+    }
+  }
+  if(A.length<3 || B.length<3) return null;
+  if(polyArea(A) < 60 || polyArea(B) < 60) return null; // ignore slivers
+  return [A,B];
+}
+
+// ---------- SHAPE GENERATORS (local coords, centered) ----------
+function regularPoly(r, sides, rot0=0){
+  const pts=[];
+  for(let i=0;i<sides;i++){
+    const a = rot0 + i*Math.PI*2/sides;
+    pts.push({x: Math.cos(a)*r, y: Math.sin(a)*r});
+  }
+  return pts;
+}
+function starPoly(r, points=5, inner=0.5){
+  const pts=[];
+  for(let i=0;i<points*2;i++){
+    const a = -Math.PI/2 + i*Math.PI/points;
+    const rad = i%2===0 ? r : r*inner;
+    pts.push({x: Math.cos(a)*rad, y: Math.sin(a)*rad});
+  }
+  return pts;
+}
+function heartPoly(r){
+  const pts=[]; const N=32;
+  for(let i=0;i<N;i++){
+    const t = i/N * Math.PI*2;
+    const x = 16*Math.pow(Math.sin(t),3);
+    const y = -(13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t));
+    pts.push({x: x*(r/17), y: y*(r/17)});
+  }
+  return pts;
+}
+function bumpyCircle(r, bumps, amp, sides=36){
+  const pts=[];
+  for(let i=0;i<sides;i++){
+    const a = i*Math.PI*2/sides;
+    const rad = r + Math.sin(a*bumps)*amp;
+    pts.push({x: Math.cos(a)*rad, y: Math.sin(a)*rad});
+  }
+  return pts;
+}
+function gearPoly(r, teeth=10){
+  const pts=[]; const n=teeth*2;
+  for(let i=0;i<n;i++){
+    const a = i*Math.PI*2/n;
+    const rad = i%2===0 ? r : r*0.78;
+    pts.push({x: Math.cos(a)*rad, y: Math.sin(a)*rad});
+  }
+  return pts;
+}
+function ringPoly(rOuter, rInner){
+  const pts=[]; const sides=28;
+  for(let i=0;i<=sides;i++){
+    const a = i*Math.PI*2/sides;
+    pts.push({x: Math.cos(a)*rOuter, y: Math.sin(a)*rOuter});
+  }
+  pts.push({x: rInner, y: 0.001});
+  for(let i=sides;i>=0;i--){
+    const a = i*Math.PI*2/sides;
+    pts.push({x: Math.cos(a)*rInner, y: Math.sin(a)*rInner});
+  }
+  return pts;
+}
+function pizzaSlice(r, angDeg=70){
+  const pts=[{x:0,y:0}];
+  const half = angDeg*Math.PI/180/2;
+  const N=16;
+  for(let i=0;i<=N;i++){
+    const a = -half + i*(half*2/N);
+    pts.push({x: Math.cos(a)*r, y: Math.sin(a)*r});
+  }
+  return pts;
+}
+function puzzlePiece(r){
+  // squarish with a tab and a notch
+  const pts=[];
+  const s=r;
+  const N=6;
+  // top edge with a tab bump
+  pts.push({x:-s,y:-s});
+  for(let i=0;i<=N;i++){
+    const t=i/N; const x=-s+t*2*s;
+    let y=-s;
+    if(t>0.35&&t<0.65) y -= Math.sin((t-0.35)/0.3*Math.PI)*s*0.35;
+    pts.push({x,y});
+  }
+  pts.push({x:s,y:-s});
+  pts.push({x:s,y:s});
+  // bottom edge with notch
+  for(let i=N;i>=0;i--){
+    const t=i/N; const x=-s+t*2*s;
+    let y=s;
+    if(t>0.35&&t<0.65) y += Math.sin((t-0.35)/0.3*Math.PI)*s*0.3;
+    pts.push({x,y});
+  }
+  pts.push({x:-s,y:s});
+  return pts;
+}
+const SHAPES = {
+  circle:   r => regularPoly(r, 30),
+  square:   r => regularPoly(r, 4, Math.PI/4),
+  rectangle:r => [{x:-r*1.3,y:-r*0.75},{x:r*1.3,y:-r*0.75},{x:r*1.3,y:r*0.75},{x:-r*1.3,y:r*0.75}],
+  triangle: r => regularPoly(r, 3, -Math.PI/2),
+  pentagon: r => regularPoly(r, 5, -Math.PI/2),
+  hexagon:  r => regularPoly(r, 6),
+  octagon:  r => regularPoly(r, 8, Math.PI/8),
+  star:     r => starPoly(r, 5, 0.48),
+  heart:    r => heartPoly(r),
+  cloud:    r => bumpyCircle(r, 6, r*0.18),
+  cookie:   r => bumpyCircle(r, 14, r*0.06),
+  gear:     r => gearPoly(r, 9),
+  donut:    r => ringPoly(r, r*0.42),
+//  pizza:    r => pizzaSlice(r, 75)
+};
+const SHAPE_NAMES = Object.keys(SHAPES);
+// Finds the point where a vertical line through the shape's center (x=0) first
+// crosses the polygon boundary from above — i.e. the true topmost surface point.
+// This makes the rope look physically attached for ANY shape (square, heart,
+// gear, rectangle...), not just circle-like ones.
+function topAttachPoint(pts){
+  const n = pts.length;
+  let bestY = null;
+  for(let i=0;i<n;i++){
+    const p1 = pts[i], p2 = pts[(i+1)%n];
+    if((p1.x >= 0 && p2.x < 0) || (p1.x < 0 && p2.x >= 0)){
+      const t = (0 - p1.x) / (p2.x - p1.x);
+      const y = p1.y + t*(p2.y - p1.y);
+      if(bestY === null || y < bestY) bestY = y;
+    }
+  }
+  if(bestY === null){
+    // fallback: shouldn't normally happen, use the highest vertex
+    bestY = Math.min(...pts.map(p=>p.y));
+  }
+  return {x: 0, y: bestY};
+}
+const SIZES = { tiny:114, small:162, medium:234, large:324, verylarge:426 };
+const SIZE_NAMES = Object.keys(SIZES);
+const COLORS = ['#ff6b8b','#ffb454','#63e6be','#63b3ff','#c792ff','#ffe66d','#7ee787','#ff9ecb'];
+
+// ---------- QUESTION BANK ----------
+const questionBank = [];
+function frac(n,d){ return {label:`${n}/${d}`, val: n/d*100}; }
+function addPartitionQ(text, targets, tag){
+  questionBank.push({text, sub:'Slice to match the split', type:'partition', targets, tag});
+}
+// Fractions: leave X (single target = X%, remainder = rest)
+[[1,2],[1,3],[2,3],[1,4],[3,4],[3,5],[2,5],[5,8],[3,8],[7,10],[3,10],[1,6],[5,6],[1,5],[4,5],[1,8],[7,8]]
+  .forEach(([n,d])=>{
+    const v = n/d*100;
+    addPartitionQ(`Leave ${n}/${d}`, [v, 100-v], 'fraction');
+    addPartitionQ(`Remove ${n}/${d}`, [100-v, v], 'fraction');
+  });
+// Percentages
+[5,10,15,20,25,30,33,35,40,45,49,55,60,65,70,75,80,85,90].forEach(p=>{
+  addPartitionQ(`Remove ${p}%`, [100-p, p], 'percent');
+  addPartitionQ(`Leave ${p}%`, [p, 100-p], 'percent');
+});
+// Ratios
+[[1,1],[1,2],[2,3],[3,5],[1,3],[1,4],[3,4],[4,1],[5,2],[2,5]].forEach(([a,b])=>{
+  const total=a+b; const v1=a/total*100, v2=b/total*100;
+  addPartitionQ(`Split into a ${a}:${b} ratio`, [v1,v2], 'ratio');
+});
+// Equal partitions
+[2,3,4,5,6,7,8,9,10].forEach(n=>{
+  const arr = new Array(n).fill(100/n);
+  addPartitionQ(`Divide into ${n} equal parts`, arr, 'equal');
+});
+[4,6,8].forEach(n=>{
+  const arr = new Array(n).fill(100/n);
+  addPartitionQ(`Divide into ${n} equal sectors`, arr, 'equal');
+});
+// Geometry / stat-based challenges
+questionBank.push({text:'Create one tiny piece', sub:'One sliver, rest can vary', type:'stat', tag:'geom',
+  check:(percs)=> percs.length>=2 && Math.min(...percs) <= 10});
+questionBank.push({text:'Largest piece should be half', sub:'Max piece ≈ 50%', type:'stat', tag:'geom',
+  check:(percs,tol)=> Math.abs(Math.max(...percs)-50) <= tol});
+questionBank.push({text:'Two equal pieces, plus one more', sub:'At least 3 pieces, two matching', type:'stat', tag:'geom',
+  check:(percs,tol)=>{
+    if(percs.length<3) return false;
+    for(let i=0;i<percs.length;i++) for(let j=i+1;j<percs.length;j++)
+      if(Math.abs(percs[i]-percs[j])<=tol) return true;
+    return false;
+  }});
+questionBank.push({text:'Create four identical triangles', sub:'4 equal pieces', type:'partition', targets:[25,25,25,25], tag:'geom'});
+questionBank.push({text:'Six equal sectors', sub:'6 equal pieces', type:'partition', targets:[16.67,16.67,16.67,16.67,16.67,16.67], tag:'geom'});
+questionBank.push({text:'Make one piece twice as large', sub:'Ratio 2:1', type:'partition', targets:[66.67,33.33], tag:'geom'});
+questionBank.push({text:'Cut exactly in half', sub:'Two equal pieces', type:'partition', targets:[50,50], tag:'geom'});
+
+// ---------- BACKTRACKING PARTITION MATCHER ----------
+// Attempts to assign each piece percentage to one of targets.length groups
+// such that group sums match targets within tolerance.
+function matchPartition(percs, targets, tol){
+  const groups = targets.length;
+  if(percs.length < groups) return null;
+  const sums = new Array(groups).fill(0);
+  const assign = new Array(percs.length).fill(-1);
+  let best = null;
+  function backtrack(i){
+    if(best) return;
+    if(i === percs.length){
+      let ok = true, err = 0;
+      for(let g=0; g<groups; g++){
+        const d = Math.abs(sums[g]-targets[g]);
+        err += d;
+        if(d > tol) ok = false;
+      }
+      if(ok) best = {assign: assign.slice(), err};
+      return;
+    }
+    for(let g=0; g<groups; g++){
+      if(sums[g] + percs[i] > targets[g] + tol + 0.01) continue;
+      sums[g] += percs[i]; assign[i] = g;
+      backtrack(i+1);
+      sums[g] -= percs[i]; assign[i] = -1;
+      if(best) return;
+    }
+  }
+  backtrack(0);
+  return best;
+}
+
+// ---------- PARTICLES ----------
+class Particle {
+  constructor(x,y,vx,vy,life,color,size,gravity){
+    this.x=x; this.y=y; this.vx=vx; this.vy=vy; this.life=life; this.maxLife=life;
+    this.color=color; this.size=size; this.gravity=gravity||0; this.rot=Math.random()*7; this.vrot=(Math.random()-0.5)*8;
+  }
+  update(dt){
+    this.x += this.vx*dt; this.y += this.vy*dt;
+    this.vy += this.gravity*dt;
+    this.vx *= 0.985; this.vy *= 0.99;
+    this.rot += this.vrot*dt;
+    this.life -= dt;
+    return this.life > 0;
+  }
+  draw(ctx){
+    const t = Math.max(0, this.life/this.maxLife);
+    ctx.save();
+    ctx.translate(this.x, this.y); ctx.rotate(this.rot);
+    ctx.globalAlpha = t;
+    ctx.fillStyle = this.color;
+    ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
+    ctx.restore();
+  }
+}
+class ParticleSystem {
+  constructor(){ this.list = []; }
+  burst(x,y,color,count,opts={}){
+    for(let i=0;i<count;i++){
+      const a = Math.random()*Math.PI*2;
+      const spd = (opts.speed||220)*(0.4+Math.random()*0.9);
+      this.list.push(new Particle(x,y, Math.cos(a)*spd, Math.sin(a)*spd - (opts.up||0),
+        opts.life||(0.5+Math.random()*0.5), color, opts.size||(3+Math.random()*4), opts.gravity!==undefined?opts.gravity:500));
+    }
+  }
+  sliceTrail(x,y){
+    this.list.push(new Particle(x,y,(Math.random()-0.5)*40,(Math.random()-0.5)*40,0.35,'#fff6d0',3,0));
+  }
+  confetti(){
+    for(let i=0;i<90;i++){
+      const c = COLORS[Math.floor(Math.random()*COLORS.length)];
+      this.list.push(new Particle(W/2+(Math.random()-0.5)*200, H*0.3, (Math.random()-0.5)*300, -300-Math.random()*300, 2+Math.random(), c, 6+Math.random()*5, 480));
+    }
+  }
+  update(dt){ this.list = this.list.filter(p=>p.update(dt)); }
+  draw(ctx){ this.list.forEach(p=>p.draw(ctx)); }
+}
+
+// ---------- PIECE ----------
+class Piece {
+  constructor(localPts, position, rotation, color){
+    this.local = localPts;
+    this.position = position; // world {x,y}
+    this.rotation = rotation||0;
+    this.velocity = {x:0,y:0};
+    this.angularVelocity = (Math.random()-0.5)*0.6;
+    this.color = color;
+    this.area = polyArea(localPts);
+    this.radius = maxRadius(localPts);
+    this.hanging = false;
+    this.grounded = false;
+    this.anchorLocal = null; // local point where rope attaches, if hanging
+    this.mass = Math.max(0.4, this.area/4000);
+  }
+  worldPoints(){
+    return this.local.map(p=>{
+      const r = rot(p, this.rotation);
+      return {x: r.x+this.position.x, y: r.y+this.position.y};
+    });
+  }
+  worldAnchor(){
+    if(!this.anchorLocal) return this.position;
+    const r = rot(this.anchorLocal, this.rotation);
+    return {x: r.x+this.position.x, y: r.y+this.position.y};
+  }
+}
+
+// ---------- ROPE (damped spring pendulum) ----------
+class Rope {
+  constructor(anchor, restLength){
+    this.anchor = anchor; // fixed world point {x,y}
+    this.restLength = restLength;
+    this.end = {x: anchor.x, y: anchor.y + 10};
+    this.vel = {x: 0, y: 0};
+  }
+  update(dt, targetMassPull){
+    const g = 1500;
+    this.vel.y += g*dt;
+    // spring tension only when stretched beyond rest length (rope can't push)
+    const dx = this.end.x-this.anchor.x, dy = this.end.y-this.anchor.y;
+    const len = Math.hypot(dx,dy) || 0.001;
+    const stretch = len - this.restLength;
+    if(stretch > 0){
+      const k = 55; // stiffness
+      const nx = dx/len, ny = dy/len;
+      const f = k*stretch;
+      this.vel.x -= nx*f*dt;
+      this.vel.y -= ny*f*dt;
+    }
+    // damping
+    const damp = Math.pow(0.986, dt*60);
+    this.vel.x *= damp; this.vel.y *= damp;
+    this.end.x += this.vel.x*dt;
+    this.end.y += this.vel.y*dt;
+  }
+  draw(ctx){
+    ctx.save();
+    ctx.strokeStyle = 'rgba(235,225,255,0.85)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    const midx = (this.anchor.x+this.end.x)/2 + (this.vel.x*0.01);
+    const midy = (this.anchor.y+this.end.y)/2;
+    ctx.moveTo(this.anchor.x, this.anchor.y);
+    ctx.quadraticCurveTo(midx, midy, this.end.x, this.end.y);
+    ctx.stroke();
+    // peg
+    ctx.fillStyle = '#cfc7ff';
+    ctx.beginPath(); ctx.arc(this.anchor.x, this.anchor.y, 7, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ---------- GAME ----------
+const DIFFS = [
+  {name:'EASY', tol:8},
+  {name:'MEDIUM', tol:5},
+  {name:'HARD', tol:2},
+  {name:'EXPERT', tol:1}
+];
+
+const State = { INTRO:0, ENTER:1, CUTTING:2, RESULT:3 };
+
+class Game {
+  constructor(){
+    this.particles = new ParticleSystem();
+    this.pieces = [];
+    this.history = [];
+    this.rope = null;
+    this.originalArea = 1;
+    this.state = State.INTRO;
+    this.score = 0;
+    this.streak = 0;
+    this.level = 0;
+    this.diffIndex = 1;
+    this.question = null;
+    this.shake = 0;
+    this.dragging = false;
+    this.dragPts = [];
+    this.enterTimer = 0;
+    this.lastTime = performance.now();
+    this.bindUI();
+    this.bindInput();
+    requestAnimationFrame(this.loop.bind(this));
+  }
+  bindUI(){
+    document.querySelectorAll('.diffchip').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        document.querySelectorAll('.diffchip').forEach(e=>e.classList.remove('active'));
+        el.classList.add('active');
+        this.diffIndex = parseInt(el.dataset.d,10);
+      });
+    });
+    document.getElementById('playBtn').addEventListener('click', ()=>{
+      document.getElementById('startOverlay').style.display = 'none';
+      this.updateDiffLabel();
+      this.nextLevel();
+    });
+    document.getElementById('validateBtn').addEventListener('click', ()=> this.validate());
+    document.getElementById('restartBtn').addEventListener('click', ()=> this.restartLevel());
+    document.getElementById('undoBtn').addEventListener('click', ()=> this.undo());
+    document.getElementById('continueBtn').addEventListener('click', ()=>{
+      document.getElementById('resultOverlay').style.display = 'none';
+      this.nextLevel();
+    });
+  }
+  updateDiffLabel(){ document.getElementById('diffLabel').textContent = DIFFS[this.diffIndex].name; }
+  bindInput(){
+    const rectInfo = ()=> canvas.getBoundingClientRect();
+    const toCanvas = (clientX, clientY)=>{
+      const r = rectInfo();
+      return { x: (clientX-r.left)/r.width*W, y: (clientY-r.top)/r.height*H };
+    };
+    canvas.addEventListener('pointerdown', e=>{
+      if(this.state !== State.CUTTING) return;
+      this.dragging = true;
+      this.dragPts = [toCanvas(e.clientX, e.clientY)];
+    });
+    canvas.addEventListener('pointermove', e=>{
+      if(!this.dragging) return;
+      const p = toCanvas(e.clientX, e.clientY);
+      this.dragPts.push(p);
+      this.particles.sliceTrail(p.x + (Math.random()-0.5)*6, p.y + (Math.random()-0.5)*6);
+    });
+    window.addEventListener('pointerup', e=>{
+      if(!this.dragging) return;
+      this.dragging = false;
+      this.finishDrag();
+    });
+  }
+  finishDrag(){
+    if(this.dragPts.length < 2) return;
+    const a = this.dragPts[0], b = this.dragPts[this.dragPts.length-1];
+    const dist = Math.hypot(b.x-a.x, b.y-a.y);
+    if(dist < 40) return;
+    // extend line far beyond shape bounds for a full cut
+    const dx = b.x-a.x, dy = b.y-a.y, len = Math.hypot(dx,dy);
+    const ux = dx/len, uy = dy/len;
+    const EXT = 2000;
+    const p1 = {x: a.x-ux*EXT, y: a.y-uy*EXT};
+    const p2 = {x: b.x+ux*EXT, y: b.y+uy*EXT};
+    this.applyCut(p1, p2);
+  }
+  applyCut(worldA, worldB){
+    // snapshot for undo
+    this.history.push(this.pieces.map(p=>this.clonePiece(p)));
+    let cutSomething = false;
+    const newPieces = [];
+    for(const piece of this.pieces){
+      const inv = -piece.rotation;
+      const la = rot({x: worldA.x-piece.position.x, y: worldA.y-piece.position.y}, inv);
+      const lb = rot({x: worldB.x-piece.position.x, y: worldB.y-piece.position.y}, inv);
+      const result = cutPolygon(piece.local, la, lb);
+      if(!result){ newPieces.push(piece); continue; }
+      cutSomething = true;
+      const [polyA, polyB] = result;
+      // Decide, once, which side of the cut the rope anchor point falls on —
+      // using the exact same half-plane test cutPolygon used to build A/B,
+      // so there is no ambiguity when the anchor sits near a cut vertex.
+      let anchorSide = null;
+      if(piece.hanging && piece.anchorLocal){
+        const dxL = lb.x-la.x, dyL = lb.y-la.y;
+        anchorSide = dxL*(piece.anchorLocal.y-la.y) - dyL*(piece.anchorLocal.x-la.x);
+        if(Math.abs(anchorSide) < 1e-6) anchorSide = 1e-6; // break exact ties consistently
+      }
+      [polyA, polyB].forEach((poly, idx)=>{
+        const c = polyCentroid(poly);
+        const localRecentered = poly.map(p=>({x:p.x-c.x, y:p.y-c.y}));
+        const worldCenter = {
+          x: piece.position.x + rot(c, piece.rotation).x,
+          y: piece.position.y + rot(c, piece.rotation).y
+        };
+        const np = new Piece(localRecentered, worldCenter, piece.rotation, piece.color);
+        np.velocity = {x: piece.velocity.x + (Math.random()-0.5)*40, y: piece.velocity.y};
+        np.angularVelocity = piece.angularVelocity + (Math.random()-0.5)*1.2;
+        if(anchorSide !== null){
+          // idx 0 -> polyA (side >= 0), idx 1 -> polyB (side <= 0)
+          const keepsAnchor = idx === 0 ? anchorSide >= 0 : anchorSide <= 0;
+          if(keepsAnchor){
+            np.hanging = true;
+            np.anchorLocal = {x: piece.anchorLocal.x-c.x, y: piece.anchorLocal.y-c.y};
+          }
+        }
+        newPieces.push(np);
+      });
+    }
+    if(cutSomething){
+      this.pieces = newPieces;
+      const mid = {x:(worldA.x+worldB.x)/2, y:(worldA.y+worldB.y)/2};
+      this.particles.burst(mid.x, mid.y, '#fff2b0', 24, {speed:260, life:0.5, gravity:200});
+      this.shake = 10;
+    } else {
+      this.history.pop();
+    }
+  }
+  clonePiece(p){
+    const np = new Piece(p.local.map(pt=>({x:pt.x,y:pt.y})), {x:p.position.x,y:p.position.y}, p.rotation, p.color);
+    np.velocity = {x:p.velocity.x, y:p.velocity.y};
+    np.angularVelocity = p.angularVelocity;
+    np.hanging = p.hanging;
+    np.grounded = p.grounded;
+    np.anchorLocal = p.anchorLocal ? {x:p.anchorLocal.x, y:p.anchorLocal.y} : null;
+    return np;
+  }
+  undo(){
+    if(this.state !== State.CUTTING) return;
+    if(this.history.length===0) return;
+    this.pieces = this.history.pop();
+  }
+  restartLevel(){
+    if(this.state===State.INTRO) return;
+    this.setupLevel(this.currentDifficultyTier(), true);
+  }
+  currentDifficultyTier(){ return DIFFS[this.diffIndex]; }
+  pickQuestion(){
+    const tier = this.diffIndex;
+    let pool = questionBank;
+    if(tier===0) pool = questionBank.filter(q=> (q.targets? q.targets.length<=3 : true));
+    this.question = pool[Math.floor(Math.random()*pool.length)];
+  }
+  nextLevel(){
+    this.level++;
+    document.getElementById('lvlNum').textContent = this.level;
+    if(this.streak>0 && this.streak%4===0 && this.diffIndex<3){
+      this.diffIndex = Math.min(3, this.diffIndex+1);
+      this.updateDiffLabel();
+      document.querySelectorAll('.diffchip').forEach((e,i)=>e.classList.toggle('active', i===this.diffIndex));
+    }
+    this.pickQuestion();
+    document.getElementById('instrText').textContent = this.question.text;
+    document.getElementById('instrSub').textContent = this.question.sub || 'Slice to answer, then Validate';
+    this.setupLevel(this.currentDifficultyTier(), false);
+  }
+  setupLevel(tier, isRestart){
+    const shapeName = SHAPE_NAMES[Math.floor(Math.random()*SHAPE_NAMES.length)];
+    // Bigger shapes on Easy (large/very-large), progressively smaller as
+    // difficulty rises — smaller pieces are genuinely harder to slice precisely.
+    const TIER_SIZE_POOL = [
+      ['large','verylarge'],   // Easy
+      ['medium','large'],      // Medium
+      ['small','medium'],      // Hard
+      ['tiny','small']         // Expert
+    ][this.diffIndex];
+    const sizeName = isRestart && this._lastSizeName ? this._lastSizeName
+      : TIER_SIZE_POOL[Math.floor(Math.random()*TIER_SIZE_POOL.length)];
+    this._lastSizeName = sizeName;
+    // clamp so even the very-large tier stays fully inside the play area
+    const r = Math.min(SIZES[sizeName], W*0.4);
+    const gen = isRestart && this._lastShape ? this._lastShape : shapeName;
+    this._lastShape = gen;
+    let localPts = SHAPES[gen](r);
+    // The radius `r` is a generic scale — shapes like rectangle stretch it
+    // asymmetrically (1.3x wide), so clamp on the shape's REAL bounding box,
+    // not just r, or wide shapes can poke off the sides of the screen.
+    const maxAbsX = Math.max(...localPts.map(p=>Math.abs(p.x)));
+    const safeHalfWidth = W*0.42;
+    if(maxAbsX > safeHalfWidth){
+      const scale = safeHalfWidth / maxAbsX;
+      localPts = localPts.map(p=>({x:p.x*scale, y:p.y*scale}));
+    }
+    const ropeLen = 170 + Math.min(260, this.level*6) + Math.random()*40;
+    const anchor = {x: W/2 + (Math.random()-0.5)*40, y: 150};
+    this.rope = new Rope(anchor, ropeLen);
+    this.rope.end = {x: anchor.x + (Math.random()-0.5)*30, y: anchor.y - 250 - Math.random()*100};
+    const color = COLORS[Math.floor(Math.random()*COLORS.length)];
+    const topLocal = topAttachPoint(localPts);
+    const main = new Piece(localPts, {x: this.rope.end.x, y: this.rope.end.y}, (Math.random()-0.5)*0.5, color);
+    main.hanging = true;
+    main.anchorLocal = topLocal;
+    this.pieces = [main];
+    this.history = [];
+    this.originalArea = main.area;
+    this.state = State.ENTER;
+    this.enterTimer = 0;
+    document.getElementById('resultOverlay').style.display = 'none';
+  }
+  physicsStep(dt){
+    // update rope + hanging piece
+    const hangingPiece = this.pieces.find(p=>p.hanging);
+    if(hangingPiece){
+      this.rope.update(dt, hangingPiece.mass);
+      const anchorOffset = rot(hangingPiece.anchorLocal||{x:0,y:0}, hangingPiece.rotation);
+      hangingPiece.position.x = this.rope.end.x - anchorOffset.x;
+      hangingPiece.position.y = this.rope.end.y - anchorOffset.y;
+      // gentle rotation follows swing velocity (pendulum feel)
+      const targetRot = Math.max(-0.6, Math.min(0.6, this.rope.vel.x*0.0009));
+      hangingPiece.rotation += (targetRot - hangingPiece.rotation)*Math.min(1, dt*3);
+    }
+    // falling / grounded pieces
+    const floorY = H - 90;
+    for(const p of this.pieces){
+      if(p.hanging) continue;
+      if(!p.grounded){
+        p.velocity.y += 1500*dt;
+        p.position.x += p.velocity.x*dt;
+        p.position.y += p.velocity.y*dt;
+      } else {
+        p.velocity.x *= 0.9;
+        if(Math.abs(p.velocity.x) < 2) p.velocity.x = 0;
+        p.angularVelocity *= 0.9;
+        p.position.x += p.velocity.x*dt;
+      }
+      p.rotation += p.angularVelocity*dt;
+      // Use the piece's real (rotated) silhouette for collision, not a circular
+      // radius — otherwise irregular cut fragments rest with a visible gap
+      // above the floor ("floating") since their farthest vertex isn't below them.
+      const wpts = p.worldPoints();
+      let minX = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for(const wp of wpts){
+        if(wp.x < minX) minX = wp.x;
+        if(wp.x > maxX) maxX = wp.x;
+        if(wp.y > maxY) maxY = wp.y;
+      }
+      if(minX < 10){ p.position.x += (10-minX); p.velocity.x *= -0.5; }
+      if(maxX > W-10){ p.position.x -= (maxX-(W-10)); p.velocity.x *= -0.5; }
+      if(maxY > floorY){
+        p.position.y -= (maxY - floorY);
+        if(!p.grounded){
+          if(Math.abs(p.velocity.y) > 60){
+            p.velocity.y *= -0.38;
+            this.particles.burst(p.position.x, floorY, 'rgba(200,190,255,0.5)', 8, {speed:120, life:0.4, gravity:300, up:60});
+          } else {
+            p.velocity.y = 0;
+            p.grounded = true;
+          }
+          p.velocity.x *= 0.7;
+          p.angularVelocity *= 0.6;
+        }
+      }
+    }
+    // entrance settle detection
+    if(this.state === State.ENTER){
+      this.enterTimer += dt;
+      const settled = Math.hypot(this.rope.vel.x, this.rope.vel.y) < 25;
+      if((settled && this.enterTimer>1.2) || this.enterTimer>3.2){
+        this.state = State.CUTTING;
+      }
+    }
+  }
+  validate(){
+    if(this.state !== State.CUTTING) return;
+    if(this.pieces.length < 2){
+      this.showResult(false, 'Make at least one cut before validating.', []);
+      return;
+    }
+    const tol = this.currentDifficultyTier().tol;
+    const percs = this.pieces.map(p=> p.area/this.originalArea*100);
+    let pass = false, detail = '', errMag = 0;
+    if(this.question.type === 'partition'){
+      const targets = this.question.targets;
+      const m = matchPartition(percs, targets, tol);
+      if(m){ pass = true; errMag = m.err; }
+      else {
+        // still show closest attempt info
+        errMag = 999;
+      }
+      detail = `Target split: ${targets.map(t=>t.toFixed(1)+'%').join(' / ')}`;
+    } else if(this.question.type === 'stat'){
+      pass = this.question.check(percs, tol);
+      detail = 'Custom geometry challenge';
+      errMag = pass ? 0 : 50;
+    }
+    const grade = !pass ? 'Try Again' : (errMag<=tol*0.3 ? 'Perfect!' : errMag<=tol*0.7 ? 'Excellent!' : 'Good');
+    this.showResult(pass, detail, percs, grade);
+    if(pass){
+      this.score += Math.max(10, Math.round(100 - errMag*4));
+      this.streak += 1;
+      if(grade==='Perfect!') this.particles.confetti();
+    } else {
+      this.streak = 0;
+    }
+    document.getElementById('scoreNum').textContent = this.score;
+    document.getElementById('streakNum').textContent = this.streak;
+    this.state = State.RESULT;
+  }
+  showResult(pass, detail, percs, grade){
+    const overlay = document.getElementById('resultOverlay');
+    overlay.style.display = 'flex';
+    document.getElementById('resultTitle').textContent = pass ? (grade||'PASS') : 'FAIL';
+    document.getElementById('resultTitle').style.color = pass ? '#8bffb0' : '#ff8b8b';
+    document.getElementById('resultDetail').textContent = detail;
+    const piecesDiv = document.getElementById('resultPieces');
+    piecesDiv.innerHTML = '';
+    percs.sort((a,b)=>b-a).forEach((p,i)=>{
+      const chip = document.createElement('div');
+      chip.className = 'piecechip';
+      chip.textContent = `Piece ${String.fromCharCode(65+i)}: ${p.toFixed(1)}%`;
+      piecesDiv.appendChild(chip);
+    });
+  }
+  loop(now){
+    let dt = (now - this.lastTime)/1000;
+    this.lastTime = now;
+    dt = Math.min(dt, 0.033);
+    if(this.state===State.ENTER || this.state===State.CUTTING) this.physicsStep(dt);
+    this.particles.update(dt);
+    if(this.shake>0) this.shake = Math.max(0, this.shake-dt*40);
+    this.render();
+    requestAnimationFrame(this.loop.bind(this));
+  }
+  render(){
+    ctx.clearRect(0,0,W,H);
+    // background gradient + floor
+    const g = ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0,'#150c28'); g.addColorStop(1,'#05030a');
+    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+    // subtle stars
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    for(let i=0;i<40;i++){
+      const x = (i*137)%W, y=(i*97)%(H-200)+40;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(x, y, 1.5, 1.5);
+    }
+    ctx.restore();
+
+    ctx.save();
+    if(this.shake>0){
+      ctx.translate((Math.random()-0.5)*this.shake, (Math.random()-0.5)*this.shake);
+    }
+    // floor
+    const floorY = H-90;
+    const fg = ctx.createLinearGradient(0,floorY,0,H);
+    fg.addColorStop(0,'#2a1f45'); fg.addColorStop(1,'#0c0818');
+    ctx.fillStyle = fg;
+    ctx.fillRect(0, floorY, W, H-floorY);
+    ctx.strokeStyle = 'rgba(180,150,255,0.35)';
+    ctx.beginPath(); ctx.moveTo(0,floorY); ctx.lineTo(W,floorY); ctx.stroke();
+
+    if(this.rope) this.rope.draw(ctx);
+
+    for(const p of this.pieces){
+      const pts = p.worldPoints();
+      ctx.save();
+      ctx.beginPath();
+      pts.forEach((pt,i)=> i===0 ? ctx.moveTo(pt.x,pt.y) : ctx.lineTo(pt.x,pt.y));
+      ctx.closePath();
+      ctx.fillStyle = p.color;
+      ctx.shadowColor = p.color; ctx.shadowBlur = 18;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    this.particles.draw(ctx);
+
+    // slice trail line while dragging
+    if(this.dragging && this.dragPts.length>1){
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,244,200,0.9)';
+      ctx.lineWidth = 4;
+      ctx.shadowColor = '#fff4c8'; ctx.shadowBlur = 12;
+      ctx.beginPath();
+      this.dragPts.forEach((p,i)=> i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+      ctx.stroke();
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+}
+
+new Game();
+})();
+</script>
+</body>
+</html>

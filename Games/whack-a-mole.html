@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Whack-a-Mole · Modern Builder</title>
+  <style>
+    :root {
+      --bg-body: #f3f4f6;
+      --bg-board: #ffffff;
+      --border-light: #e5e7eb;
+      
+      --text-main: #1f2937;
+      --text-muted: #6b7280;
+      
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --accent: #f59e0b;
+      --accent-hover: #d97706;
+      --danger: #ef4444;
+      
+      --hole-bg: #d1d5db;
+      --mole-bg: #d97706;
+      --brick-bg: #dc2626;
+      --brick-border: #991b1b;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+
+    body {
+      background: var(--bg-body);
+      height: 100dvh;
+      width: 100vw;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      overflow: hidden;
+      color: var(--text-main);
+    }
+
+    .game-container {
+      background: var(--bg-board);
+      width: 95vw;
+      height: 96dvh;
+      max-width: 600px;
+      max-height: 900px;
+      border-radius: 3vh;
+      padding: 2vh 3vw;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      border: 1px solid var(--border-light);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1.5vh;
+      position: relative;
+    }
+
+    /* --- HEADER --- */
+    .header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f9fafb;
+      padding: 1.2vh 2vh;
+      border-radius: 2vh;
+      border: 1px solid var(--border-light);
+    }
+
+    h1 {
+      font-size: min(2.5vh, 1.4rem);
+      font-weight: 800;
+      color: var(--text-main);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .score-box {
+      display: flex;
+      align-items: center;
+      gap: 1vh;
+      background: #eff6ff;
+      padding: 0.5vh 2vh;
+      border-radius: 1.5vh;
+      color: var(--primary);
+      font-size: min(3vh, 1.8rem);
+      font-weight: 800;
+      border: 1px solid #bfdbfe;
+    }
+
+    .score-label {
+      font-size: min(1.5vh, 0.8rem);
+      color: #3b82f6;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* --- CANVAS BUILDER --- */
+    #houseCanvas {
+      width: 100%;
+      height: 22vh;
+      background: #f9fafb;
+      border-radius: 1.5vh;
+      border: 2px solid var(--border-light);
+      display: block;
+      object-fit: contain;
+    }
+
+    /* --- GAME GRID --- */
+    .grid {
+      flex: 1;
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 2vmin;
+      align-items: center;
+      justify-items: center;
+      padding: 0.5vh 0;
+    }
+
+    .hole-wrapper {
+      position: relative;
+      width: min(20vmin, 120px);
+      height: min(20vmin, 120px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .hole {
+      width: 100%;
+      height: 100%;
+      background: var(--hole-bg);
+      border-radius: 50%;
+      box-shadow: inset 0 8px 15px rgba(0,0,0,0.15), inset 0 -2px 5px rgba(255,255,255,0.7);
+      position: relative;
+      overflow: hidden;
+      border: 4px solid #f3f4f6;
+      transition: all 0.2s;
+    }
+    
+    .hole.active {
+      border-color: #dbeafe;
+      background: #e5e7eb;
+    }
+
+    .mole {
+      background: var(--mole-bg);
+      width: 65%;
+      height: 85%;
+      border-radius: 40% 40% 10% 10%;
+      position: absolute;
+      bottom: -10%;
+      left: 17.5%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transform: translateY(100%);
+      transition: transform 0.15s cubic-bezier(0.34, 1.3, 0.7, 1);
+      cursor: crosshair;
+      border: 2px solid #b45309;
+      box-shadow: inset 0 -10px 10px rgba(0,0,0,0.1);
+    }
+
+    .mole::before {
+      content: "•_•";
+      font-size: min(4vmin, 1.6rem);
+      font-weight: bold;
+      letter-spacing: 2px;
+      color: #fff;
+      margin-top: 25%;
+    }
+
+    .hole.active .mole { transform: translateY(15%); }
+    
+    .hole.hit .mole {
+      background: var(--danger);
+      border-color: #b91c1c;
+      transform: translateY(25%) scale(0.9);
+      transition: transform 0.05s ease, background 0.1s ease;
+    }
+    
+    .hole.hit .mole::before { 
+      content: ">_<"; 
+      color: #fff;
+    }
+
+    /* --- CONTROLS --- */
+    .controls-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5vh;
+    }
+
+    .controls {
+      display: flex;
+      gap: 1.5vh;
+      justify-content: center;
+      align-items: stretch;
+      height: 6.5vh;
+      min-height: 50px;
+    }
+
+    button {
+      font-family: inherit;
+      background: var(--primary);
+      color: white;
+      font-weight: 700;
+      font-size: min(2.2vh, 1.1rem);
+      padding: 0 2.5vh;
+      border-radius: 1.5vh;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3), 0 2px 4px -2px rgba(59, 130, 246, 0.3);
+      transition: all 0.1s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1vh;
+    }
+
+    button:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 2px rgba(59, 130, 246, 0.3);
+      background: var(--primary-hover);
+    }
+
+    #difficultyBtn {
+      background: #f3f4f6;
+      color: var(--text-main);
+      border: 1px solid var(--border-light);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    #difficultyBtn:active {
+      background: #e5e7eb;
+      box-shadow: none;
+    }
+
+    #difficultyBtn.hard {
+      background: var(--accent);
+      color: white;
+      border: none;
+      box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.3);
+    }
+    
+    #difficultyBtn.hard:active {
+      background: var(--accent-hover);
+    }
+
+    #messageBox {
+      height: 4vh;
+      min-height: 30px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: 600;
+      color: var(--text-main);
+      background: #f9fafb;
+      border-radius: 1vh;
+      font-size: min(2vh, 1rem);
+      transition: all 0.2s;
+    }
+
+    /* --- FLYING BRICK ANIMATION --- */
+    .flying-brick {
+      position: fixed;
+      background: var(--brick-bg);
+      border: 2px solid var(--brick-border);
+      border-radius: 2px;
+      pointer-events: none;
+      z-index: 999;
+      /* CSS transition drives the flight to the canvas */
+      transition: left 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), 
+                  top 0.5s cubic-bezier(0.5, 0.1, 0.8, 1),
+                  transform 0.5s ease-out,
+                  opacity 0.5s ease-in;
+    }
+
+    /* --- VICTORY OVERLAY --- */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100dvh;
+      background: rgba(31, 41, 55, 0.7);
+      z-index: 1000;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(4px);
+    }
+    
+    .modal-content {
+      background: #ffffff;
+      padding: 5vh 8vw;
+      border-radius: 2.5vh;
+      text-align: center;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      display: flex;
+      flex-direction: column;
+      gap: 2vh;
+      align-items: center;
+      width: 90vw;
+      max-width: 400px;
+    }
+    
+    .modal-content h2 { 
+      color: var(--text-main); 
+      font-size: min(4vh, 2rem); 
+      font-weight: 800;
+    }
+    
+    .modal-content p { 
+      color: var(--text-muted); 
+      font-size: min(2.5vh, 1.1rem); 
+    }
+    
+    .modal-controls { display: flex; gap: 2vh; margin-top: 3vh; width: 100%; }
+    .modal-controls button { flex: 1; font-size: min(2vh, 1rem); padding: 1.5vh; }
+    
+    .exit-btn {
+      background: #f3f4f6;
+      color: var(--text-main);
+      box-shadow: none;
+    }
+    
+    .exit-btn:active {
+      background: #e5e7eb;
+    }
+
+  </style>
+</head>
+<body>
+
+<div class="game-container">
+  <div class="header">
+    <h1><span>🔨</span> Builder</h1>
+    <div class="score-box">
+      <span class="score-label">BRICKS</span>
+      <span id="scoreDisplay">0</span>
+    </div>
+  </div>
+
+  <!-- Storyline Home Canvas -->
+  <canvas id="houseCanvas" width="500" height="240"></canvas>
+
+  <div class="grid" id="moleGrid"></div>
+
+  <div class="controls-container">
+    <div id="messageBox">Ready to build?</div>
+    <div class="controls">
+      <button id="startBtn" style="flex: 2;">
+        <span id="startIcon">▶</span> <span id="startText">START</span>
+      </button>
+      <button id="difficultyBtn" style="flex: 1;">
+        Normal
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Victory Modal -->
+<div class="modal-overlay" id="victoryModal">
+  <div class="modal-content">
+    <h2>House Complete!</h2>
+    <p>You successfully built the structure.</p>
+    <p style="color: var(--primary); font-size: 1.5rem; font-weight: 800;">
+      Final Score: <span id="finalScoreDisplay">0</span>
+    </p>
+    <div class="modal-controls">
+      <button class="exit-btn" id="exitBtn">Exit</button>
+      <button id="restartBtn">Play Again</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    // --- GAME STATE ---
+    const BOARD_SIZE = 9;
+    const holes = [];
+    let activeMoleIndex = -1;
+    let score = 0;
+    let gameActive = false;
+    let isHardMode = false;
+    let moleIntervalMs = 850;
+    
+    // Timers
+    let moveTimer = null;
+    let hideTimer = null;
+    
+    // DOM Elements
+    const gridEl = document.getElementById('moleGrid');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const startBtn = document.getElementById('startBtn');
+    const startText = document.getElementById('startText');
+    const startIcon = document.getElementById('startIcon');
+    const difficultyBtn = document.getElementById('difficultyBtn');
+    const messageBox = document.getElementById('messageBox');
+    
+    // Modal Elements
+    const victoryModal = document.getElementById('victoryModal');
+    const finalScoreDisplay = document.getElementById('finalScoreDisplay');
+    const exitBtn = document.getElementById('exitBtn');
+    const restartBtn = document.getElementById('restartBtn');
+
+    // --- SOLID CANVAS BUILDER ENGINE ---
+    const canvas = document.getElementById('houseCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Resize internal resolution for sharp rendering
+    canvas.width = canvas.offsetWidth * 2;
+    canvas.height = canvas.offsetHeight * 2;
+    
+    const BW = 28; // Brick Width
+    const BH = 16; // Brick Height
+    const blueprint = []; 
+    const builtBricks = []; 
+    const pendingBricks = []; // Bricks currently flying in the air
+    const fallingBricks = []; // Bricks dropping due to a miss
+    let animationId = null;
+
+    // Visual structure of a proper home layout
+    const houseLayout = [
+      "       ** ", 
+      "      **** ", 
+      "     ****** ",
+      "    ******** ",
+      "   ********** ", 
+      "    ** ** ", 
+      "    ** ** ", 
+      "    ** ** ", 
+      "    ** ** ** ", // + Window gap
+      "    ** ** ", 
+      "    ** ** ** ", // + Door gap
+      "    ** ** ** "  
+    ];
+
+    function initBlueprint() {
+      blueprint.length = 0;
+      const cols = houseLayout[0].length;
+      const rows = houseLayout.length;
+      const startX = (canvas.width - (cols * BW)) / 2;
+      const startY = canvas.height - 40 - (rows * BH);
+
+      // Bottom to top logic
+      for (let r = rows - 1; r >= 0; r--) {
+        for (let c = 0; c < cols; c++) {
+          if (houseLayout[r][c] === '*') {
+            blueprint.push({
+              x: startX + c * BW,
+              y: startY + r * BH
+            });
+          }
+        }
+      }
+    }
+
+    // Finds the next empty blueprint spot not currently targeted by a flying brick
+    function getNextBlueprintIndex() {
+      for (let i = 0; i < blueprint.length; i++) {
+        if (!builtBricks.includes(i) && !pendingBricks.includes(i)) {
+          return i;
+        }
+      }
+      return -1;
+    }
+
+    function removeBrick() {
+      if (builtBricks.length === 0) return;
+      
+      const randomIndex = Math.floor(Math.random() * builtBricks.length);
+      const blueprintIndex = builtBricks[randomIndex];
+      builtBricks.splice(randomIndex, 1);
+      
+      const bp = blueprint[blueprintIndex];
+      fallingBricks.push({
+        x: bp.x,
+        y: bp.y,
+        vx: (Math.random() - 0.5) * 8, 
+        vy: -Math.random() * 6 - 3,    
+        rot: 0,
+        vrot: (Math.random() - 0.5) * 0.2 
+      });
+    }
+
+    function drawSolidBrick(x, y, rotation, state) {
+      ctx.save();
+      ctx.translate(x + BW/2, y + BH/2);
+      ctx.rotate(rotation);
+      
+      if (state === 'built' || state === 'falling') {
+        // Solid physical brick
+        ctx.fillStyle = '#dc2626'; // Red brick
+        ctx.strokeStyle = '#991b1b'; // Dark red border
+        ctx.lineWidth = 2;
+        ctx.fillRect(-BW/2 + 1, -BH/2 + 1, BW - 2, BH - 2);
+        ctx.strokeRect(-BW/2 + 1, -BH/2 + 1, BW - 2, BH - 2);
+      } else {
+        // Blueprint state
+        ctx.strokeStyle = '#d1d5db';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 2]);
+        ctx.strokeRect(-BW/2 + 1, -BH/2 + 1, BW - 2, BH - 2);
+      }
+      
+      ctx.restore();
+    }
+
+    function renderCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Ground line
+      ctx.strokeStyle = '#9ca3af';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(40, canvas.height - 30);
+      ctx.lineTo(canvas.width - 40, canvas.height - 30);
+      ctx.stroke();
+
+      // 1. Draw Blueprint (dashed lines)
+      blueprint.forEach(bp => {
+        drawSolidBrick(bp.x, bp.y, 0, 'blueprint');
+      });
+
+      // 2. Draw built bricks
+      builtBricks.forEach(bpIdx => {
+        const bp = blueprint[bpIdx];
+        drawSolidBrick(bp.x, bp.y, 0, 'built');
+      });
+
+      // 3. Draw falling bricks (Physics)
+      for (let i = fallingBricks.length - 1; i >= 0; i--) {
+        let fb = fallingBricks[i];
+        
+        fb.vy += 0.5; // Gravity
+        fb.x += fb.vx;
+        fb.y += fb.vy;
+        fb.rot += fb.vrot;
+        
+        drawSolidBrick(fb.x, fb.y, fb.rot, 'falling');
+        
+        if (fb.y > canvas.height + 100) {
+          fallingBricks.splice(i, 1);
+        }
+      }
+
+      animationId = requestAnimationFrame(renderCanvas);
+    }
+    
+    // --- CORE GAMEPLAY ---
+    function updateScoreUI() {
+      scoreDisplay.textContent = score;
+    }
+    
+    function setMessage(text, isError = false) {
+      messageBox.textContent = text;
+      messageBox.style.color = isError ? 'var(--danger)' : 'var(--text-main)';
+      messageBox.style.background = isError ? '#fef2f2' : '#f9fafb';
+    }
+    
+    function clearAllMoles() {
+      holes.forEach(hole => hole.classList.remove('active', 'hit'));
+      activeMoleIndex = -1;
+    }
+    
+    function hideMole() {
+      if (activeMoleIndex !== -1 && holes[activeMoleIndex]) {
+        holes[activeMoleIndex].classList.remove('active');
+      }
+      activeMoleIndex = -1;
+      if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+    }
+    
+    function showRandomMole() {
+      if (!gameActive) return;
+      hideMole();
+      
+      let randomIndex;
+      do {
+        randomIndex = Math.floor(Math.random() * BOARD_SIZE);
+      } while (randomIndex === activeMoleIndex && BOARD_SIZE > 1);
+      
+      holes[randomIndex].classList.add('active');
+      activeMoleIndex = randomIndex;
+      
+      const moleVisibleDuration = Math.max(300, moleIntervalMs - 150);
+      
+      hideTimer = setTimeout(() => {
+        if (gameActive && activeMoleIndex !== -1) {
+          hideMole();
+          removeBrick(); // Story penalty
+          setMessage('Missed! A brick fell.', true);
+        }
+        hideTimer = null;
+      }, moleVisibleDuration);
+    }
+    
+    function scheduleNextMole() {
+      if (!gameActive) return;
+      if (moveTimer) clearTimeout(moveTimer);
+      moveTimer = setTimeout(() => {
+        if (gameActive) {
+          showRandomMole();
+          scheduleNextMole();
+        }
+      }, moleIntervalMs);
+    }
+    
+    function checkWinCondition() {
+      if (builtBricks.length >= blueprint.length) {
+        stopGame();
+        finalScoreDisplay.textContent = score;
+        victoryModal.style.display = 'flex';
+      }
+    }
+    
+    function stopGame() {
+      gameActive = false;
+      if (moveTimer) clearTimeout(moveTimer);
+      if (hideTimer) clearTimeout(hideTimer);
+      clearAllMoles();
+      startText.textContent = 'START';
+      startIcon.textContent = '▶';
+    }
+    
+    function startGame() {
+      stopGame();
+      score = 0;
+      builtBricks.length = 0;
+      pendingBricks.length = 0;
+      fallingBricks.length = 0;
+      updateScoreUI();
+      gameActive = true;
+      startText.textContent = 'STOP';
+      startIcon.textContent = '⏹';
+      setMessage('Whack to place bricks!');
+      
+      moveTimer = setTimeout(() => {
+        if (gameActive) {
+          showRandomMole();
+          scheduleNextMole();
+        }
+      }, 400);
+    }
+
+    // Animation logic for creating the flying DOM brick
+    function spawnFlyingBrick(startX, startY) {
+      const nextIdx = getNextBlueprintIndex();
+      if (nextIdx === -1) return; // No spots left in blueprint
+      
+      // Reserve this slot so fast clicks don't double up
+      pendingBricks.push(nextIdx);
+      
+      const bp = blueprint[nextIdx];
+      const rect = canvas.getBoundingClientRect();
+      
+      // Calculate scale ratio between internal canvas size and DOM size
+      const scaleX = rect.width / canvas.width;
+      const scaleY = rect.height / canvas.height;
+      
+      const domBW = BW * scaleX;
+      const domBH = BH * scaleY;
+
+      // Calculate final target coordinates in screen space
+      const targetX = rect.left + (bp.x * scaleX);
+      const targetY = rect.top + (bp.y * scaleY);
+      
+      // Create DOM element to fly across the screen
+      const brick = document.createElement('div');
+      brick.className = 'flying-brick';
+      brick.style.width = `${domBW}px`;
+      brick.style.height = `${domBH}px`;
+      
+      // Center on the cursor initially
+      brick.style.left = `${startX - domBW/2}px`;
+      brick.style.top = `${startY - domBH/2}px`;
+      brick.style.transform = `scale(0.2) rotate(-90deg)`;
+      brick.style.opacity = '0';
+      
+      document.body.appendChild(brick);
+      
+      // Trigger animation on next frame
+      requestAnimationFrame(() => {
+        // Force reflow
+        brick.offsetHeight;
+        
+        brick.style.left = `${targetX}px`;
+        brick.style.top = `${targetY}px`;
+        brick.style.transform = `scale(1) rotate(0deg)`;
+        brick.style.opacity = '1';
+      });
+      
+      // After animation completes (500ms matching CSS transition)
+      setTimeout(() => {
+        brick.remove();
+        
+        // Remove from pending and add to built array to render statically on canvas
+        const pIdx = pendingBricks.indexOf(nextIdx);
+        if (pIdx > -1) pendingBricks.splice(pIdx, 1);
+        
+        builtBricks.push(nextIdx);
+        checkWinCondition();
+        
+      }, 500);
+    }
+    
+    function handleWhack(index, event) {
+      event.preventDefault(); 
+      if (!gameActive) {
+        setMessage('Press START to begin.');
+        return;
+      }
+      
+      if (activeMoleIndex === index && holes[index].classList.contains('active')) {
+        score++;
+        updateScoreUI();
+        
+        const holeEl = holes[index];
+        holeEl.classList.remove('active');
+        holeEl.classList.add('hit'); 
+        
+        if (navigator.vibrate) navigator.vibrate(30);
+        
+        // Get precise hit coordinates for the flying brick origin
+        let clientX = event.clientX;
+        let clientY = event.clientY;
+        if (event.touches && event.touches.length > 0) {
+            clientX = event.touches[0].clientX;
+            clientY = event.touches[0].clientY;
+        }
+        
+        // Fire the animated brick!
+        spawnFlyingBrick(clientX, clientY);
+
+        setTimeout(() => holeEl.classList.remove('hit'), 150);
+        
+        hideMole();
+        const messages = ['Brick placed!', 'Nice hit!', 'Building...', 'Keep going!'];
+        setMessage(messages[Math.floor(Math.random() * messages.length)]);
+        
+        if (moveTimer) clearTimeout(moveTimer);
+        if (gameActive) {
+          moveTimer = setTimeout(() => {
+            if (gameActive) {
+              showRandomMole();
+              scheduleNextMole();
+            }
+          }, Math.max(200, moleIntervalMs - 250));
+        }
+      }
+    }
+    
+    function buildGrid() {
+      gridEl.innerHTML = '';
+      holes.length = 0;
+      for (let i = 0; i < BOARD_SIZE; i++) {
+        const wrapperDiv = document.createElement('div');
+        wrapperDiv.className = 'hole-wrapper';
+
+        const holeDiv = document.createElement('div');
+        holeDiv.className = 'hole';
+        
+        const moleDiv = document.createElement('div');
+        moleDiv.className = 'mole';
+        
+        holeDiv.appendChild(moleDiv);
+        wrapperDiv.appendChild(holeDiv);
+        
+        wrapperDiv.addEventListener('pointerdown', (e) => handleWhack(i, e));
+        
+        gridEl.appendChild(wrapperDiv);
+        holes.push(holeDiv);
+      }
+    }
+    
+    function toggleDifficulty() {
+      isHardMode = !isHardMode;
+      if (isHardMode) {
+        moleIntervalMs = 600;
+        difficultyBtn.innerHTML = 'Hard';
+        difficultyBtn.classList.add('hard');
+      } else {
+        moleIntervalMs = 900;
+        difficultyBtn.innerHTML = 'Normal';
+        difficultyBtn.classList.remove('hard');
+      }
+      
+      if (gameActive) {
+        if (moveTimer) clearTimeout(moveTimer);
+        hideMole();
+        setMessage(`Mode changed: ${isHardMode ? 'Hard' : 'Normal'}`);
+        if (gameActive) {
+          moveTimer = setTimeout(() => {
+            if (gameActive) showRandomMole(); scheduleNextMole();
+          }, 400);
+        }
+      }
+    }
+    
+    // UI Event Listeners
+    startBtn.addEventListener('click', () => {
+      if (gameActive) stopGame(); else startGame();
+    });
+    
+    difficultyBtn.addEventListener('click', toggleDifficulty);
+    
+    restartBtn.addEventListener('click', () => {
+      victoryModal.style.display = 'none';
+      startGame();
+    });
+
+    exitBtn.addEventListener('click', () => {
+      victoryModal.style.display = 'none';
+      stopGame();
+      builtBricks.length = 0;
+      pendingBricks.length = 0;
+      score = 0;
+      updateScoreUI();
+      setMessage('Ready to build?');
+    });
+    
+    function initialize() {
+      buildGrid();
+      initBlueprint();
+      stopGame();
+      updateScoreUI();
+      if (!animationId) {
+        renderCanvas();
+      }
+    }
+    
+    window.addEventListener('resize', () => {
+      canvas.width = canvas.offsetWidth * 2;
+      canvas.height = canvas.offsetHeight * 2;
+      initBlueprint();
+    });
+    
+    initialize();
+  })();
+</script>
+</body>
+</html>

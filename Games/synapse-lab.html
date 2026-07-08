@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Synapse Lab — Cognitive Science Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-void:#0B0F19;
+    --bg-panel:#10162A;
+    --bg-panel-2:#161E36;
+    --line:#26304A;
+    --cyan:#5EEAD4;
+    --violet:#A78BFA;
+    --amber:#FBBF24;
+    --coral:#FB7185;
+    --ink:#E7ECF5;
+    --ink-dim:#8B97AE;
+    --font-display:'Space Grotesk',sans-serif;
+    --font-body:'Inter',sans-serif;
+    --font-mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:var(--bg-void);color:var(--ink);font-family:var(--font-body);min-height:100vh;}
+  #bgCanvas{position:fixed;inset:0;z-index:-1;}
+  #app{max-width:880px;margin:0 auto;padding:28px 16px 60px;position:relative;z-index:1;}
+
+  .screen{display:none;}
+  .screen.active{display:block;animation:fadeIn .35s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+  .eyebrow{font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.18em;font-size:.72rem;color:var(--cyan);}
+  h1.title{font-family:var(--font-display);font-size:clamp(2.1rem,6vw,3.3rem);margin:.18em 0;letter-spacing:-.02em;}
+  .tagline{color:var(--ink-dim);max-width:580px;line-height:1.55;font-size:.98rem;}
+
+  .legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:26px 0;}
+  .legend-item{border:1px solid var(--line);background:var(--bg-panel);border-radius:10px;padding:14px;}
+  .legend-item .icon{font-size:1.5rem;}
+  .legend-item h3{margin:.4em 0 .2em;font-family:var(--font-display);font-size:.98rem;letter-spacing:.02em;}
+  .legend-item p{margin:0;color:var(--ink-dim);font-size:.83rem;line-height:1.45;}
+
+  .section-label{font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.12em;font-size:.72rem;color:var(--violet);margin:30px 0 10px;}
+
+  .tier-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+  .tier-card{text-align:left;border:1px solid var(--line);background:var(--bg-panel);border-radius:10px;padding:16px;cursor:pointer;color:var(--ink);font-family:var(--font-body);transition:.18s;}
+  .tier-card:hover,.tier-card:focus-visible{border-color:var(--cyan);}
+  .tier-card.selected{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber) inset,0 0 16px rgba(251,191,36,.25);}
+  .tier-card .icon{font-size:1.5rem;}
+  .tier-card h3{margin:.35em 0;font-family:var(--font-display);font-size:1.02rem;}
+  .tier-card p{margin:0;color:var(--ink-dim);font-size:.83rem;}
+
+  .actions{margin-top:24px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .hint{color:var(--ink-dim);font-size:.8rem;}
+
+  .btn{font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em;padding:13px 24px;border-radius:8px;border:1px solid var(--line);background:var(--bg-panel-2);color:var(--ink);cursor:pointer;transition:.18s;font-size:.82rem;}
+  .btn:disabled{opacity:.35;cursor:not-allowed;}
+  .btn-primary{border-color:var(--cyan);color:var(--cyan);}
+  .btn-primary:hover:not(:disabled),.btn-primary:focus-visible:not(:disabled){background:rgba(94,234,212,.12);box-shadow:0 0 16px rgba(94,234,212,.3);}
+  button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;}
+
+  .console{border:1px solid var(--line);background:var(--bg-panel);border-radius:14px;overflow:hidden;}
+  .telemetry{display:flex;flex-wrap:wrap;border-bottom:1px solid var(--line);}
+  .tel-item{flex:1;min-width:104px;padding:10px 14px;border-left:1px solid var(--line);}
+  .tel-item:first-child{border-left:none;}
+  .tel-label{display:block;font-family:var(--font-mono);font-size:.62rem;letter-spacing:.1em;color:var(--ink-dim);}
+  .tel-value{font-family:var(--font-mono);font-size:1.05rem;color:var(--ink);}
+  .energy .cell{display:inline-block;width:13px;height:8px;margin-right:3px;border-radius:2px;background:var(--line);}
+  .energy .cell.filled{background:var(--amber);box-shadow:0 0 6px rgba(251,191,36,.6);}
+
+  .monitor{position:relative;margin:16px;padding:24px 18px;border:1px solid var(--line);border-radius:10px;background:var(--bg-panel-2);min-height:280px;display:flex;flex-direction:column;justify-content:center;}
+  .bracket{position:absolute;width:16px;height:16px;border-color:var(--cyan);opacity:.55;}
+  .bracket.tl{top:6px;left:6px;border-top:2px solid;border-left:2px solid;}
+  .bracket.tr{top:6px;right:6px;border-top:2px solid;border-right:2px solid;}
+  .bracket.bl{bottom:6px;left:6px;border-bottom:2px solid;border-left:2px solid;}
+  .bracket.br{bottom:6px;right:6px;border-bottom:2px solid;border-right:2px solid;}
+
+  .instruction{text-align:center;color:var(--ink-dim);font-family:var(--font-mono);font-size:.76rem;text-transform:uppercase;letter-spacing:.06em;margin:0 0 12px;}
+
+  .banner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:rgba(11,15,25,.94);opacity:0;pointer-events:none;transition:opacity .25s;text-align:center;border-radius:10px;padding:0 16px;}
+  .banner.show{opacity:1;}
+  .banner-level{font-family:var(--font-mono);color:var(--violet);letter-spacing:.12em;font-size:.78rem;}
+  .banner-title{font-family:var(--font-display);font-size:1.55rem;margin:.1em 0;color:var(--cyan);}
+  .banner-sub{color:var(--ink-dim);font-size:.84rem;max-width:300px;}
+
+  .ticker{padding:10px 18px;font-family:var(--font-mono);font-size:.72rem;color:var(--ink-dim);text-align:center;border-top:1px solid var(--line);}
+
+  /* echo trial */
+  .echo-display{display:flex;align-items:center;justify-content:center;min-height:110px;}
+  .echo-flash{font-size:2.8rem;display:flex;flex-direction:column;align-items:center;gap:6px;animation:popIn .22s ease;}
+  .echo-flash span{font-size:.8rem;font-family:var(--font-mono);color:var(--ink-dim);text-transform:uppercase;letter-spacing:.05em;}
+  @keyframes popIn{from{transform:scale(.7);opacity:0;}to{transform:scale(1);opacity:1;}}
+  .echo-progress{display:flex;gap:6px;justify-content:center;margin:6px 0 14px;}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--line);}
+  .dot.filled{background:var(--cyan);}
+  .echo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:10px;}
+  .echo-btn{background:var(--bg-panel);border:1px solid var(--line);border-radius:8px;padding:12px 6px;color:var(--ink);font-size:1.35rem;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;transition:.15s;font-family:var(--font-body);}
+  .echo-btn span{font-size:.62rem;font-family:var(--font-mono);color:var(--ink-dim);text-transform:uppercase;}
+  .echo-btn.correct{border-color:var(--cyan);box-shadow:0 0 10px rgba(94,234,212,.5);}
+  .echo-btn.wrong{border-color:var(--coral);box-shadow:0 0 10px rgba(251,113,133,.5);}
+  .echo-btn:disabled{cursor:default;opacity:.85;}
+
+  /* sort trial */
+  .timerbar{height:6px;background:var(--bg-panel);border-radius:4px;overflow:hidden;margin:4px 0 16px;}
+  .timerfill{height:100%;width:100%;background:linear-gradient(90deg,var(--cyan),var(--violet));transition:width .1s linear;}
+  .sort-progress{text-align:center;color:var(--ink-dim);font-family:var(--font-mono);font-size:.74rem;margin-bottom:6px;}
+  .sort-item{font-family:var(--font-display);font-size:1.35rem;text-align:center;margin:8px 0 18px;padding:16px;border:1px solid var(--line);border-radius:10px;background:var(--bg-panel);transition:.2s;}
+  .sort-item.flash-good{border-color:var(--cyan);background:rgba(94,234,212,.12);}
+  .sort-item.flash-bad{border-color:var(--coral);background:rgba(251,113,133,.12);}
+  .sort-cats{display:flex;gap:12px;justify-content:center;}
+  .cat-btn{flex:1;max-width:220px;padding:14px;border:1px solid var(--line);background:var(--bg-panel);color:var(--ink);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.04em;border-radius:8px;cursor:pointer;font-size:.85rem;}
+  .cat-btn:hover,.cat-btn:focus-visible{border-color:var(--violet);box-shadow:0 0 10px rgba(167,139,250,.4);}
+
+  /* bond trial */
+  .bond-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(108px,1fr));gap:8px;margin-top:8px;}
+  .bond-card{position:relative;height:64px;background:transparent;border:1px solid var(--line);border-radius:8px;cursor:pointer;perspective:600px;padding:0;}
+  .bond-card .face-down,.bond-card .face-up{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:6px;font-size:.74rem;text-align:center;border-radius:8px;backface-visibility:hidden;transition:transform .4s;font-family:var(--font-body);line-height:1.2;}
+  .bond-card .face-down{background:var(--bg-panel);color:var(--ink-dim);font-family:var(--font-mono);font-size:1.2rem;}
+  .bond-card .face-up{background:#1B2540;color:var(--cyan);transform:rotateY(180deg);}
+  .bond-card.flipped .face-down{transform:rotateY(180deg);}
+  .bond-card.flipped .face-up{transform:rotateY(0deg);}
+  .bond-card.matched{border-color:var(--cyan);box-shadow:0 0 10px rgba(94,234,212,.45);}
+  .bond-card.matched .face-up{color:var(--amber);}
+
+  /* outcome */
+  .outcome{text-align:center;padding:14px 10px;}
+  .outcome-headline{font-family:var(--font-display);font-size:1.25rem;margin-bottom:10px;}
+  .outcome.good .outcome-headline{color:var(--cyan);}
+  .outcome.bad .outcome-headline{color:var(--coral);}
+  .outcome-fact{font-size:.88rem;color:var(--ink-dim);line-height:1.5;max-width:460px;margin:0 auto;}
+  .fact-label{display:block;font-family:var(--font-mono);font-size:.68rem;letter-spacing:.08em;color:var(--violet);margin-bottom:4px;}
+  .outcome-note{margin-top:10px;font-family:var(--font-mono);font-size:.76rem;color:var(--amber);}
+
+  /* end screen */
+  .end-card{border:1px solid var(--line);background:var(--bg-panel);border-radius:14px;padding:28px 22px;text-align:center;}
+  .end-card h2{font-family:var(--font-display);margin-top:0;}
+  .end-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:14px;margin:18px 0 22px;}
+  .end-stats div{border:1px solid var(--line);border-radius:8px;padding:12px;}
+  .end-stats strong{display:block;font-family:var(--font-mono);font-size:1.3rem;color:var(--cyan);margin-top:4px;}
+  #endNote{color:var(--ink-dim);max-width:480px;margin:0 auto 18px;line-height:1.5;}
+
+  footer.note{margin-top:30px;color:var(--ink-dim);font-size:.78rem;text-align:center;}
+
+  @media (max-width:640px){
+    .tel-item{min-width:92px;padding:8px 10px;}
+    .monitor{padding:18px 12px;}
+    .sort-cats{flex-direction:column;}
+    .cat-btn{max-width:none;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;}
+  }
+</style>
+</head>
+<body>
+<canvas id="bgCanvas" aria-hidden="true"></canvas>
+<div id="app">
+
+  <!-- START SCREEN -->
+  <section class="screen active" id="screen-start">
+    <div class="eyebrow">Cognitive Science Trainer</div>
+    <h1 class="title">SYNAPSE LAB</h1>
+    <p class="tagline">Three short brain trials, one science lab. Watch sequences, sort phenomena, and bond matching concepts before your energy runs out — difficulty climbs every level, forever, until you slip.</p>
+
+    <div class="legend">
+      <div class="legend-item"><div class="icon">🧠</div><h3>Echo Trial</h3><p>A sequence of science symbols flashes by. Recall the exact order from memory.</p></div>
+      <div class="legend-item"><div class="icon">🗂️</div><h3>Sort Trial</h3><p>Classify phenomena into the correct category before the timer burns out.</p></div>
+      <div class="legend-item"><div class="icon">🔗</div><h3>Bond Trial</h3><p>Flip cards to pair related concepts — a relational twist on classic matching.</p></div>
+    </div>
+
+    <div class="section-label">Choose your starting level</div>
+    <div class="tier-grid" id="tierGrid">
+      <button class="tier-card" data-tier="elementary"><div class="icon">🌱</div><h3>Elementary School</h3><p>Sun, plants, animals &amp; the senses</p></button>
+      <button class="tier-card" data-tier="middle"><div class="icon">⚙️</div><h3>Middle School</h3><p>Atoms, cells, energy &amp; forces</p></button>
+      <button class="tier-card" data-tier="high"><div class="icon">🧪</div><h3>High School</h3><p>Elements, reactions &amp; physics laws</p></button>
+      <button class="tier-card" data-tier="college"><div class="icon">🎓</div><h3>College</h3><p>Thermodynamics, genetics &amp; beyond</p></button>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="beginBtn" disabled>Begin Mission</button>
+      <span class="hint" id="beginHint">Pick a level above to unlock the start button.</span>
+    </div>
+
+    <footer class="note">4 energy cells. Each failed trial costs one. Combo multiplier climbs with perfect trials and resets on a miss.</footer>
+  </section>
+
+  <!-- GAME SCREEN -->
+  <section class="screen" id="screen-game">
+    <div class="console">
+      <div class="telemetry">
+        <div class="tel-item"><span class="tel-label">LEVEL</span><span class="tel-value" id="hudLevel">1</span></div>
+        <div class="tel-item"><span class="tel-label">TRIAL</span><span class="tel-value" id="hudTrial">—</span></div>
+        <div class="tel-item"><span class="tel-label">SCORE</span><span class="tel-value" id="hudScore">0</span></div>
+        <div class="tel-item"><span class="tel-label">COMBO</span><span class="tel-value" id="hudCombo">×1.00</span></div>
+        <div class="tel-item energy"><span class="tel-label">ENERGY</span><span class="tel-value" id="hudEnergy"></span></div>
+      </div>
+      <div class="monitor" id="monitor">
+        <span class="bracket tl"></span><span class="bracket tr"></span><span class="bracket bl"></span><span class="bracket br"></span>
+        <div class="banner" id="banner"></div>
+        <div id="stage"></div>
+      </div>
+      <div class="ticker" id="ticker">—</div>
+    </div>
+  </section>
+
+  <!-- END SCREEN -->
+  <section class="screen" id="screen-end">
+    <div class="end-card">
+      <div class="eyebrow">Mission Debrief</div>
+      <h2>Run Complete</h2>
+      <div class="end-stats">
+        <div><span class="tel-label">LEVEL REACHED</span><strong id="endLevel">0</strong></div>
+        <div><span class="tel-label">FINAL SCORE</span><strong id="endScore">0</strong></div>
+        <div><span class="tel-label">BEST COMBO</span><strong id="endCombo">×1.00</strong></div>
+      </div>
+      <p id="endNote"></p>
+      <button class="btn btn-primary" id="restartBtn">Run It Again</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- content banks ---------- */
+  const TIERS = {
+    elementary:{
+      name:"Elementary School",
+      blurb:"Sun, plants, animals & the senses",
+      echoPool:[
+        {id:'sun',sym:'☀️',name:'Sun'},{id:'drop',sym:'💧',name:'Water'},
+        {id:'tree',sym:'🌳',name:'Tree'},{id:'rock',sym:'🪨',name:'Rock'},
+        {id:'cloud',sym:'☁️',name:'Cloud'},{id:'leaf',sym:'🍃',name:'Leaf'},
+        {id:'fish',sym:'🐟',name:'Fish'},{id:'moon',sym:'🌙',name:'Moon'},
+        {id:'fire',sym:'🔥',name:'Fire'},{id:'seed',sym:'🌱',name:'Seed'}
+      ],
+      sortTitle:"Living vs. Non-Living",
+      sortCats:['Living','Non-Living'],
+      sortItems:[
+        {name:'Dog',cat:'Living'},{name:'Bicycle',cat:'Non-Living'},
+        {name:'Oak Tree',cat:'Living'},{name:'Rock',cat:'Non-Living'},
+        {name:'Butterfly',cat:'Living'},{name:'Plastic Cup',cat:'Non-Living'},
+        {name:'Sunflower',cat:'Living'},{name:'Chair',cat:'Non-Living'},
+        {name:'Ant',cat:'Living'},{name:'Cloud',cat:'Non-Living'},
+        {name:'Mushroom',cat:'Living'},{name:'Pencil',cat:'Non-Living'}
+      ],
+      bondTitle:"Match the Nature Pairs",
+      bondPairs:[
+        {a:'☀️ Sun',b:'Gives us light & heat'},
+        {a:'🐝 Bee',b:'Makes honey & pollinates flowers'},
+        {a:'❤️ Heart',b:'Pumps blood through the body'},
+        {a:'🌱 Seed',b:'Grows into a new plant'},
+        {a:'👂 Ear',b:'Helps us hear sound'},
+        {a:'🐸 Frog',b:'Hops and eats insects'}
+      ],
+      facts:[
+        "Plants take in carbon dioxide and release oxygen during photosynthesis.",
+        "A lightning bolt is roughly five times hotter than the surface of the Sun.",
+        "Octopuses have three hearts and blue blood.",
+        "Sound travels about four times faster through water than through air.",
+        "Bananas are technically berries, but strawberries are not.",
+        "Sealed honey can stay edible for centuries — ancient jars have been found still good to eat.",
+        "Your nose can tell apart tens of thousands of different smells.",
+        "A raindrop falls at roughly 20 km/h (12 mph) by the time it lands."
+      ]
+    },
+    middle:{
+      name:"Middle School",
+      blurb:"Atoms, cells, energy & forces",
+      echoPool:[
+        {id:'atom',sym:'⚛️',name:'Atom'},{id:'cell',sym:'🦠',name:'Cell'},
+        {id:'magnet',sym:'🧲',name:'Magnet'},{id:'battery',sym:'🔋',name:'Energy'},
+        {id:'therm',sym:'🌡️',name:'Heat'},{id:'beaker',sym:'🧪',name:'Chemical'},
+        {id:'dna',sym:'🧬',name:'DNA'},{id:'bolt',sym:'⚡',name:'Electricity'},
+        {id:'gear',sym:'⚙️',name:'Force'},{id:'scope',sym:'🔬',name:'Microscope'}
+      ],
+      sortTitle:"Physical vs. Chemical Change",
+      sortCats:['Physical','Chemical'],
+      sortItems:[
+        {name:'Melting Ice',cat:'Physical'},{name:'Burning Wood',cat:'Chemical'},
+        {name:'Cutting Paper',cat:'Physical'},{name:'Rusting Iron',cat:'Chemical'},
+        {name:'Boiling Water',cat:'Physical'},{name:'Baking a Cake',cat:'Chemical'},
+        {name:'Breaking Glass',cat:'Physical'},{name:'Vinegar + Baking Soda',cat:'Chemical'},
+        {name:'Freezing Juice',cat:'Physical'},{name:'Photosynthesis',cat:'Chemical'},
+        {name:'Dissolving Sugar',cat:'Physical'},{name:'Burning Paper',cat:'Chemical'}
+      ],
+      bondTitle:"Match the Science Pairs",
+      bondPairs:[
+        {a:'Mitochondria',b:'Powerhouse of the cell'},
+        {a:'Atom',b:'Smallest unit of matter'},
+        {a:'Gravity',b:'Pulls objects toward Earth'},
+        {a:'Photosynthesis',b:'Plants turn light into food'},
+        {a:'Evaporation',b:'Liquid changes into gas'},
+        {a:'Magnet',b:'Attracts iron and steel'}
+      ],
+      facts:[
+        "If a hydrogen atom were the size of a stadium, its nucleus would be a marble at the center — atoms are mostly empty space.",
+        "Your body has trillions of cells, and most are replaced many times over your life.",
+        "Static electricity and lightning are the same force, just very different scales.",
+        "Water is the only common substance found naturally as solid, liquid and gas on Earth's surface.",
+        "A rusting nail is a chemical change — new matter (iron oxide) forms and can't simply be reversed by cooling.",
+        "Stretched out, the DNA from a single one of your cells would measure about 2 meters.",
+        "Newton's cradle shows momentum transferring between objects with almost no energy lost.",
+        "Magnetic force can act through empty space — no direct contact needed."
+      ]
+    },
+    high:{
+      name:"High School",
+      blurb:"Elements, reactions & physics laws",
+      echoPool:[
+        {id:'H',sym:'H',name:'Hydrogen'},{id:'O',sym:'O',name:'Oxygen'},
+        {id:'Na',sym:'Na',name:'Sodium'},{id:'Cl',sym:'Cl',name:'Chlorine'},
+        {id:'Fe',sym:'Fe',name:'Iron'},{id:'Au',sym:'Au',name:'Gold'},
+        {id:'He',sym:'He',name:'Helium'},{id:'C',sym:'C',name:'Carbon'},
+        {id:'N',sym:'N',name:'Nitrogen'},{id:'Ca',sym:'Ca',name:'Calcium'}
+      ],
+      sortTitle:"Acid vs. Base",
+      sortCats:['Acid','Base'],
+      sortItems:[
+        {name:'Lemon Juice',cat:'Acid'},{name:'Soap',cat:'Base'},
+        {name:'Vinegar',cat:'Acid'},{name:'Baking Soda',cat:'Base'},
+        {name:'Battery Acid',cat:'Acid'},{name:'Ammonia',cat:'Base'},
+        {name:'Black Coffee',cat:'Acid'},{name:'Bleach',cat:'Base'},
+        {name:'Orange Juice',cat:'Acid'},{name:'Toothpaste',cat:'Base'},
+        {name:'Soda Water',cat:'Acid'},{name:'Drain Cleaner',cat:'Base'}
+      ],
+      bondTitle:"Match the Concept Pairs",
+      bondPairs:[
+        {a:'Na',b:'Sodium'},
+        {a:'O₂',b:'Oxygen gas'},
+        {a:'Mitosis',b:'One cell becomes two identical cells'},
+        {a:'Mercury',b:'Closest planet to the Sun'},
+        {a:'pH 7',b:'Neutral solution'},
+        {a:"Newton's 1st Law",b:'An object in motion stays in motion'}
+      ],
+      facts:[
+        "Pure water sits at pH 7 — exactly neutral.",
+        "Gold barely reacts with anything, which is why ancient gold artifacts still shine today.",
+        "Helium has the lowest boiling point of any element, near -269°C.",
+        "Table salt is held together by an ionic bond between sodium and chlorine ions.",
+        "Newton's Third Law explains rocket propulsion: exhaust pushes the rocket forward as the rocket pushes exhaust back.",
+        "Carbon bonds with itself in chains and rings, forming the backbone of nearly all organic molecules.",
+        "Mercury has almost no atmosphere, so its surface temperature swings over 600°C between day and night.",
+        "Mitosis keeps chromosome number constant; meiosis cuts it in half to make sex cells."
+      ]
+    },
+    college:{
+      name:"College",
+      blurb:"Thermodynamics, genetics & beyond",
+      echoPool:[
+        {id:'emc2',sym:'E=mc²',name:'Mass-energy'},{id:'fma',sym:'F=ma',name:"Newton's 2nd Law"},
+        {id:'dg',sym:'ΔG',name:'Gibbs free energy'},{id:'ph',sym:'pH',name:'Acidity scale'},
+        {id:'mit',sym:'Mitosis',name:'Cell division'},{id:'rna',sym:'RNA',name:'Transcription'},
+        {id:'lambda',sym:'λ',name:'Wavelength'},{id:'atp',sym:'ATP',name:"Energy currency"},
+        {id:'dh',sym:'ΔH',name:'Enthalpy change'},{id:'sigma',sym:'ΔS',name:'Entropy change'}
+      ],
+      sortTitle:"Endothermic vs. Exothermic",
+      sortCats:['Endothermic','Exothermic'],
+      sortItems:[
+        {name:'Photosynthesis',cat:'Endothermic'},{name:'Combustion',cat:'Exothermic'},
+        {name:'Melting Ice',cat:'Endothermic'},{name:'Cellular Respiration',cat:'Exothermic'},
+        {name:'Evaporating Water',cat:'Endothermic'},{name:'Rusting Iron',cat:'Exothermic'},
+        {name:'Dissolving NH₄NO₃',cat:'Endothermic'},{name:'Neutralization Reaction',cat:'Exothermic'},
+        {name:'Photolysis',cat:'Endothermic'},{name:'Condensation',cat:'Exothermic'},
+        {name:'Thermal Decomposition',cat:'Endothermic'},{name:'Nuclear Fission',cat:'Exothermic'}
+      ],
+      bondTitle:"Match the Concept Pairs",
+      bondPairs:[
+        {a:'E = mc²',b:'Mass-energy equivalence'},
+        {a:'ΔG < 0',b:'Reaction is spontaneous'},
+        {a:'ATP',b:"The cell's energy currency"},
+        {a:'Catalyst',b:'Speeds a reaction without being consumed'},
+        {a:'Meiosis',b:'Produces 4 genetically distinct gametes'},
+        {a:"Le Chatelier's Principle",b:'A system shifts to oppose a change'}
+      ],
+      facts:[
+        "A reaction can be exothermic overall and still need an initial nudge of activation energy to start.",
+        "ΔG = ΔH − TΔS. A negative ΔG means a process is thermodynamically spontaneous.",
+        "Enzymes are biological catalysts — they lower activation energy without changing the overall energy balance.",
+        "Meiosis includes two rounds of division, turning one diploid cell into four haploid cells.",
+        "The Second Law of Thermodynamics: entropy in an isolated system never decreases.",
+        "ATP releases usable energy when its third phosphate group is removed, becoming ADP.",
+        "Le Chatelier's Principle predicts that adding reactant pushes an equilibrium toward more product.",
+        "In nuclear fission, the fragments weigh slightly less than the original nucleus — that missing mass becomes energy."
+      ]
+    }
+  };
+
+  const TRIAL_ORDER = ['echo','sort','bond'];
+  const MAX_LIVES = 4;
+
+  /* ---------- helpers ---------- */
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      const tmp = a[i]; a[i]=a[j]; a[j]=tmp;
+    }
+    return a;
+  }
+  function sample(arr,n){ return shuffle(arr).slice(0,n); }
+  function delay(ms){ return new Promise(res=>setTimeout(res,ms)); }
+
+  let audioCtx = null;
+  function beep(freq,dur,type,vol){
+    try{
+      audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = type; o.frequency.value = freq; g.gain.value = vol;
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start();
+      g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+dur);
+      o.stop(audioCtx.currentTime+dur);
+    }catch(e){ /* audio not available; fail silently */ }
+  }
+  function correctTick(){ beep(1046,0.07,'sine',0.025); }
+  function wrongTick(){ beep(180,0.18,'sawtooth',0.04); }
+  function successBeep(){ beep(880,0.1,'sine',0.035); setTimeout(()=>beep(1318,0.14,'sine',0.03),100); }
+  function failBeep(){ beep(140,0.3,'sawtooth',0.05); }
+
+  /* ---------- background ambient canvas ---------- */
+  function initBG(){
+    const canvas = document.getElementById('bgCanvas');
+    const ctx = canvas.getContext('2d');
+    let w,h;
+    const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function resize(){ w=canvas.width=window.innerWidth; h=canvas.height=window.innerHeight; }
+    resize();
+    window.addEventListener('resize',resize);
+    const N = reduced ? 0 : 42;
+    const particles = [];
+    for(let i=0;i<N;i++){
+      particles.push({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-0.5)*0.25,vy:(Math.random()-0.5)*0.25});
+    }
+    function tick(){
+      ctx.clearRect(0,0,w,h);
+      for(const p of particles){
+        p.x+=p.vx; p.y+=p.vy;
+        if(p.x<0||p.x>w) p.vx*=-1;
+        if(p.y<0||p.y>h) p.vy*=-1;
+      }
+      for(let i=0;i<particles.length;i++){
+        for(let j=i+1;j<particles.length;j++){
+          const a=particles[i], b=particles[j];
+          const d=Math.hypot(a.x-b.x,a.y-b.y);
+          if(d<120){
+            ctx.strokeStyle = 'rgba(94,234,212,'+((1-d/120)*0.16)+')';
+            ctx.lineWidth=1;
+            ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+          }
+        }
+      }
+      for(const p of particles){
+        ctx.beginPath(); ctx.fillStyle='rgba(167,139,250,0.55)';
+        ctx.arc(p.x,p.y,2,0,Math.PI*2); ctx.fill();
+      }
+      if(!reduced) requestAnimationFrame(tick);
+    }
+    tick();
+  }
+
+  /* ---------- game state ---------- */
+  let state = null;
+
+  function freshState(tierKey){
+    return {
+      tierKey, level:1, trialType:null,
+      typeCounts:{echo:0,sort:0,bond:0},
+      score:0, lives:MAX_LIVES,
+      comboStreak:0, bestCombo:1,
+      gameOver:false, current:null, advanceTimer:null
+    };
+  }
+
+  function getMultiplier(){ return 1 + Math.min(state.comboStreak*0.25, 2); }
+
+  function addScore(pts){
+    if(!pts) return;
+    state.score += Math.round(pts*getMultiplier());
+  }
+
+  function loseLife(){
+    if(state.gameOver) return;
+    state.lives--;
+    state.comboStreak = 0;
+    updateHUD();
+    if(state.lives<=0) gameOver();
+  }
+
+  function showScreen(name){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById('screen-'+name).classList.add('active');
+  }
+
+  function updateHUD(){
+    document.getElementById('hudLevel').textContent = state.level;
+    const labelMap = {echo:'ECHO',sort:'SORT',bond:'BOND'};
+    document.getElementById('hudTrial').textContent = labelMap[state.trialType] || '—';
+    document.getElementById('hudScore').textContent = state.score;
+    document.getElementById('hudCombo').textContent = '×'+getMultiplier().toFixed(2);
+    const energyEl = document.getElementById('hudEnergy');
+    energyEl.innerHTML = '';
+    for(let i=0;i<MAX_LIVES;i++){
+      const cell = document.createElement('span');
+      cell.className = 'cell'+(i<state.lives ? ' filled':'');
+      energyEl.appendChild(cell);
+    }
+  }
+
+  function showLevelBanner(type){
+    const labelMap = {
+      echo:['ECHO TRIAL','Watch the sequence, then repeat it back.'],
+      sort:['SORT TRIAL','Classify each item before the timer runs out.'],
+      bond:['BOND TRIAL','Find every matching science pair.']
+    };
+    const pair = labelMap[type];
+    const banner = document.getElementById('banner');
+    banner.innerHTML =
+      '<div class="banner-level">LEVEL '+state.level+'</div>'+
+      '<div class="banner-title">'+pair[0]+'</div>'+
+      '<div class="banner-sub">'+pair[1]+'</div>';
+    banner.classList.add('show');
+    setTimeout(()=>banner.classList.remove('show'), 950);
+  }
+
+  function runTrial(){
+    if(state.gameOver) return;
+    const type = TRIAL_ORDER[(state.level-1)%3];
+    state.trialType = type;
+    updateHUD();
+    showLevelBanner(type);
+    setTimeout(()=>{
+      if(state.gameOver) return;
+      if(type==='echo') startEcho();
+      else if(type==='sort') startSort();
+      else startBond();
+    }, 1050);
+  }
+
+  function advance(){
+    if(state.gameOver) return;
+    state.level++;
+    runTrial();
+  }
+
+  function showOutcome(perfect, extraNote){
+    const tier = TIERS[state.tierKey];
+    const fact = tier.facts[Math.floor(Math.random()*tier.facts.length)];
+    const stage = document.getElementById('stage');
+    stage.innerHTML =
+      '<div class="outcome '+(perfect?'good':'bad')+'">'+
+        '<div class="outcome-headline">'+(perfect?'✅ Trial cleared':'⚠️ Trial failed')+'</div>'+
+        '<div class="outcome-fact"><span class="fact-label">LAB NOTE</span>'+fact+'</div>'+
+        (extraNote ? '<div class="outcome-note">'+extraNote+'</div>' : '')+
+      '</div>';
+  }
+
+  function resolveTrial(perfect, bonusPoints, extraNote){
+    if(state.gameOver) return;
+    if(bonusPoints) addScore(bonusPoints);
+    if(perfect){
+      state.comboStreak++;
+      state.bestCombo = Math.max(state.bestCombo, state.comboStreak);
+      showOutcome(true);
+      successBeep();
+    } else {
+      showOutcome(false, extraNote);
+      failBeep();
+      loseLife();
+    }
+    updateHUD();
+    if(!state.gameOver){
+      state.advanceTimer = setTimeout(advance, 1700);
+    }
+  }
+
+  /* ---------- timer ---------- */
+  function startTimer(cur, onDone){
+    cur.timerId = setInterval(()=>{
+      cur.timeLeft = Math.max(cur.timeLeft - 0.1, 0);
+      const fill = document.getElementById('timerfill');
+      if(fill) fill.style.width = (cur.timeLeft/cur.timeLimit*100)+'%';
+      if(cur.timeLeft<=0){
+        clearInterval(cur.timerId);
+        onDone();
+      }
+    }, 100);
+  }
+
+  /* ---------- ECHO trial ---------- */
+  async function startEcho(){
+    const tier = TIERS[state.tierKey];
+    const count = state.typeCounts.echo;
+    const n = Math.min(3+count, tier.echoPool.length);
+    state.typeCounts.echo++;
+    const seq = sample(tier.echoPool, n);
+    state.current = {type:'echo', seq, pos:0, locked:false};
+
+    const stage = document.getElementById('stage');
+    stage.innerHTML = '<p class="instruction">Memorize the order…</p><div class="echo-display" id="echoDisplay"></div>';
+    const disp = document.getElementById('echoDisplay');
+    await delay(450);
+    const showMs = Math.max(850 - count*35, 420);
+    for(const item of seq){
+      if(state.gameOver) return;
+      disp.innerHTML = '<div class="echo-flash">'+item.sym+'<span>'+item.name+'</span></div>';
+      await delay(showMs);
+      disp.innerHTML = '';
+      await delay(170);
+    }
+    if(state.gameOver) return;
+    renderEchoRecall(seq);
+  }
+
+  function renderEchoRecall(seq){
+    const stage = document.getElementById('stage');
+    const choices = shuffle(seq);
+    stage.innerHTML =
+      '<p class="instruction">Tap them back in the same order</p>'+
+      '<div class="echo-progress" id="echoProgress">'+seq.map(()=>'<span class="dot"></span>').join('')+'</div>'+
+      '<div class="echo-grid">'+choices.map(c=>'<button class="echo-btn" data-role="echo-choice" data-id="'+c.id+'">'+c.sym+'<span>'+c.name+'</span></button>').join('')+'</div>';
+  }
+
+  function handleEchoChoice(btn){
+    const cur = state.current;
+    if(state.gameOver || cur.locked || cur.type!=='echo' || btn.disabled) return;
+    const expected = cur.seq[cur.pos];
+    const dots = document.querySelectorAll('#echoProgress .dot');
+    if(btn.dataset.id === expected.id){
+      btn.classList.add('correct'); btn.disabled = true;
+      if(dots[cur.pos]) dots[cur.pos].classList.add('filled');
+      cur.pos++;
+      correctTick();
+      if(cur.pos === cur.seq.length){
+        cur.locked = true;
+        resolveTrial(true, 100*cur.seq.length);
+      }
+    } else {
+      btn.classList.add('wrong'); btn.disabled = true;
+      cur.locked = true;
+      wrongTick();
+      const order = cur.seq.map(s=>s.name).join(' → ');
+      resolveTrial(false, 100*cur.pos, 'Correct order was: '+order);
+    }
+  }
+
+  /* ---------- SORT trial ---------- */
+  function startSort(){
+    const tier = TIERS[state.tierKey];
+    const count = state.typeCounts.sort;
+    const n = Math.min(6+count, tier.sortItems.length);
+    state.typeCounts.sort++;
+    const items = sample(tier.sortItems, n);
+    const timeLimit = Math.max(20 - count*1.5, 8);
+    const cur = {type:'sort', items, idx:0, correctCount:0, mistakes:0, timeLeft:timeLimit, timeLimit, locked:false};
+    state.current = cur;
+
+    const stage = document.getElementById('stage');
+    stage.innerHTML =
+      '<p class="instruction">'+tier.sortTitle+'</p>'+
+      '<div class="timerbar"><div class="timerfill" id="timerfill"></div></div>'+
+      '<div class="sort-progress" id="sortProgress">Item 1 / '+n+'</div>'+
+      '<div class="sort-item" id="sortItem">'+items[0].name+'</div>'+
+      '<div class="sort-cats">'+tier.sortCats.map(c=>'<button class="cat-btn" data-role="sort-cat" data-cat="'+c+'">'+c+'</button>').join('')+'</div>';
+
+    startTimer(cur, ()=>{
+      if(state.gameOver) return;
+      cur.locked = true;
+      finishSort(cur, true);
+    });
+  }
+
+  function handleSortCat(btn){
+    const cur = state.current;
+    if(state.gameOver || cur.locked || cur.type!=='sort') return;
+    const item = cur.items[cur.idx];
+    const correct = item.cat === btn.dataset.cat;
+    const itemEl = document.getElementById('sortItem');
+    if(correct){
+      cur.correctCount++; addScore(40); correctTick();
+      itemEl.classList.add('flash-good');
+    } else {
+      cur.mistakes++; wrongTick();
+      itemEl.classList.add('flash-bad');
+    }
+    updateHUD();
+    cur.idx++;
+    if(cur.idx >= cur.items.length){
+      cur.locked = true;
+      clearInterval(cur.timerId);
+      finishSort(cur, false);
+      return;
+    }
+    setTimeout(()=>{
+      if(state.gameOver) return;
+      const prog = document.getElementById('sortProgress');
+      const el = document.getElementById('sortItem');
+      if(prog) prog.textContent = 'Item '+(cur.idx+1)+' / '+cur.items.length;
+      if(el){ el.textContent = cur.items[cur.idx].name; el.className = 'sort-item'; }
+    }, 260);
+  }
+
+  function finishSort(cur, timedOut){
+    const perfect = !timedOut && cur.mistakes===0 && cur.correctCount===cur.items.length;
+    const bonus = perfect ? Math.round(80 + cur.timeLeft*4) : 0;
+    resolveTrial(perfect, bonus);
+  }
+
+  /* ---------- BOND trial ---------- */
+  function startBond(){
+    const tier = TIERS[state.tierKey];
+    const count = state.typeCounts.bond;
+    const pairCount = Math.min(4+Math.floor(count/2), tier.bondPairs.length);
+    state.typeCounts.bond++;
+    const pairs = sample(tier.bondPairs, pairCount);
+    const timeLimit = Math.max(50 - count*4, 18);
+
+    let cards = [];
+    pairs.forEach((p,i)=>{
+      cards.push({pair:i, side:'a', text:p.a});
+      cards.push({pair:i, side:'b', text:p.b});
+    });
+    cards = shuffle(cards);
+
+    const cur = {type:'bond', totalPairs:pairCount, matchedCount:0, flippedEls:[], timeLeft:timeLimit, timeLimit, locked:false};
+    state.current = cur;
+
+    const stage = document.getElementById('stage');
+    stage.innerHTML =
+      '<p class="instruction">'+tier.bondTitle+'</p>'+
+      '<div class="timerbar"><div class="timerfill" id="timerfill"></div></div>'+
+      '<div class="bond-grid">'+cards.map(c=>
+        '<button class="bond-card" data-role="bond-card" data-pair="'+c.pair+'" data-side="'+c.side+'">'+
+          '<span class="face-down">?</span><span class="face-up">'+c.text+'</span>'+
+        '</button>').join('')+
+      '</div>';
+
+    startTimer(cur, ()=>{
+      if(state.gameOver) return;
+      cur.locked = true;
+      finishBond(cur);
+    });
+  }
+
+  function handleBondCard(btn){
+    const cur = state.current;
+    if(state.gameOver || cur.locked || cur.type!=='bond') return;
+    if(btn.classList.contains('matched') || btn.classList.contains('flipped') || cur.flippedEls.length>=2) return;
+    btn.classList.add('flipped');
+    cur.flippedEls.push(btn);
+    if(cur.flippedEls.length===2){
+      const b1 = cur.flippedEls[0], b2 = cur.flippedEls[1];
+      if(b1.dataset.pair===b2.dataset.pair && b1.dataset.side!==b2.dataset.side){
+        b1.classList.add('matched'); b2.classList.add('matched');
+        cur.flippedEls = [];
+        cur.matchedCount++;
+        addScore(60); correctTick(); updateHUD();
+        if(cur.matchedCount >= cur.totalPairs){
+          cur.locked = true;
+          clearInterval(cur.timerId);
+          finishBond(cur);
+        }
+      } else {
+        wrongTick();
+        setTimeout(()=>{
+          b1.classList.remove('flipped'); b2.classList.remove('flipped');
+          cur.flippedEls = [];
+        }, 650);
+      }
+    }
+  }
+
+  function finishBond(cur){
+    const perfect = cur.matchedCount >= cur.totalPairs;
+    const bonus = perfect ? Math.round(60 + cur.timeLeft*4) : 0;
+    resolveTrial(perfect, bonus);
+  }
+
+  /* ---------- start / end ---------- */
+  function startGame(tierKey){
+    state = freshState(tierKey);
+    const tier = TIERS[tierKey];
+    document.getElementById('ticker').textContent = tier.name.toUpperCase()+' MODE — '+tier.blurb;
+    showScreen('game');
+    runTrial();
+  }
+
+  function gameOver(){
+    state.gameOver = true;
+    if(state.current && state.current.timerId) clearInterval(state.current.timerId);
+    if(state.advanceTimer) clearTimeout(state.advanceTimer);
+    const bestMult = 1 + Math.min(state.bestCombo*0.25, 2);
+    document.getElementById('endLevel').textContent = state.level;
+    document.getElementById('endScore').textContent = state.score;
+    document.getElementById('endCombo').textContent = '×'+bestMult.toFixed(2);
+    const note = document.getElementById('endNote');
+    if(state.level>=15) note.textContent = "Outstanding synaptic stamina — your scientific reflexes are razor sharp.";
+    else if(state.level>=8) note.textContent = "Solid neural training run. A few more sessions and you'll be unstoppable.";
+    else note.textContent = "Good first run — every cognitive scientist starts with trial and error.";
+    showScreen('end');
+  }
+
+  /* ---------- wiring ---------- */
+  document.addEventListener('DOMContentLoaded', function(){
+    initBG();
+
+    let selectedTier = null;
+    const tierCards = document.querySelectorAll('.tier-card');
+    tierCards.forEach(card=>{
+      card.addEventListener('click', ()=>{
+        tierCards.forEach(c=>c.classList.remove('selected'));
+        card.classList.add('selected');
+        selectedTier = card.dataset.tier;
+        const btn = document.getElementById('beginBtn');
+        btn.disabled = false;
+        document.getElementById('beginHint').textContent = 'Selected: '+TIERS[selectedTier].name;
+      });
+    });
+
+    document.getElementById('beginBtn').addEventListener('click', ()=>{
+      if(selectedTier) startGame(selectedTier);
+    });
+
+    document.getElementById('restartBtn').addEventListener('click', ()=>{
+      showScreen('start');
+    });
+
+    document.getElementById('stage').addEventListener('click', e=>{
+      const t = e.target.closest('[data-role]');
+      if(!t) return;
+      const role = t.dataset.role;
+      if(role==='echo-choice') handleEchoChoice(t);
+      else if(role==='sort-cat') handleSortCat(t);
+      else if(role==='bond-card') handleBondCard(t);
+    });
+  });
+})();
+</script>
+</body>
+</html>

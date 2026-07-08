@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stoichiometry Chef</title>
+<style>
+  :root{
+    --bg:#0d1614;
+    --tile:#142420;
+    --panel:rgba(18,28,25,0.85);
+    --line:rgba(217,164,65,0.25);
+    --brass:#d9a441;
+    --flameO:#ff7a3d;
+    --flameB:#5ec8ff;
+    --text:#eef2ea;
+    --text-dim:#8fa39a;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    --sans: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; min-height:100%; width:100%;
+    background:var(--bg);
+    font-family:var(--sans);
+    color:var(--text);
+    -webkit-user-select:none; user-select:none;
+  }
+  #frame{
+    min-height:100vh;
+    display:flex; flex-direction:column; align-items:center;
+    padding:14px 0 28px;
+    background:
+      repeating-linear-gradient(0deg, transparent 0 38px, rgba(217,164,65,0.03) 38px 39px),
+      repeating-linear-gradient(90deg, transparent 0 38px, rgba(217,164,65,0.03) 38px 39px),
+      radial-gradient(ellipse 90% 60% at 50% 0%, rgba(255,122,61,0.07) 0%, rgba(255,122,61,0) 60%),
+      var(--bg);
+  }
+  #game{ width:min(96vw, 760px); display:flex; flex-direction:column; gap:10px; }
+
+  #topbar{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:8px 14px;
+    background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    font-family:var(--mono); font-size:12px;
+  }
+  #topbar .grp{display:flex; gap:16px; align-items:center;}
+  #topbar label{color:var(--text-dim); font-size:9px; text-transform:uppercase; letter-spacing:1px; display:block;}
+  #topbar .val{color:var(--brass); font-size:15px; font-weight:700;}
+  #lives{font-size:15px;}
+  #timerWrap{ height:6px; border-radius:4px; background:rgba(255,255,255,0.08); overflow:hidden; }
+  #timerBar{ height:100%; width:100%; background:var(--flameB); transition:width 0.1s linear, background 0.3s; }
+
+  #canvasWrap{
+    position:relative; width:100%; border-radius:14px; overflow:hidden;
+    border:1px solid var(--line);
+    box-shadow:0 0 0 1px rgba(0,0,0,0.4), 0 18px 40px rgba(0,0,0,0.5);
+  }
+  canvas{ display:block; width:100%; height:auto; background:#0a120f; touch-action:none; }
+
+  #toast{
+    position:absolute; top:12px; left:50%; transform:translateX(-50%) translateY(-10px);
+    background:var(--brass); color:#1d1404; font-weight:800; font-size:13px;
+    padding:7px 16px; border-radius:999px; opacity:0; transition:opacity .35s, transform .35s;
+    pointer-events:none; max-width:88%; text-align:center;
+  }
+  #toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  #eqStrip{
+    text-align:center; font-family:var(--mono); font-size:18px; font-weight:700;
+    background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 10px;
+    letter-spacing:0.5px;
+  }
+  #eqStrip sub{ font-size:0.65em; }
+  #eqStrip .arrow{ color:var(--brass); margin:0 6px; }
+
+  #station{ display:flex; align-items:stretch; gap:8px; }
+  .stationCol{
+    flex:1; display:flex; flex-direction:column; gap:8px;
+    background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:10px;
+  }
+  .stationCol h3{
+    margin:0 0 2px; font-size:10px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-dim); text-align:center;
+  }
+  #stationArrow{
+    display:flex; align-items:center; justify-content:center; font-size:24px; color:var(--brass); padding:0 2px;
+  }
+  .ingredientCard{
+    display:flex; align-items:center; gap:8px;
+    background:rgba(255,255,255,0.04); border:1px solid var(--line); border-radius:10px; padding:7px 9px;
+  }
+  .swatch{ width:14px; height:14px; border-radius:50%; flex:0 0 auto; box-shadow:0 0 0 2px rgba(0,0,0,0.3) inset; }
+  .formula{ font-family:var(--mono); font-size:15px; font-weight:700; flex:1; }
+  .stepper{ display:flex; align-items:center; gap:6px; }
+  .stepBtn{
+    width:26px; height:26px; border-radius:7px; border:1px solid var(--line);
+    background:rgba(255,255,255,0.06); color:var(--text); font-size:15px; font-weight:700;
+    cursor:pointer; line-height:1; padding:0;
+  }
+  .stepBtn:active{ background:rgba(217,164,65,0.35); }
+  .coefVal{ font-family:var(--mono); font-weight:800; min-width:16px; text-align:center; color:var(--brass); }
+
+  #actionRow{ display:flex; gap:8px; }
+  .actionBtn{
+    flex:1; border:none; border-radius:12px; font-weight:800; font-size:14px; padding:13px 10px; cursor:pointer; letter-spacing:0.3px;
+  }
+  #cookBtn{ background:linear-gradient(135deg, var(--flameO), #ffd166); color:#241400; flex:2; }
+  #hintBtn{ background:rgba(94,200,255,0.18); color:var(--flameB); border:1px solid var(--flameB); }
+  #hintBtn:disabled{ opacity:0.35; cursor:not-allowed; }
+
+  #instructions{ text-align:center; font-size:11.5px; color:var(--text-dim); line-height:1.5; }
+  #instructions b{ color:var(--brass); }
+
+  .overlay{
+    position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+    background:rgba(7,11,9,0.85); backdrop-filter:blur(4px); z-index:1000;
+    overflow-y:auto; -webkit-overflow-scrolling:touch; padding:24px 16px;
+  }
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:18px;
+    padding:26px 30px; max-width:440px; max-height:100%; overflow-y:auto;
+    -webkit-overflow-scrolling:touch; text-align:center; margin:auto;
+  }
+  .card h1{ margin:0 0 6px; font-size:22px; color:var(--brass); }
+  .card h2{ margin:0 0 14px; font-size:14px; color:var(--text-dim); font-weight:500; }
+  .card p{ font-size:13px; line-height:1.6; color:var(--text-dim); margin:0 0 14px; text-align:left; }
+  .card p b{ color:var(--text); }
+  .card button{
+    background:linear-gradient(135deg, var(--flameO), #ffd166); color:#241400; border:none;
+    font-weight:800; font-size:14px; padding:11px 26px; border-radius:999px; cursor:pointer;
+  }
+  .statRow{ display:flex; justify-content:space-between; font-family:var(--mono); font-size:13px; padding:4px 0; border-bottom:1px dashed var(--line); }
+  .statRow span:last-child{ color:var(--brass); font-weight:700; }
+  .hidden{ display:none !important; }
+</style>
+</head>
+<body>
+<div id="frame">
+  <div id="game">
+    <div id="topbar">
+      <div class="grp">
+        <div><label>Score</label><span class="val" id="scoreVal">0</span></div>
+        <div><label>Streak</label><span class="val" id="streakVal">0×1</span></div>
+      </div>
+      <div><label style="text-align:right">Burners</label><span id="lives" class="val">🔥🔥🔥</span></div>
+    </div>
+    <div id="timerWrap"><div id="timerBar"></div></div>
+
+    <div id="canvasWrap">
+      <canvas id="canvas"></canvas>
+      <div id="toast"></div>
+      <div class="overlay" id="startOverlay">
+        <div class="card">
+          <h1>🍲 Stoichiometry Chef</h1>
+          <h2>Balance the equation. Cook the dish. Don't blow up the kitchen.</h2>
+          <p>Every recipe is an unbalanced chemical equation, like <b>_H₂ + _O₂ → _H₂O</b>. Use the
+          <b>−</b> / <b>+</b> steppers on each ingredient to set the right whole-number coefficients —
+          the same number of every atom must appear on both sides.</p>
+          <p>Hit <b>Cook!</b> when you think it's balanced. Get it right (in the <b>simplest</b> ratio) and you
+          plate a dish. Get it wrong, and the cauldron... has opinions about that.</p>
+          <p>The cauldron's color mixes live from whatever you've poured in — watch it shift as you adjust ratios. Three blown burners and the kitchen closes.</p>
+          <button id="startBtn">Fire Up the Burners</button>
+        </div>
+      </div>
+      <div class="overlay hidden" id="overOverlay">
+        <div class="card">
+          <h1 id="overTitle">🔥 Kitchen Closed</h1>
+          <h2>Tonight's service, by the numbers</h2>
+          <div class="statRow"><span>Final score</span><span id="statScore">0</span></div>
+          <div class="statRow"><span>Dishes served</span><span id="statDishes">0</span></div>
+          <div class="statRow"><span>Best streak</span><span id="statStreak">0</span></div>
+          <div class="statRow"><span>Highest tier reached</span><span id="statTier">1</span></div>
+          <br>
+          <button id="retryBtn">Reopen Kitchen</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="eqStrip">_</div>
+
+    <div id="station">
+      <div class="stationCol" id="reactCol">
+        <h3>Reactants</h3>
+      </div>
+      <div id="stationArrow">→</div>
+      <div class="stationCol" id="prodCol">
+        <h3>Products</h3>
+      </div>
+    </div>
+
+    <div id="actionRow">
+      <button class="actionBtn" id="hintBtn">💡 Hint (−50)</button>
+      <button class="actionBtn" id="cookBtn">🍳 Cook!</button>
+    </div>
+
+    <div id="instructions">
+      Adjust each ingredient's coefficient so atom counts match on both sides, then <b>Cook!</b> &nbsp;·&nbsp;
+      balanced-but-not-simplest gets a gentle nudge, not an explosion.
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const W = 900, H = 320;
+  canvas.width = W; canvas.height = H;
+  const POT = {x:W/2, y:H-70, rx:140, ry:42, topY:H-150};
+
+  // ---------- chemistry helpers ----------
+  function parseFormula(f){
+    let i=0;
+    function parseGroup(){
+      let counts={};
+      while(i<f.length && f[i]!==')'){
+        if(f[i]==='('){
+          i++;
+          const inner=parseGroup();
+          i++; // skip ')'
+          let numStr='';
+          while(i<f.length && /[0-9]/.test(f[i])){ numStr+=f[i]; i++; }
+          const mult = numStr?parseInt(numStr):1;
+          for(const el in inner) counts[el]=(counts[el]||0)+inner[el]*mult;
+        } else {
+          let el=f[i]; i++;
+          while(i<f.length && /[a-z]/.test(f[i])){ el+=f[i]; i++; }
+          let numStr='';
+          while(i<f.length && /[0-9]/.test(f[i])){ numStr+=f[i]; i++; }
+          const num = numStr?parseInt(numStr):1;
+          counts[el]=(counts[el]||0)+num;
+        }
+      }
+      return counts;
+    }
+    return parseGroup();
+  }
+  function gcd2(a,b){ return b===0?a:gcd2(b,a%b); }
+  function gcdArr(nums){ return nums.reduce((a,b)=>gcd2(a,b)); }
+
+  const ELEMENT_COLORS = {
+    H:'#e8e8e8', O:'#ff5d4a', C:'#9a9a9a', N:'#5e8bff', Na:'#c77dff',
+    Cl:'#8be38a', Mg:'#7fffb0', Fe:'#c97b3d', Al:'#cfd6da', K:'#caa6ff',
+    Ca:'#e0c9a0', Ag:'#dfe7ea', S:'#ffe066', P:'#ff9f4a', Zn:'#b9c4cf'
+  };
+  function hexToRgb(h){ const n=parseInt(h.replace('#',''),16); return [(n>>16)&255,(n>>8)&255,n&255]; }
+  function rgbToHex(r,g,b){ return '#'+[r,g,b].map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join(''); }
+
+  function speciesSwatch(formula){
+    const counts = parseFormula(formula);
+    const keys = Object.keys(counts);
+    let r=0,g=0,b=0;
+    keys.forEach(k=>{ const [rr,gg,bb]=hexToRgb(ELEMENT_COLORS[k]||'#cccccc'); r+=rr;g+=gg;b+=bb; });
+    return rgbToHex(r/keys.length, g/keys.length, b/keys.length);
+  }
+
+  // ---------- dish & failure flavor text ----------
+  const DISH_NAMES = {
+    'H2O':'Sparkling H₂-Oh! Soufflé',
+    'NaCl':'Salt Lick Surprise',
+    'MgO':'Magnesium Meringue',
+    'HCl':'Hydrochloric Hot Sauce',
+    'NH3':"Nitrogen's Nightmare Foam",
+    'CO2+H2O':'Smoky Carbon Flambé',
+    'Fe2O3':'Rusty Iron Bisque',
+    'Al2O3':'Anodized Aluminum Soufflé',
+    'KCl+O2':'Oxygenated Potassium Pop',
+    'CaCl2+H2O':'Calcium Chloride Consommé',
+    'AgCl+NaNO3':'Silver Lining Stew',
+    'SO2':'Sulfurous Stinker Soup',
+    'P2O5':'Phosphorescent Phlegm Pudding',
+    'ZnCl2+H2':'Zesty Zinc Fizz'
+  };
+  const FAIL_LINES = [
+    "💥 Kaboom! The soup achieved sentience and fled the building.",
+    "🔥 Burnt to a cosmic crisp! The smoke alarm filed a formal complaint.",
+    "💨 Bad batch — whatever that was, it's a gas now. Literally.",
+    "🌋 The cauldron erupted. Tonight's special: regret.",
+    "🧪 Stoichiometry says no. Your lab coat says 'why.'",
+    "☠️ Unbalanced! Mother Nature just revoked your chef's hat."
+  ];
+  const TIMEOUT_LINE = "⏰ Time's up — the dish carbonized into a fine dust.";
+
+  // ---------- equations ----------
+  const EQUATIONS = [
+    {tier:1, reactants:['H2','O2'], products:['H2O']},
+    {tier:1, reactants:['Na','Cl2'], products:['NaCl']},
+    {tier:1, reactants:['Mg','O2'], products:['MgO']},
+    {tier:1, reactants:['H2','Cl2'], products:['HCl']},
+    {tier:1, reactants:['S','O2'], products:['SO2']},
+    {tier:2, reactants:['N2','H2'], products:['NH3']},
+    {tier:2, reactants:['CH4','O2'], products:['CO2','H2O']},
+    {tier:2, reactants:['Fe','O2'], products:['Fe2O3']},
+    {tier:2, reactants:['Al','O2'], products:['Al2O3']},
+    {tier:2, reactants:['Zn','HCl'], products:['ZnCl2','H2']},
+    {tier:3, reactants:['C3H8','O2'], products:['CO2','H2O']},
+    {tier:3, reactants:['C2H6','O2'], products:['CO2','H2O']},
+    {tier:3, reactants:['KClO3'], products:['KCl','O2']},
+    {tier:3, reactants:['Ca(OH)2','HCl'], products:['CaCl2','H2O']},
+    {tier:3, reactants:['AgNO3','NaCl'], products:['AgCl','NaNO3']},
+    {tier:3, reactants:['P4','O2'], products:['P2O5']},
+  ];
+  const TIER_TIME = {1:30, 2:24, 3:20};
+  const TIER_MULT = {1:1, 2:1.5, 3:2};
+
+  // ---------- state ----------
+  let state='start'; // start | playing | resolving | over
+  let curEq=null, coeffR=[], coeffP=[];
+  let score=0, streak=0, bestStreak=0, lives=3, dishesServed=0, highestTier=1;
+  let unlockedTier=1, lastEqIndex=-1;
+  let timeLeft=30, timeTotal=30, timerActive=false;
+  let liquidColor=[40,70,60], targetColor=[40,70,60];
+  let particles=[], bubbles=[], steams=[], shake=0;
+  let flyDish=null; // {x,y,text,life}
+  let potState='idle'; // idle | success | explode
+
+  function updateHud(){
+    document.getElementById('scoreVal').textContent = score;
+    const mult = 1+Math.min(3, Math.floor(streak/3));
+    document.getElementById('streakVal').textContent = streak+'×'+mult;
+    document.getElementById('lives').textContent = '🔥'.repeat(Math.max(lives,0)) + '⚫'.repeat(Math.max(3-lives,0));
+    document.getElementById('hintBtn').disabled = score<50;
+  }
+  function multiplier(){ return 1+Math.min(3, Math.floor(streak/3)); }
+
+  function showToast(msg, ms){
+    const t=document.getElementById('toast');
+    t.textContent=msg; t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer=setTimeout(()=>t.classList.remove('show'), ms||1600);
+  }
+
+  // ---------- round setup ----------
+  function pickEquation(){
+    const pool = EQUATIONS.map((e,i)=>i).filter(i=>EQUATIONS[i].tier<=unlockedTier && i!==lastEqIndex);
+    const idx = pool[(Math.random()*pool.length)|0];
+    lastEqIndex = idx;
+    return EQUATIONS[idx];
+  }
+  function recomputeUnlock(){
+    unlockedTier = dishesServed>=10 || score>=700 ? 3 : (dishesServed>=4 || score>=250 ? 2 : 1);
+    if(unlockedTier>highestTier) highestTier=unlockedTier;
+  }
+
+  function loadRound(){
+    recomputeUnlock();
+    curEq = pickEquation();
+    coeffR = curEq.reactants.map(()=>1);
+    coeffP = curEq.products.map(()=>1);
+    renderStation();
+    updateEqStrip();
+    updateLiquidTarget();
+    timeTotal = TIER_TIME[curEq.tier];
+    timeLeft = timeTotal;
+    timerActive = true;
+    potState='idle';
+    state='playing';
+  }
+
+  function renderStation(){
+    const rc = document.getElementById('reactCol');
+    const pc = document.getElementById('prodCol');
+    rc.querySelectorAll('.ingredientCard').forEach(n=>n.remove());
+    pc.querySelectorAll('.ingredientCard').forEach(n=>n.remove());
+    curEq.reactants.forEach((f,i)=> rc.appendChild(makeCard('r', i, f)) );
+    curEq.products.forEach((f,i)=> pc.appendChild(makeCard('p', i, f)) );
+  }
+  function fHTML(formula){ return formula.replace(/(\d+)/g, '<sub>$1</sub>'); }
+  function makeCard(side, idx, formula){
+    const div=document.createElement('div'); div.className='ingredientCard';
+    div.innerHTML =
+      '<div class="swatch" style="background:'+speciesSwatch(formula)+'"></div>'+
+      '<div class="formula">'+fHTML(formula)+'</div>'+
+      '<div class="stepper">'+
+        '<button class="stepBtn" data-act="minus" data-side="'+side+'" data-idx="'+idx+'">−</button>'+
+        '<span class="coefVal" id="coef-'+side+'-'+idx+'">1</span>'+
+        '<button class="stepBtn" data-act="plus" data-side="'+side+'" data-idx="'+idx+'">+</button>'+
+      '</div>';
+    return div;
+  }
+  document.getElementById('station').addEventListener('click', e=>{
+    const btn = e.target.closest('.stepBtn'); if(!btn || state!=='playing') return;
+    const side=btn.dataset.side, idx=+btn.dataset.idx, act=btn.dataset.act;
+    const arr = side==='r'?coeffR:coeffP;
+    arr[idx] = act==='plus' ? Math.min(9, arr[idx]+1) : Math.max(1, arr[idx]-1);
+    document.getElementById('coef-'+side+'-'+idx).textContent = arr[idx];
+    updateEqStrip();
+    updateLiquidTarget();
+  });
+
+  function updateEqStrip(){
+    const r = curEq.reactants.map((f,i)=> coeffR[i]+' '+fHTML(f) ).join(' + ');
+    const p = curEq.products.map((f,i)=> coeffP[i]+' '+fHTML(f) ).join(' + ');
+    document.getElementById('eqStrip').innerHTML = r + ' <span class="arrow">→</span> ' + p;
+  }
+
+  function updateLiquidTarget(){
+    let r=0,g=0,b=0,wsum=0;
+    curEq.reactants.forEach((f,i)=>{
+      const counts = parseFormula(f);
+      for(const el in counts){
+        const w = counts[el]*coeffR[i];
+        const [rr,gg,bb] = hexToRgb(ELEMENT_COLORS[el]||'#999999');
+        r+=rr*w; g+=gg*w; b+=bb*w; wsum+=w;
+      }
+    });
+    if(wsum>0){ targetColor=[r/wsum, g/wsum, b/wsum]; }
+  }
+
+  // ---------- cook attempt ----------
+  function attemptCook(){
+    if(state!=='playing') return;
+    const left={}, right={};
+    curEq.reactants.forEach((f,i)=>{
+      const c=parseFormula(f);
+      for(const el in c) left[el]=(left[el]||0)+c[el]*coeffR[i];
+    });
+    curEq.products.forEach((f,i)=>{
+      const c=parseFormula(f);
+      for(const el in c) right[el]=(right[el]||0)+c[el]*coeffP[i];
+    });
+    const keys = new Set([...Object.keys(left), ...Object.keys(right)]);
+    let balanced=true;
+    for(const k of keys){ if((left[k]||0)!==(right[k]||0)){ balanced=false; break; } }
+
+    if(!balanced){ explode(false); return; }
+
+    const allCoeffs = [...coeffR, ...coeffP];
+    const g = gcdArr(allCoeffs);
+    if(g>1){
+      showToast('Balanced — but not simplest form. Try dividing every number by '+g+'.', 2200);
+      potState='simmer'; setTimeout(()=>{ if(state==='playing') potState='idle'; }, 700);
+      return;
+    }
+    success();
+  }
+
+  function success(){
+    state='resolving'; timerActive=false; potState='success';
+    dishesServed++;
+    const bonus = Math.round(timeLeft*4);
+    streak++; if(streak>bestStreak) bestStreak=streak;
+    const pts = Math.round((100*TIER_MULT[curEq.tier] + bonus) * multiplier());
+    score += pts;
+    updateHud();
+    const key = curEq.products.join('+');
+    const dishName = DISH_NAMES[key] || ('Mystery Dish #'+(1+((Math.random()*999)|0)));
+    spawnBurst([255,220,140], 30);
+    flyDish = {x:POT.x, y:POT.topY, text:'✨ '+dishName+'  (+'+pts+')', life:1};
+    showToast('Served! '+dishName, 1800);
+    setTimeout(()=>{ if(state!=='over') loadRound(); }, 1300);
+  }
+
+  function explode(timeout){
+    state='resolving'; timerActive=false; potState='explode'; shake=16;
+    lives--; streak=0; updateHud();
+    spawnBurst([liquidColor[0],liquidColor[1],liquidColor[2]], 26);
+    spawnBurst([255,122,61], 18);
+    showToast(timeout?TIMEOUT_LINE:FAIL_LINES[(Math.random()*FAIL_LINES.length)|0], 2200);
+    setTimeout(()=>{
+      if(lives<=0){ gameOver(); return; }
+      coeffR = curEq.reactants.map(()=>1);
+      coeffP = curEq.products.map(()=>1);
+      document.querySelectorAll('.coefVal').forEach(el=>el.textContent='1');
+      updateEqStrip(); updateLiquidTarget();
+      timeLeft = timeTotal; timerActive=true; potState='idle'; state='playing';
+    }, 1500);
+  }
+
+  function useHint(){
+    if(state!=='playing' || score<50) return;
+    // find a wrong coefficient (compare current to a freshly solved target via brute trial is complex;
+    // instead nudge: pick a random ingredient currently not contributing to balance and bump correctly)
+    score -= 50; updateHud();
+    // Try increasing each coefficient by 1 at a time isn't guaranteed correct without solving;
+    // so reveal correct value by solving via small search for minimal balancing multiplier set.
+    const solved = solveMinimal(curEq);
+    if(!solved){ showToast('No hint available for this one — just experiment!', 1800); return; }
+    const wrongIdxR = coeffR.findIndex((v,i)=>v!==solved.r[i]);
+    const wrongIdxP = coeffP.findIndex((v,i)=>v!==solved.p[i]);
+    if(wrongIdxR!==-1){
+      coeffR[wrongIdxR]=solved.r[wrongIdxR];
+      document.getElementById('coef-r-'+wrongIdxR).textContent=solved.r[wrongIdxR];
+    } else if(wrongIdxP!==-1){
+      coeffP[wrongIdxP]=solved.p[wrongIdxP];
+      document.getElementById('coef-p-'+wrongIdxP).textContent=solved.p[wrongIdxP];
+    } else {
+      showToast('Already balanced — hit Cook!', 1600);
+    }
+    updateEqStrip(); updateLiquidTarget();
+  }
+
+  // brute-force small integer solver (coefficients 1..9) for minimal balanced solution
+  function solveMinimal(eq){
+    const rN = eq.reactants.length, pN = eq.products.length;
+    const parsedR = eq.reactants.map(parseFormula), parsedP = eq.products.map(parseFormula);
+    const elements = new Set();
+    parsedR.concat(parsedP).forEach(c=>Object.keys(c).forEach(k=>elements.add(k)));
+    const elArr = [...elements];
+    const maxC = 8;
+    function* combos(n){
+      const arr = new Array(n).fill(1);
+      function* rec(pos){
+        if(pos===n){ yield arr.slice(); return; }
+        for(let v=1; v<=maxC; v++){ arr[pos]=v; yield* rec(pos+1); }
+      }
+      yield* rec(0);
+    }
+    for(const rC of combos(rN)){
+      for(const pC of combos(pN)){
+        let ok=true;
+        for(const el of elArr){
+          let l=0,r=0;
+          parsedR.forEach((c,i)=>{ if(c[el]) l+=c[el]*rC[i]; });
+          parsedP.forEach((c,i)=>{ if(c[el]) r+=c[el]*pC[i]; });
+          if(l!==r){ ok=false; break; }
+        }
+        if(ok && gcdArr([...rC,...pC])===1) return {r:rC, p:pC};
+      }
+    }
+    return null;
+  }
+
+  function gameOver(){
+    state='over';
+    document.getElementById('statScore').textContent = score;
+    document.getElementById('statDishes').textContent = dishesServed;
+    document.getElementById('statStreak').textContent = bestStreak;
+    document.getElementById('statTier').textContent = highestTier;
+    document.getElementById('overOverlay').classList.remove('hidden');
+  }
+
+  function startGame(){
+    state='playing';
+    score=0; streak=0; bestStreak=0; lives=3; dishesServed=0; highestTier=1; unlockedTier=1; lastEqIndex=-1;
+    liquidColor=[40,70,60]; targetColor=[40,70,60];
+    particles=[]; bubbles=[]; steams=[]; flyDish=null;
+    document.getElementById('startOverlay').classList.add('hidden');
+    document.getElementById('overOverlay').classList.add('hidden');
+    updateHud();
+    loadRound();
+  }
+  document.getElementById('startBtn').onclick = startGame;
+  document.getElementById('retryBtn').onclick = startGame;
+  document.getElementById('cookBtn').onclick = attemptCook;
+  document.getElementById('hintBtn').onclick = useHint;
+
+  // ---------- particles / effects ----------
+  function spawnBurst(rgb, n){
+    for(let i=0;i<n;i++){
+      const a=Math.random()*Math.PI*2, sp=Math.random()*4+1.5;
+      particles.push({x:POT.x,y:POT.topY-10,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-2,life:1,
+        color:'rgba('+rgb[0]+','+rgb[1]+','+rgb[2]+',1)'});
+    }
+  }
+
+  // ---------- timer ----------
+  let lastTs = performance.now();
+  function tickTimer(dt){
+    if(!timerActive) return;
+    timeLeft -= dt;
+    const pct = Math.max(0, timeLeft/timeTotal);
+    const bar = document.getElementById('timerBar');
+    bar.style.width = (pct*100)+'%';
+    bar.style.background = pct>0.5 ? 'var(--flameB)' : (pct>0.2 ? '#ffd166' : 'var(--flameO)');
+    if(timeLeft<=0){ timerActive=false; explode(true); }
+  }
+
+  // ---------- drawing ----------
+  function drawTile(){
+    ctx.fillStyle = '#0a120f'; ctx.fillRect(0,0,W,H);
+    const g = ctx.createRadialGradient(POT.x, POT.topY-40, 20, POT.x, POT.topY-40, 360);
+    g.addColorStop(0,'rgba(255,122,61,0.10)'); g.addColorStop(1,'rgba(255,122,61,0)');
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  }
+  function drawFlame(){
+    const t = performance.now()/180;
+    for(let i=-1;i<=1;i+=2){
+      const fx = POT.x + i*60, fy = POT.y+26;
+      const flick = 6+Math.sin(t+i)*3;
+      ctx.beginPath();
+      ctx.moveTo(fx-10,fy);
+      ctx.quadraticCurveTo(fx, fy-18-flick, fx+10, fy);
+      ctx.closePath();
+      const fg = ctx.createLinearGradient(fx,fy,fx,fy-20-flick);
+      fg.addColorStop(0,'#ff7a3d'); fg.addColorStop(1,'#ffe066');
+      ctx.fillStyle=fg; ctx.fill();
+    }
+  }
+  function drawPot(now){
+    // shadow base
+    ctx.beginPath(); ctx.ellipse(POT.x,POT.y+28,POT.rx*0.9,12,0,0,7);
+    ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.fill();
+
+    if(potState==='explode'){
+      // cracked / dark pot
+      ctx.globalAlpha=0.6;
+    }
+    // pot body
+    ctx.beginPath();
+    ctx.moveTo(POT.x-POT.rx, POT.topY);
+    ctx.quadraticCurveTo(POT.x-POT.rx, POT.y+10, POT.x, POT.y+18);
+    ctx.quadraticCurveTo(POT.x+POT.rx, POT.y+10, POT.x+POT.rx, POT.topY);
+    ctx.closePath();
+    const potGrad = ctx.createLinearGradient(POT.x-POT.rx,0,POT.x+POT.rx,0);
+    potGrad.addColorStop(0,'#3a3a3a'); potGrad.addColorStop(0.5,'#5a5a5a'); potGrad.addColorStop(1,'#2c2c2c');
+    ctx.fillStyle=potGrad; ctx.fill();
+    ctx.globalAlpha=1;
+
+    // liquid surface
+    if(potState!=='explode'){
+      const wob = Math.sin(now/260)*3;
+      ctx.beginPath();
+      ctx.ellipse(POT.x, POT.topY+6+wob, POT.rx-8, POT.ry-8, 0,0,7);
+      const lc = potState==='success'
+        ? 'rgb(255,224,150)'
+        : 'rgb('+liquidColor.map(Math.round).join(',')+')';
+      const liqGrad = ctx.createRadialGradient(POT.x-20,POT.topY-6,5,POT.x,POT.topY+6,POT.rx);
+      liqGrad.addColorStop(0, lc);
+      liqGrad.addColorStop(1, 'rgb('+liquidColor.map(v=>Math.max(0,v-40)).join(',')+')');
+      ctx.fillStyle = potState==='success' ? lc : liqGrad;
+      ctx.fill();
+    }
+
+    // rim
+    ctx.beginPath(); ctx.ellipse(POT.x, POT.topY, POT.rx, POT.ry, 0,0,7);
+    ctx.strokeStyle='rgba(255,255,255,0.18)'; ctx.lineWidth=4; ctx.stroke();
+  }
+  function drawBubbles(now){
+    if(potState==='explode') return;
+    if(Math.random()<0.12){
+      bubbles.push({x:POT.x+(Math.random()-0.5)*POT.rx*1.3, y:POT.topY+10, r:Math.random()*3+1.5, life:1});
+    }
+    bubbles.forEach(b=>{ b.y -= 0.6; b.life -= 0.018; });
+    bubbles = bubbles.filter(b=>b.life>0);
+    bubbles.forEach(b=>{
+      ctx.globalAlpha = Math.max(b.life,0)*0.5;
+      ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,7);
+      ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.fill();
+    });
+    ctx.globalAlpha=1;
+  }
+  function drawSteam(){
+    if(Math.random()<0.1){
+      steams.push({x:POT.x+(Math.random()-0.5)*60, y:POT.topY-10, life:1, drift:(Math.random()-0.5)*0.4});
+    }
+    steams.forEach(s=>{ s.y -= 0.9; s.x += s.drift; s.life -= 0.012; });
+    steams = steams.filter(s=>s.life>0);
+    steams.forEach(s=>{
+      ctx.globalAlpha = Math.max(s.life,0)*0.18;
+      ctx.beginPath(); ctx.arc(s.x,s.y,10*(1.4-s.life),0,7);
+      ctx.fillStyle='#dfeee8'; ctx.fill();
+    });
+    ctx.globalAlpha=1;
+  }
+  function drawParticles(){
+    particles.forEach(p=>{
+      p.x+=p.vx; p.y+=p.vy; p.vy+=0.12; p.life-=0.02;
+      ctx.globalAlpha=Math.max(p.life,0);
+      ctx.beginPath(); ctx.arc(p.x,p.y,3,0,7);
+      ctx.fillStyle=p.color; ctx.fill();
+    });
+    ctx.globalAlpha=1;
+    particles = particles.filter(p=>p.life>0);
+  }
+  function drawFlyDish(){
+    if(!flyDish) return;
+    flyDish.y -= 0.7; flyDish.life -= 0.012;
+    ctx.globalAlpha = Math.max(flyDish.life,0);
+    ctx.font='bold 15px '+getComputedStyle(document.documentElement).getPropertyValue('--sans');
+    ctx.fillStyle='#ffe9b0'; ctx.textAlign='center';
+    ctx.fillText(flyDish.text, POT.x, flyDish.y);
+    ctx.globalAlpha=1;
+    if(flyDish.life<=0) flyDish=null;
+  }
+
+  function frame(ts){
+    const dt = Math.min(0.05, (ts-lastTs)/1000); lastTs=ts;
+    tickTimer(dt);
+    liquidColor = liquidColor.map((v,i)=> v + (targetColor[i]-v)*0.06);
+
+    ctx.save();
+    if(shake>0){ ctx.translate((Math.random()-0.5)*shake,(Math.random()-0.5)*shake); shake*=0.85; if(shake<0.5) shake=0; }
+    drawTile();
+    drawFlame();
+    drawSteam();
+    drawPot(ts);
+    drawBubbles(ts);
+    drawParticles();
+    drawFlyDish();
+    ctx.restore();
+
+    requestAnimationFrame(frame);
+  }
+
+  updateHud();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

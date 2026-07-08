@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Kindness Ripples · Complete Edition</title>
+  <style>
+    :root {
+      --bg-main: #0b0f19;
+      --bg-panel: #1e293b;
+      --accent: #3b82f6;
+      --text-main: #f8fafc;
+      --success: #10b981;
+      --danger: #ef4444;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+
+    body {
+      background: var(--bg-main);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      user-select: none;
+      touch-action: none;
+    }
+
+    /* Modals */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(11, 15, 25, 0.95);
+      backdrop-filter: blur(8px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+      padding: 20px;
+      transition: opacity 0.3s;
+    }
+    .modal-overlay.hidden { opacity: 0; pointer-events: none; }
+    .modal-box {
+      background: var(--bg-panel);
+      padding: 2rem;
+      border-radius: 1.5rem;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      border: 1px solid #334155;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-title { font-size: 1.6rem; font-weight: bold; margin-bottom: 0.5rem; color: #fbbf24; }
+    .modal-subtitle { color: #94a3b8; font-size: 0.95rem; margin-bottom: 1.5rem; }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: white;
+      border: none;
+      padding: 0.9rem 2rem;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border-radius: 2rem;
+      cursor: pointer;
+      width: 100%;
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+      transition: transform 0.1s;
+      margin-top: 1rem;
+    }
+    .btn-primary:active { transform: scale(0.97); }
+
+    /* MCQ */
+    .quiz-question { margin-bottom: 1.5rem; font-size: 1.05rem; line-height: 1.5; color: #e2e8f0; text-align: left;}
+    .btn-option {
+      background: #334155;
+      color: white;
+      border: 2px solid #475569;
+      padding: 0.9rem 1.2rem;
+      border-radius: 1rem;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      text-align: left;
+      width: 100%;
+      margin-bottom: 0.8rem;
+    }
+    .btn-option:active { transform: scale(0.98); }
+    .btn-option.correct { background: #10b981; border-color: #059669; }
+    .btn-option.wrong { background: #ef4444; border-color: #b91c1c; animation: shake 0.3s; }
+
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+
+    /* Main App Layout */
+    .app {
+      width: 100%;
+      max-width: 800px;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 1.5rem;
+      background: rgba(30, 41, 59, 0.8);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid #334155;
+      z-index: 10;
+    }
+    .level-indicator { font-weight: bold; font-size: 1.1rem; color: #60a5fa; }
+    .score-badge { background: #0f172a; padding: 0.4rem 1rem; border-radius: 1rem; font-weight: bold; color: #fbbf24; border: 1px solid #334155; }
+    .reset-btn { background: none; border: none; color: #94a3b8; font-size: 0.9rem; cursor: pointer; text-decoration: underline; }
+
+    /* Canvas */
+    .canvas-container {
+      flex: 1;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    
+    .dialog-bubble {
+      position: absolute;
+      top: 12%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: white;
+      color: #1e293b;
+      padding: 1.2rem 1.5rem;
+      border-radius: 2rem;
+      font-weight: 600;
+      font-size: 1.05rem;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      text-align: center;
+      max-width: 85%;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 5;
+    }
+    .dialog-bubble.show { opacity: 1; }
+    .dialog-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 10px 10px 0;
+      border-style: solid;
+      border-color: white transparent transparent transparent;
+    }
+
+    /* Tokens Bar */
+    .tokens-bar {
+      background: var(--bg-panel);
+      padding: 1.2rem 1rem;
+      border-top: 1px solid #334155;
+      display: flex;
+      gap: 1rem;
+      overflow-x: auto;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-x;
+      min-height: 120px;
+      z-index: 10;
+    }
+    .tokens-bar::-webkit-scrollbar { display: none; }
+    
+    .token-item {
+      flex: 0 0 auto;
+      background: #0f172a;
+      border: 1px solid #475569;
+      border-radius: 1rem;
+      padding: 0.8rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-width: 80px;
+      height: 90px;
+      cursor: grab;
+      touch-action: none;
+      transition: border-color 0.2s;
+    }
+    .token-item:active { cursor: grabbing; border-color: #fbbf24; }
+    .token-item.locked {
+      opacity: 0.6;
+      filter: grayscale(0.8);
+      cursor: pointer;
+    }
+    .token-item.locked:active { cursor: pointer; border-color: #475569; }
+    .token-item.locked .token-emoji::after {
+      content: '🔒';
+      position: absolute;
+      font-size: 1rem;
+      bottom: -5px; right: -10px;
+      background: #1e293b;
+      border-radius: 50%;
+      padding: 2px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    }
+    .token-emoji { font-size: 2.2rem; pointer-events: none; position: relative; }
+    .token-name { font-size: 0.75rem; color: #cbd5e1; margin-top: 0.4rem; pointer-events: none; font-weight: 600; white-space: normal; text-align: center; line-height: 1.1; }
+
+    .token-placeholder {
+      flex: 0 0 auto;
+      min-width: 80px;
+      height: 90px;
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px dashed #475569;
+      border-radius: 1rem;
+    }
+
+    /* Notifications */
+    .toast {
+      position: fixed;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: rgba(30, 41, 59, 0.95);
+      color: white;
+      padding: 0.8rem 1.8rem;
+      border-radius: 2rem;
+      font-weight: bold;
+      border: 1px solid #475569;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s;
+      z-index: 1000;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+<!-- Modals -->
+<div id="startScreen" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-title">Kindness Ripples</div>
+    <div class="modal-subtitle">6 Levels of Compassion</div>
+    <p style="color: #cbd5e1; font-size: 0.95rem; line-height: 1.6; text-align: left; margin-bottom: 1.5rem;">
+      Items are locked! Tap a locked item and answer a question to unlock it.<br><br>
+      Once unlocked, drag it onto the correct needy character. Once used, the item disappears!
+    </p>
+    <button class="btn-primary" id="startBtn">Begin Journey</button>
+  </div>
+</div>
+
+<div id="levelUpScreen" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-title" id="levelUpTitle">Level Complete!</div>
+    <div class="modal-subtitle" id="levelUpSubtitle"></div>
+    <button class="btn-primary" id="continueBtn">Next Level</button>
+  </div>
+</div>
+
+<div id="quizScreen" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-title">Unlock Item</div>
+    <div class="modal-subtitle" id="quizSubtitle">Answer to unlock this item</div>
+    <div id="quizQuestion" class="quiz-question"></div>
+    <div id="quizOptions"></div>
+    <button class="btn-secondary" id="closeQuizBtn" style="background: #475569; color: white; border: none; padding: 0.8rem 2rem; border-radius: 2rem; width: 100%; margin-top: 1rem; cursor: pointer;">Cancel</button>
+  </div>
+</div>
+
+<div class="app">
+  <header class="header">
+    <div class="level-indicator" id="uiLevelText">Level 1: Plants</div>
+    <div class="score-badge">⭐ <span id="uiPoints">0</span></div>
+    <button class="reset-btn" id="resetBtn">Restart</button>
+  </header>
+  <main class="canvas-container" id="dropZone">
+    <div id="dialogBubble" class="dialog-bubble">...</div>
+    <canvas id="gameCanvas"></canvas>
+  </main>
+  <div class="tokens-bar" id="tokensBar"></div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+/**
+ * THE 60-ITEM MASTER DATABASE
+ * Adjusted for 5th to 8th Standard (Ages 10-14)
+ */
+const GAME_DATA = [
+  // LEVEL 1: PLANTS & TREES
+  {
+    levelName: "Plants & Trees",
+    pairs: [
+      { id: 'l1_1', e: '🥀', he: '🌹', en: 'Wilted Rose', in: 'Water Can', ie: '💧', clue: "My leaves are crisp and dry...", q: "How do plants take in water from the soil?", opts: ["Through their roots", "Through their leaves", "Through their flowers"], a: 0 },
+      { id: 'l1_2', e: '🟨', he: '🟩', en: 'Yellow Lawn', in: 'Fertilizer', ie: '🌿', clue: "I lack the nutrients to stay green.", q: "What do plants need from the soil to grow healthy and green?", opts: ["Nutrients and minerals", "Sugar and salt", "Plastic and glass"], a: 0 },
+      { id: 'l1_3', e: '🌳', he: '🌳', en: 'Overgrown Hedge', in: 'Shears', ie: '✂️', clue: "My branches are tangling and heavy.", q: "Why do gardeners trim old branches from a hedge?", opts: ["To help it grow healthy new branches", "To make it thirsty", "To stop it from growing"], a: 0 },
+      { id: 'l1_4', e: '🍅', he: '🍅', en: 'Aphid Tomato', in: 'Ladybugs', ie: '🐞', clue: "Tiny bugs are eating my sap!", q: "Instead of harmful chemicals, what is a natural way to get rid of plant-eating bugs?", opts: ["Using helpful insects like ladybugs", "Spraying them with juice", "Shouting at them"], a: 0 },
+      { id: 'l1_5', e: '❄️', he: '🌱', en: 'Freezing Roots', in: 'Mulch', ie: '🍂', clue: "The frost is damaging my delicate roots.", q: "How does covering soil with dry leaves (mulch) help plants in winter?", opts: ["It acts like a blanket to keep roots warm", "It makes the plant invisible", "It turns into snow"], a: 0 },
+      { id: 'l1_6', e: '🪴', he: '🪴', en: 'Rootbound Fern', in: 'Large Pot', ie: '🪣', clue: "I have no more room to expand.", q: "What happens if a plant's roots run out of space in a small pot?", opts: ["It becomes 'rootbound' and stops growing well", "It learns to walk", "It shrinks in size"], a: 0 },
+      { id: 'l1_7', e: '🧱', he: '🌱', en: 'Compacted Soil', in: 'Trowel', ie: '⛏️', clue: "The dirt is too hard for my roots to push through.", q: "Why is it bad for plants if the soil is packed too hard?", opts: ["Roots can't get air or grow through it", "The dirt gets too warm", "Worms will eat the plant"], a: 0 },
+      { id: 'l1_8', e: '🌾', he: '🌲', en: 'Bent Sapling', in: 'Wooden Stake', ie: '🪵', clue: "The wind is blowing me over.", q: "Why do we tie young trees to wooden stakes?", opts: ["To support them so they grow straight in the wind", "To stop them from running away", "To measure their height"], a: 0 },
+      { id: 'l1_9', e: '🍄', he: '🍃', en: 'Fungal Leaf', in: 'Neem Oil', ie: '🧴', clue: "White powdery spots are covering me.", q: "What can cause fuzzy white spots (disease) on plant leaves?", opts: ["Fungi or mold", "Too much sunlight", "Happy caterpillars"], a: 0 },
+      { id: 'l1_10', e: '🔥', he: '🌸', en: 'Scorched Orchid', in: 'Shade Net', ie: '⛱️', clue: "The direct sun is burning my delicate petals.", q: "Some plants get sunburned! What do they need?", opts: ["Shade or filtered sunlight", "Sunscreen lotion", "More water on their leaves"], a: 0 }
+    ]
+  },
+  // LEVEL 2: ANIMALS
+  {
+    levelName: "Animals & Wildlife",
+    pairs: [
+      { id: 'l2_1', e: '🐕', he: '🐕‍🦺', en: 'Stray Dog', in: 'Dog Bone', ie: '🦴', clue: "I haven't eaten in days.", q: "Dogs have an amazing sense that helps them find food. Which is it?", opts: ["Sense of Smell", "Sense of Taste", "Sense of Humor"], a: 0 },
+      { id: 'l2_2', e: '🥶', he: '🐈', en: 'Cold Kitten', in: 'Blanket', ie: '🧣', clue: "I am shivering and can't get warm.", q: "Mammals like cats and humans are warm-blooded. What does that mean?", opts: ["They make their own body heat", "They are always hot", "They drink warm water"], a: 0 },
+      { id: 'l2_3', e: '🐦', he: '🦅', en: 'Starving Bird', in: 'Bird Seed', ie: '🌻', clue: "Winter snow hid all the natural food.", q: "During winter, why is it harder for wild birds to survive?", opts: ["Their natural food is hidden under snow", "They forget how to fly", "They get too sleepy"], a: 0 },
+      { id: 'l2_4', e: '😿', he: '😺', en: 'Hungry Cat', in: 'Fresh Fish', ie: '🐟', clue: "I smell something delicious in the water.", q: "Cats are 'carnivores'. What does a carnivore eat?", opts: ["Mainly meat", "Only plants", "Everything"], a: 0 },
+      { id: 'l2_5', e: '🐴', he: '🐎', en: 'Matted Horse', in: 'Hair Brush', ie: '🪮', clue: "My coat is tangled with painful burrs.", q: "Why is it important to groom and brush animals like horses?", opts: ["To keep their skin healthy and remove bugs", "To change their color", "To make them run faster"], a: 0 },
+      { id: 'l2_6', e: '🦊', he: '🦊', en: 'Injured Fox', in: 'Bandage', ie: '🩹', clue: "I cut my paw on sharp metal.", q: "When an animal gets a cut, what part of the blood helps stop the bleeding?", opts: ["Platelets", "White blood cells", "Water"], a: 0 },
+      { id: 'l2_7', e: '🐮', he: '🐄', en: 'Orphaned Calf', in: 'Milk Bottle', ie: '🍼', clue: "I lost my mother and I'm so young.", q: "What do all baby mammals need to drink to grow strong?", opts: ["Milk from their mother", "Fresh river water", "Fruit juice"], a: 0 },
+      { id: 'l2_8', e: '🐝', he: '🐝', en: 'Tired Bee', in: 'Sweet Nectar', ie: '🍯', clue: "My wings are too heavy to reach the hive.", q: "How do bees tell their friends where to find the best flowers?", opts: ["They do a special 'waggle dance'", "They buzz very loudly", "They leave a trail of honey"], a: 0 },
+      { id: 'l2_9', e: '🐇', he: '🐇', en: 'Hungry Rabbit', in: 'Lettuce', ie: '🥬', clue: "I need fresh greens to survive.", q: "Rabbits are 'herbivores'. What is a herbivore?", opts: ["An animal that eats only plants", "An animal that eats insects", "An animal that eats both meat and plants"], a: 0 },
+      { id: 'l2_10', e: '🦜', he: '🦜', en: 'Bored Parrot', in: 'Puzzle Toy', ie: '🧩', clue: "I am intelligent and need mental stimulation.", q: "Parrots are very smart. Why do they need toys in captivity?", opts: ["To keep their brains busy so they don't get bored", "To learn how to read", "To hide from other birds"], a: 0 }
+    ]
+  },
+  // LEVEL 3: HUMANS
+  {
+    levelName: "Humans & Individuals",
+    pairs: [
+      { id: 'l3_1', e: '🚶', he: '🚶', en: 'Lost Tourist', in: 'City Map', ie: '🗺️', clue: "I don't know how to get back to my hotel.", q: "What do we call the tool or drawing that shows us how to navigate the world?", opts: ["A map", "A compass", "A painting"], a: 0 },
+      { id: 'l3_2', e: '🥶', he: '👨', en: 'Freezing Man', in: 'Warm Coat', ie: '🧥', clue: "The wind chill is dropping fast.", q: "What happens to the human body if it gets dangerously cold?", opts: ["Hypothermia", "Dehydration", "Heatstroke"], a: 0 },
+      { id: 'l3_3', e: '🤤', he: '🧑', en: 'Starving Beggar', in: 'Hot Meal', ie: '🍲', clue: "I haven't eaten a warm meal in days.", q: "Food gives our bodies energy. What is that energy usually measured in?", opts: ["Calories", "Degrees", "Kilometers"], a: 0 },
+      { id: 'l3_4', e: '🥵', he: '🏃', en: 'Thirsty Runner', in: 'Water Bottle', ie: '🚰', clue: "I've run 10 miles and have no sweat left.", q: "What is it called when your body loses too much water through sweat?", opts: ["Dehydration", "Evaporation", "Condensation"], a: 0 },
+      { id: 'l3_5', e: '🥱', he: '🧑‍🎓', en: 'Bored Student', in: 'Good Book', ie: '📖', clue: "My mind feels stagnant and uninspired.", q: "How does reading books help your brain?", opts: ["It builds vocabulary and imagination", "It makes your head bigger", "It makes you sleepy"], a: 0 },
+      { id: 'l3_6', e: '😵', he: '🤓', en: 'Squinting Reader', in: 'Glasses', ie: '👓', clue: "The letters on the page are completely blurry.", q: "If someone has trouble seeing things that are far away, they are...", opts: ["Nearsighted", "Farsighted", "Blind"], a: 0 },
+      { id: 'l3_7', e: '📵', he: '📱', en: 'Stranded Caller', in: 'Mobile Phone', ie: '📱', clue: "My car broke down and I have no signal.", q: "How do cell phones send messages through the air?", opts: ["Radio waves", "Sound waves", "Light waves"], a: 0 },
+      { id: 'l3_8', e: '🌧️', he: '🚶', en: 'Soaked Commuter', in: 'Umbrella', ie: '☂️', clue: "The sudden storm is ruining my clothes.", q: "In the water cycle, what do we call rain falling from the clouds?", opts: ["Precipitation", "Evaporation", "Transpiration"], a: 0 },
+      { id: 'l3_9', e: '💳', he: '🎫', en: 'Broke Traveler', in: 'Bus Ticket', ie: '🎫', clue: "I lost my wallet and need to get home.", q: "Why do we use money in society?", opts: ["To easily trade for goods and services", "To decorate our wallets", "To feed animals"], a: 0 },
+      { id: 'l3_10', e: '🦶', he: '👟', en: 'Barefoot Child', in: 'Sneakers', ie: '👟', clue: "The hot pavement is burning my feet.", q: "Why is it important to wear shoes outdoors?", opts: ["To protect feet from injury and germs", "To make you walk faster", "To make your feet smaller"], a: 0 }
+    ]
+  },
+  // LEVEL 4: SOCIETY
+  {
+    levelName: "Society & Infrastructure",
+    pairs: [
+      { id: 'l4_1', e: '🗑️', he: '🏞️', en: 'Littered Park', in: 'Trash Bag', ie: '🚮', clue: "Garbage is destroying this beautiful green space.", q: "Why is dropping plastic litter bad for the environment?", opts: ["Plastic takes hundreds of years to break down", "Plastic turns into soil quickly", "Plastic makes the grass grow"], a: 0 },
+      { id: 'l4_2', e: '🖍️', he: '🧱', en: 'Vandalized Wall', in: 'Fresh Paint', ie: '🖌️', clue: "Offensive words are written on this public building.", q: "When people write on public buildings without permission, it is called...", opts: ["Vandalism", "Architecture", "Gardening"], a: 0 },
+      { id: 'l4_3', e: '🪑', he: '🪑', en: 'Broken Bench', in: 'Repair Tools', ie: '🔨', clue: "The elderly have nowhere to sit safely here.", q: "Who usually pays to build public parks and benches?", opts: ["The community through taxes", "The park animals", "A single rich person"], a: 0 },
+      { id: 'l4_4', e: '🏚️', he: '🏠', en: 'Crumbling Wall', in: 'Bricks', ie: '🧱', clue: "This historical structure is falling apart.", q: "What profession designs safe buildings and structures?", opts: ["Architects and Engineers", "Doctors and Nurses", "Farmers and Chefs"], a: 0 },
+      { id: 'l4_5', e: '🌑', he: '💡', en: 'Dark Alley', in: 'Light Bulbs', ie: '💡', clue: "People feel unsafe walking here at night.", q: "Why are streetlights important for a community?", opts: ["They help prevent accidents and keep people safe", "They keep the stars away", "They make the streets warmer"], a: 0 },
+      { id: 'l4_6', e: '🏜️', he: '🌻', en: 'Empty Lot', in: 'Plant Seeds', ie: '🌱', clue: "This concrete slab could be a community garden.", q: "Turning an empty city lot into a garden helps the community by...", opts: ["Providing fresh food and a green space", "Making the city noisier", "Attracting more cars"], a: 0 },
+      { id: 'l4_7', e: '🌪️', he: '🛣️', en: 'Dirty Street', in: 'Push Broom', ie: '🧹', clue: "Glass and debris are blocking the bike lane.", q: "What happens if trash blocks the storm drains on a street?", opts: ["The street can flood when it rains", "The street gets wider", "The cars drive faster"], a: 0 },
+      { id: 'l4_8', e: '⚠️', he: '🚸', en: 'Dangerous Crossing', in: 'Stop Sign', ie: '🛑', clue: "Cars won't slow down for children here.", q: "What is the purpose of traffic laws and signs?", opts: ["To keep pedestrians and drivers safe", "To make people late for school", "To decorate the roads"], a: 0 },
+      { id: 'l4_9', e: '📚', he: '🏫', en: 'Empty Library', in: 'Book Box', ie: '📦', clue: "The shelves have no books for local kids.", q: "Public libraries are important because they...", opts: ["Provide free access to information for everyone", "Sell the best books", "Keep books locked away"], a: 0 },
+      { id: 'l4_10', e: '🗽', he: '✨', en: 'Dirty Statue', in: 'Wet Sponge', ie: '🧽', clue: "Our town's historical monument is covered in grime.", q: "What kind of pollution can mix with rain and damage stone statues?", opts: ["Acid rain caused by air pollution", "Dust from the desert", "Loud noises from cars"], a: 0 }
+    ]
+  },
+  // LEVEL 5: HUMANITY
+  {
+    levelName: "Humanity & Earth",
+    pairs: [
+      { id: 'l5_1', e: '🤒', he: '🏥', en: 'Sick Village', in: 'Medicine', ie: '💊', clue: "A preventable disease is spreading rapidly.", q: "What do we call a disease that spreads quickly to many people?", opts: ["An epidemic or outbreak", "A cure", "A fracture"], a: 0 },
+      { id: 'l5_2', e: '🏜️', he: '🚰', en: 'Drought Area', in: 'Clean Water', ie: '💧', clue: "The wells have dried up completely.", q: "Even though Earth is covered in water, why is a drought dangerous?", opts: ["Most of Earth's water is salty ocean water", "Water evaporates into space", "The water turns to ice"], a: 0 },
+      { id: 'l5_3', e: '🕯️', he: '⚡', en: 'Off-grid Town', in: 'Solar Panel', ie: '☀️', clue: "We have no electricity for our medical fridge.", q: "Solar panels create electricity using clean energy from...", opts: ["The Sun", "The Wind", "Fossil Fuels"], a: 0 },
+      { id: 'l5_4', e: '🍽️', he: '🌾', en: 'Famine Region', in: 'Food Crate', ie: '📦', clue: "The crops failed and the stores are empty.", q: "A severe shortage of food in a large area is called a...", opts: ["Famine", "Feast", "Festival"], a: 0 },
+      { id: 'l5_5', e: '🚜', he: '🌽', en: 'Barren Farm', in: 'Agri-Seeds', ie: '🌱', clue: "We lack climate-resilient crops to plant.", q: "Why is healthy soil important for all of humanity?", opts: ["It is required to grow the crops that feed the world", "It is good for making mud pies", "It smells nice after rain"], a: 0 },
+      { id: 'l5_6', e: '🌪️', he: '👕', en: 'Disaster Survivors', in: 'Clothes Box', ie: '👚', clue: "The hurricane washed away everything we owned.", q: "Organizations like the Red Cross are 'NGOs'. What does that mean?", opts: ["Non-Governmental Organizations that help people", "National Game Officials", "New Global Operators"], a: 0 },
+      { id: 'l5_7', e: '⛺', he: '🏠', en: 'Homeless Refugees', in: 'Tent Shelter', ie: '🎪', clue: "We fled conflict and have no roof over our heads.", q: "People who are forced to leave their country to escape war or disaster are called...", opts: ["Refugees", "Tourists", "Explorers"], a: 0 },
+      { id: 'l5_8', e: '🏝️', he: '📡', en: 'Isolated Island', in: 'Radio Set', ie: '📻', clue: "We need weather warnings before the storms hit.", q: "How can remote islands get warnings about incoming storms?", opts: ["Through radio and satellite signals", "By looking at the moon", "By throwing messages in bottles"], a: 0 },
+      { id: 'l5_9', e: '🏚️', he: '🎓', en: 'Underfunded School', in: 'Edu Books', ie: '📚', clue: "Education is our only path out of poverty.", q: "The United Nations says that going to school is a...", opts: ["Fundamental Human Right", "Luxury only for the rich", "Waste of time"], a: 0 },
+      { id: 'l5_10', e: '⚔️', he: '🕊️', en: 'War Zone', in: 'Peace Flag', ie: '🏳️', clue: "Decades of conflict have broken our society.", q: "When two groups talk to solve their problems instead of fighting, it's called...", opts: ["Diplomacy and peacebuilding", "Arguing and yelling", "Ignoring the problem"], a: 0 }
+    ]
+  },
+  // LEVEL 6: KINDNESS & LOVE
+  {
+    levelName: "Love & Spirit",
+    pairs: [
+      { id: 'l6_1', e: '😭', he: '😊', en: 'Grieving Friend', in: 'Warm Hug', ie: '🫂', clue: "Words cannot fix the loss I'm feeling right now.", q: "When someone is very sad, giving them a hug can...", opts: ["Help them feel safe and cared for", "Make them forget everything", "Fix all their problems instantly"], a: 0 },
+      { id: 'l6_2', e: '😞', he: '🙂', en: 'Sad Stranger', in: 'Friendly Smile', ie: '😊', clue: "I feel completely invisible to the world today.", q: "Emotions can be contagious. What does this mean?", opts: ["Smiling at someone can make them want to smile too", "You can catch a cold from smiling", "Being angry fixes things"], a: 0 },
+      { id: 'l6_3', e: '👴', he: '🗣️', en: 'Lonely Elder', in: 'Listening Ear', ie: '👂', clue: "I have so many memories, but no one to share them with.", q: "What does it mean to be a good listener?", opts: ["Paying attention without interrupting", "Waiting for your turn to talk", "Playing on your phone"], a: 0 },
+      { id: 'l6_4', e: '🗺️', he: '💌', en: 'Distant Family', in: 'Mail Letter', ie: '✉️', clue: "We are separated by thousands of miles.", q: "Keeping in touch with family and friends helps improve our...", opts: ["Mental health and happiness", "Ability to run fast", "Eye color"], a: 0 },
+      { id: 'l6_5', e: '🤒', he: '🌻', en: 'Sick Neighbor', in: 'Flowers', ie: '🌷', clue: "Being bedridden is dull and depressing.", q: "Doing small acts of kindness for others can actually make YOU feel...", opts: ["Happier and less stressed", "Angry and tired", "Bored and sleepy"], a: 0 },
+      { id: 'l6_6', e: '💔', he: '❤️‍🩹', en: 'Broken Spirit', in: 'Loving Heart', ie: '❤️', clue: "I have lost faith in humanity and myself.", q: "The ability to understand and share the feelings of someone else is called...", opts: ["Empathy", "Apathy", "Sympathy"], a: 0 },
+      { id: 'l6_7', e: '🧗', he: '🤝', en: 'Struggling Worker', in: 'Helping Hand', ie: '🤲', clue: "This burden is too heavy to carry alone.", q: "When a community works together to help each other, it builds...", opts: ["Trust and teamwork", "Jealousy and anger", "Taller buildings"], a: 0 },
+      { id: 'l6_8', e: '⏱️', he: '🧘', en: 'Rushed Parent', in: 'Free Time', ie: '⏳', clue: "I just need a moment to breathe and reset.", q: "Everyone feels stressed sometimes. What is a healthy way to handle it?", opts: ["Taking a break to breathe and relax", "Yelling at people", "Running away"], a: 0 },
+      { id: 'l6_9', e: '😔', he: '🎵', en: 'Depressed Teen', in: 'Uplifting Song', ie: '🎶', clue: "Everything is gray; I need something to uplift me.", q: "Why do many people listen to music when they are feeling down?", opts: ["It can uplift our mood and express our feelings", "It makes the room darker", "It helps them forget how to talk"], a: 0 },
+      { id: 'l6_10', e: '🙈', he: '✨', en: 'Insecure Youth', in: 'Magic Mirror', ie: '🪞', clue: "I can't see the good inside myself.", q: "Accepting yourself for who you are, including your flaws, is called...", opts: ["Self-acceptance and self-compassion", "Being selfish", "Being perfect"], a: 0 }
+    ]
+  }
+];
+
+// State
+let state = {
+  currentLevelIdx: 0,
+  points: 0,
+  levelPairs: [], 
+  availableItems: [],
+  unlockedItems: [], // Tracks which items have been unlocked
+  currentEntity: null,
+};
+
+// DOM Elements
+const dropZone = document.getElementById('dropZone');
+const tokensBar = document.getElementById('tokensBar');
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const uiLevelText = document.getElementById('uiLevelText');
+const uiPoints = document.getElementById('uiPoints');
+const dialogBubble = document.getElementById('dialogBubble');
+const toast = document.getElementById('toast');
+
+const startScreen = document.getElementById('startScreen');
+const levelUpScreen = document.getElementById('levelUpScreen');
+const quizScreen = document.getElementById('quizScreen');
+
+// Drag Variables
+let draggedElement = null;
+let placeholder = null;
+let dragItemData = null;
+let startX = 0, startY = 0;
+
+// Setup & Canvas
+let particles = [];
+function resizeCanvas() {
+  const rect = dropZone.getBoundingClientRect();
+  ctx.setTransform(1, 0, 0, 1, 0, 0); 
+  canvas.width = rect.width * window.devicePixelRatio;
+  canvas.height = rect.height * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+}
+window.addEventListener('resize', resizeCanvas);
+
+function spawnParticles(x, y) {
+  for(let i=0; i<30; i++) {
+    particles.push({
+      x: x, y: y,
+      vx: (Math.random() - 0.5) * 10,
+      vy: (Math.random() - 0.5) * 10,
+      life: 1.0,
+      color: ['#fbbf24', '#34d399', '#60a5fa', '#f472b6'][Math.floor(Math.random()*4)]
+    });
+  }
+}
+
+let isHappyState = false;
+function renderLoop() {
+  const w = canvas.width / window.devicePixelRatio;
+  const h = canvas.height / window.devicePixelRatio;
+  
+  ctx.clearRect(0, 0, w, h);
+  
+  if (state.currentEntity) {
+    const cx = w / 2;
+    const cy = h / 2 + 10;
+    
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    if (isHappyState) {
+      ctx.shadowColor = '#fbbf24';
+      ctx.shadowBlur = 40;
+    }
+    
+    // Draw Emoji
+    ctx.font = '85px "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
+    const displayEmoji = isHappyState ? state.currentEntity.he : state.currentEntity.e;
+    const bounce = isHappyState ? Math.sin(Date.now() / 150) * 15 : Math.sin(Date.now() / 400) * 5;
+    ctx.fillText(displayEmoji, cx, cy + bounce);
+    ctx.restore();
+    
+    // Draw Entity Name to avoid confusion!
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 20px "Segoe UI", system-ui, sans-serif';
+    ctx.fillStyle = '#cbd5e1';
+    ctx.fillText(state.currentEntity.en, cx, cy + 70 + (isHappyState ? 0 : bounce));
+    ctx.restore();
+  }
+
+  // Draw Particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    let p = particles[i];
+    p.x += p.vx; p.y += p.vy; p.life -= 0.02;
+    if (p.life <= 0) particles.splice(i, 1);
+    else {
+      ctx.globalAlpha = p.life;
+      ctx.fillStyle = p.color;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, Math.PI*2); ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1.0;
+  requestAnimationFrame(renderLoop);
+}
+
+// Logic 
+function startLevel() {
+  if (state.currentLevelIdx >= GAME_DATA.length) {
+    alert(`Game Complete! You scored ${state.points} points. You are a true Kindness Ripple!`);
+    state.currentLevelIdx = 0; state.points = 0;
+  }
+  
+  const levelData = GAME_DATA[state.currentLevelIdx];
+  uiLevelText.textContent = `Level ${state.currentLevelIdx + 1}: ${levelData.levelName}`;
+  
+  // Reset locks for the new level
+  state.unlockedItems = [];
+  state.levelPairs = [...levelData.pairs].sort(() => Math.random() - 0.5);
+  state.availableItems = [...state.levelPairs].sort(() => Math.random() - 0.5);
+  
+  renderTokens();
+  loadNextEntity();
+}
+
+function renderTokens() {
+  tokensBar.innerHTML = '';
+  state.availableItems.forEach(item => {
+    const isUnlocked = state.unlockedItems.includes(item.id);
+    const div = document.createElement('div');
+    div.className = `token-item ${isUnlocked ? '' : 'locked'}`;
+    div.innerHTML = `<div class="token-emoji">${item.ie}</div><div class="token-name">${item.in}</div>`;
+    
+    if (isUnlocked) {
+        // Unlocked items can be dragged
+        div.addEventListener('pointerdown', (e) => startDrag(e, div, item));
+    } else {
+        // Locked items open the quiz
+        div.addEventListener('click', () => openQuiz(item));
+    }
+    
+    tokensBar.appendChild(div);
+  });
+}
+
+function loadNextEntity() {
+  if (state.levelPairs.length === 0) {
+    document.getElementById('levelUpTitle').textContent = `Level ${state.currentLevelIdx + 1} Complete!`;
+    document.getElementById('levelUpSubtitle').textContent = `You helped 10 entities in ${GAME_DATA[state.currentLevelIdx].levelName}.`;
+    levelUpScreen.classList.remove('hidden');
+    return;
+  }
+  
+  isHappyState = false;
+  state.currentEntity = state.levelPairs.pop();
+  
+  dialogBubble.textContent = state.currentEntity.clue;
+  dialogBubble.classList.add('show');
+}
+
+// Quiz System (Unlock Phase)
+function openQuiz(item) {
+  document.getElementById('quizSubtitle').innerHTML = `Unlock <b>${item.in}</b>`;
+  document.getElementById('quizQuestion').textContent = item.q;
+  
+  const optsContainer = document.getElementById('quizOptions');
+  optsContainer.innerHTML = '';
+  
+  // Create an array mapping text to whether it was originally the correct answer (item.a is always 0)
+  let optionsArray = item.opts.map((optText, index) => {
+    return { text: optText, isCorrect: index === item.a };
+  });
+  
+  // Shuffle the options array!
+  optionsArray.sort(() => Math.random() - 0.5);
+  
+  // Render the shuffled options
+  optionsArray.forEach((optObj) => {
+    const btn = document.createElement('button');
+    btn.className = 'btn-option';
+    btn.textContent = optObj.text;
+    btn.onclick = () => handleQuizAnswer(btn, optObj.isCorrect, item);
+    optsContainer.appendChild(btn);
+  });
+  
+  quizScreen.classList.remove('hidden');
+}
+
+function handleQuizAnswer(btn, isCorrect, item) {
+  const allBtns = document.querySelectorAll('#quizOptions .btn-option');
+  allBtns.forEach(b => b.style.pointerEvents = 'none');
+
+  if (isCorrect) {
+    btn.classList.add('correct');
+    setTimeout(() => {
+      quizScreen.classList.add('hidden');
+      state.unlockedItems.push(item.id);
+      showToast(`${item.in} Unlocked! 🔓`);
+      renderTokens(); // Re-render to make draggable
+    }, 800);
+  } else {
+    btn.classList.add('wrong');
+    setTimeout(() => {
+      quizScreen.classList.add('hidden');
+      showToast("Incorrect answer. Try again!", true);
+    }, 1000);
+  }
+}
+
+document.getElementById('closeQuizBtn').addEventListener('click', () => {
+    quizScreen.classList.add('hidden');
+});
+
+// Drag & Drop Implementation (Physical Element Move)
+function startDrag(e, element, itemData) {
+  if (e.pointerType === 'touch') e.target.releasePointerCapture(e.pointerId);
+
+  draggedElement = element;
+  dragItemData = itemData;
+  
+  const rect = element.getBoundingClientRect();
+  startX = e.clientX - rect.left - rect.width/2;
+  startY = e.clientY - rect.top - rect.height/2;
+
+  placeholder = document.createElement('div');
+  placeholder.className = 'token-placeholder';
+  element.parentNode.insertBefore(placeholder, element);
+
+  element.style.position = 'fixed';
+  element.style.zIndex = '9999';
+  element.style.width = rect.width + 'px';
+  element.style.height = rect.height + 'px';
+  document.body.appendChild(element);
+  
+  moveDrag(e);
+
+  document.addEventListener('pointermove', moveDrag, {passive: false});
+  document.addEventListener('pointerup', endDrag);
+}
+
+function moveDrag(e) {
+  if (!draggedElement) return;
+  e.preventDefault(); 
+  draggedElement.style.left = (e.clientX - startX - draggedElement.offsetWidth/2) + 'px';
+  draggedElement.style.top = (e.clientY - startY - draggedElement.offsetHeight/2) + 'px';
+}
+
+function endDrag(e) {
+  document.removeEventListener('pointermove', moveDrag);
+  document.removeEventListener('pointerup', endDrag);
+  
+  if (!draggedElement) return;
+
+  const dropRect = dropZone.getBoundingClientRect();
+  if (e.clientX >= dropRect.left && e.clientX <= dropRect.right &&
+      e.clientY >= dropRect.top && e.clientY <= dropRect.bottom) {
+      handleDropAttempt(dragItemData);
+  } else {
+      revertDrag();
+  }
+}
+
+function handleDropAttempt(item) {
+  if (item.id === state.currentEntity.id) {
+    // Correct Match!
+    draggedElement.style.display = 'none'; 
+    processSuccess(item);
+  } else {
+    // Wrong Item
+    showToast("This isn't what they need...", true);
+    dialogBubble.style.transform = 'translateX(-50%) translateX(10px)';
+    setTimeout(() => dialogBubble.style.transform = 'translateX(-50%) translateX(-10px)', 100);
+    setTimeout(() => dialogBubble.style.transform = 'translateX(-50%)', 200);
+    revertDrag();
+  }
+}
+
+function revertDrag() {
+  if (!draggedElement || !placeholder) return;
+  draggedElement.style.position = '';
+  draggedElement.style.zIndex = '';
+  draggedElement.style.left = '';
+  draggedElement.style.top = '';
+  draggedElement.style.width = '';
+  draggedElement.style.height = '';
+  placeholder.parentNode.insertBefore(draggedElement, placeholder);
+  placeholder.remove();
+  
+  draggedElement = null;
+  placeholder = null;
+  dragItemData = null;
+}
+
+function processSuccess(item) {
+  if(draggedElement) draggedElement.remove();
+  if(placeholder) placeholder.remove();
+  draggedElement = null;
+  placeholder = null;
+  
+  state.availableItems = state.availableItems.filter(i => i.id !== item.id);
+  
+  state.points += 50;
+  uiPoints.textContent = state.points;
+  
+  isHappyState = true;
+  dialogBubble.textContent = "Thank you! I feel so much better! ✨";
+  
+  const w = canvas.width / window.devicePixelRatio;
+  const h = canvas.height / window.devicePixelRatio;
+  spawnParticles(w/2, h/2);
+  
+  setTimeout(() => {
+    dialogBubble.classList.remove('show');
+    setTimeout(loadNextEntity, 300);
+  }, 2500);
+}
+
+function showToast(msg, isError = false) {
+  toast.textContent = msg;
+  toast.style.borderColor = isError ? 'var(--danger)' : 'var(--success)';
+  toast.classList.add('show');
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => toast.classList.remove('show'), 2000);
+}
+
+// Events
+document.getElementById('startBtn').addEventListener('click', () => {
+  startScreen.classList.add('hidden');
+  resizeCanvas();
+  startLevel();
+});
+
+document.getElementById('continueBtn').addEventListener('click', () => {
+  levelUpScreen.classList.add('hidden');
+  state.currentLevelIdx++;
+  startLevel();
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if(confirm("Restart the entire game?")) {
+    state.currentLevelIdx = 0;
+    state.points = 0;
+    uiPoints.textContent = 0;
+    startLevel();
+  }
+});
+document.addEventListener('dragstart', e => e.preventDefault());
+
+// Init
+resizeCanvas();
+renderLoop();
+</script>
+</body>
+</html>

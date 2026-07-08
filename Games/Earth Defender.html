@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover, maximum-scale=1.0, minimum-scale=1.0">
+  <title>Earth Defender · Protect the Planet</title>
+  <style>
+    :root {
+      --primary: #4a8aff;
+      --bg-dark: #070a17;
+      --panel-bg: #12162b;
+      --text-glow: #7ab0ff;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+      background: var(--bg-dark);
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+      padding: 10px;
+    }
+
+    .game-wrapper {
+      background: linear-gradient(145deg, var(--panel-bg), var(--bg-dark));
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      max-width: 500px;
+      max-height: 850px;
+      border-radius: 32px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9), 0 0 0 1px #2f4f9f inset, 0 0 40px #1a3faa30;
+      gap: 10px;
+    }
+
+    /* ----- TITLE BAR ----- */
+    .title-bar {
+      width: 100%;
+      text-align: center;
+      padding: 4px 0;
+      flex-shrink: 0;
+    }
+    .title-bar h1 {
+      font-size: clamp(1.2rem, 5vw, 1.8rem);
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffffff, #7aaaff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 25px rgba(63, 123, 255, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      letter-spacing: 2px;
+    }
+    .title-bar small {
+      font-size: 0.6rem;
+      background: rgba(24, 32, 74, 0.8);
+      padding: 3px 8px;
+      border-radius: 12px;
+      -webkit-text-fill-color: #8db0f0;
+      font-weight: 600;
+      border: 1px solid #2f4a8a;
+    }
+
+    /* ----- STATS HEADER ----- */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      padding: 8px 12px;
+      color: #b8d4ff;
+      background: rgba(14, 19, 47, 0.8);
+      border-radius: 20px;
+      flex-shrink: 0;
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(47, 74, 138, 0.5);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #0d1533;
+      padding: 4px 12px;
+      border-radius: 16px;
+      border: 1px solid #2a457a;
+      font-weight: 700;
+      font-size: clamp(0.7rem, 2vw, 0.9rem);
+    }
+
+    #scoreDisplay { color: #5effa8; text-shadow: 0 0 10px rgba(94, 255, 168, 0.5); }
+    #aliensDestroyed { color: #ff5e9c; text-shadow: 0 0 10px rgba(255, 94, 156, 0.5); }
+    #earthHealth { font-size: 0.8rem; letter-spacing: 1px; }
+
+    /* ----- CANVAS ----- */
+    .canvas-container {
+      flex: 1;
+      width: 100%;
+      min-height: 0;
+      position: relative;
+      border-radius: 24px;
+      overflow: hidden;
+      border: 2px solid #2a457a;
+      box-shadow: 0 0 30px rgba(26, 58, 138, 0.4) inset, 0 10px 20px rgba(0,0,0,0.5);
+      background: #040614;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+    }
+
+    /* ----- CONTROLS ----- */
+    .controls {
+      display: flex;
+      gap: 10px;
+      padding: 4px;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      flex-shrink: 0;
+    }
+
+    button {
+      background: linear-gradient(135deg, #4a8aff, #1f4fcf);
+      border: none;
+      color: white;
+      font-weight: 800;
+      font-size: clamp(0.8rem, 2.5vw, 1rem);
+      padding: 10px 24px;
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 6px 0 #0f2b77, 0 10px 20px rgba(0,0,0,0.5);
+      border: 1px solid #9fc1ff;
+      transition: all 0.1s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    button:active {
+      transform: translateY(6px);
+      box-shadow: 0 0px 0 #0f2b77, 0 4px 10px rgba(0,0,0,0.6);
+    }
+
+    .instruction {
+      color: #9fc1ff;
+      font-size: clamp(0.7rem, 2vw, 0.85rem);
+      background: rgba(13, 21, 59, 0.8);
+      padding: 6px 16px;
+      border-radius: 20px;
+      border: 1px solid #2a457a;
+      font-weight: 600;
+    }
+
+    #messageBox {
+      color: #fce28b;
+      font-weight: 700;
+      font-size: clamp(0.75rem, 2vw, 0.9rem);
+      background: rgba(11, 18, 58, 0.9);
+      padding: 8px 18px;
+      border-radius: 20px;
+      border: 1px solid #d4af37;
+      box-shadow: 0 0 15px rgba(212, 175, 55, 0.2);
+    }
+  </style>
+</head>
+<body>
+
+<div class="game-wrapper">
+  <div class="title-bar">
+    <h1>🛡️ EARTH DEFENDER <small>v2</small></h1>
+  </div>
+
+  <div class="header">
+    <div class="stat" title="Aliens Destroyed">👾 <span id="aliensDestroyed">0</span></div>
+    <div class="stat" title="Score">⭐ <span id="scoreDisplay">0</span></div>
+    <div class="stat" title="Earth Health"><span id="earthHealth">❤️❤️❤️❤️❤️</span></div>
+  </div>
+
+  <div class="canvas-container" id="canvasContainer">
+    <canvas id="gameCanvas" aria-label="Earth Defender game canvas"></canvas>
+  </div>
+
+  <div class="controls" id="controlsArea">
+    <button id="startBtn">🛡️ DEFEND</button>
+    <span class="instruction" id="instructionText">👆 HOLD & RELEASE</span>
+    <span id="messageBox">Prepare for invasion!</span>
+    <button id="playAgainBtn" style="display: none;">🔄 RETRY</button>
+  </div>
+</div>
+
+<script>
+  (function() {
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('canvasContainer');
+
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const aliensDestroyedDisplay = document.getElementById('aliensDestroyed');
+    const earthHealthDisplay = document.getElementById('earthHealth');
+    const messageBox = document.getElementById('messageBox');
+    
+    const startBtn = document.getElementById('startBtn');
+    const playAgainBtn = document.getElementById('playAgainBtn');
+    const instructionText = document.getElementById('instructionText');
+
+    const GRAVITY = 0.15;
+    
+    let gameActive = false;
+    let score = 0;
+    let aliensDestroyed = 0;
+    let earthHealth = 5;
+    let aliensReached = 0;
+    let maxAliensReach = 3;
+    
+    let earthX = 0, earthY = 0, earthRadius = 30;
+    let launcherX = 0, launcherY = 0;
+    
+    let projectiles = [];
+    let maxProjectiles = 6;
+    let launchCooldown = 0;
+    const LAUNCH_COOLDOWN_TIME = 8;
+    
+    let aliens = [];
+    let alienSpawnTimer = 0;
+    let baseSpawnDelay = 160;
+    let alienSpeed = 0.35;
+    
+    let particles = [];
+    let floatingTexts = [];
+    
+    let isAiming = false;
+    let touchX = 0, touchY = 0;
+    let currentAngleRad = -Math.PI / 4; 
+    let currentPower = 40;
+    let aimVX = 0, aimVY = 0;
+    const AIM_TIME = 45;
+    
+    let gameScale = 1;
+    let stars = [];
+    let earthContinents = [];
+
+    function generateContinents() {
+      earthContinents = [];
+      for (let i = 0; i < 7; i++) {
+        earthContinents.push({
+          x: (Math.random() - 0.5) * 1.4, // Relative offset
+          y: (Math.random() - 0.5) * 1.4,
+          radius: (Math.random() * 0.4 + 0.2)
+        });
+      }
+    }
+
+    function resizeCanvas() {
+      // Use DevicePixelRatio for perfectly crisp edges and accurate circular paths
+      const dpr = window.devicePixelRatio || 1;
+      const rect = container.getBoundingClientRect();
+      
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      
+      // Calculate scale based on logical width/height to keep speeds/sizes consistent
+      gameScale = Math.min(canvas.width / 480, canvas.height / 520) * (dpr > 1 ? 1 : 1.2);
+
+      // Positioning
+      earthX = canvas.width / 2;
+      earthY = canvas.height / 2 + (20 * gameScale);
+      earthRadius = 25 * gameScale;
+      
+      // Place launcher at the bottom center or corner. Bottom left looks good.
+      launcherX = 50 * gameScale;
+      launcherY = canvas.height - 50 * gameScale;
+      
+      initStars();
+      if(earthContinents.length === 0) generateContinents();
+    }
+
+    function initStars() {
+      stars = [];
+      for (let i = 0; i < 150; i++) {
+        stars.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          radius: (Math.random() * 1.5 + 0.5) * gameScale * 0.5,
+          brightness: Math.random() * 0.8 + 0.2,
+          speed: Math.random() * 0.02
+        });
+      }
+    }
+
+    function showGameOverButtons() {
+      playAgainBtn.style.display = 'flex';
+      startBtn.style.display = 'none';
+      instructionText.style.display = 'none';
+    }
+
+    function hideGameOverButtons() {
+      playAgainBtn.style.display = 'none';
+      startBtn.style.display = 'flex';
+      instructionText.style.display = 'flex';
+    }
+
+    function updateUI() {
+      scoreDisplay.textContent = score;
+      aliensDestroyedDisplay.textContent = aliensDestroyed;
+      let hearts = '';
+      for (let i = 0; i < 5; i++) {
+        hearts += i < earthHealth ? '❤️' : '🖤';
+      }
+      earthHealthDisplay.textContent = hearts;
+    }
+
+    function setMessage(text) {
+      messageBox.textContent = text;
+    }
+
+    function spawnAlien() {
+      const side = Math.floor(Math.random() * 4);
+      let x, y;
+      const margin = 30 * gameScale;
+      
+      switch(side) {
+        case 0: x = Math.random() * canvas.width; y = -margin; break;
+        case 1: x = canvas.width + margin; y = Math.random() * canvas.height; break;
+        case 2: x = Math.random() * canvas.width; y = canvas.height + margin; break;
+        case 3: x = -margin; y = Math.random() * canvas.height; break;
+      }
+      
+      const dx = earthX - x;
+      const dy = earthY - y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const speed = (0.5 + Math.random() * alienSpeed) * gameScale;
+      
+      aliens.push({
+        x, y,
+        vx: (dx / dist) * speed,
+        vy: (dy / dist) * speed,
+        radius: (10 + Math.random()*4) * gameScale,
+        type: Math.floor(Math.random() * 3),
+        wobble: Math.random() * Math.PI * 2,
+        wobbleSpeed: 0.05 + Math.random() * 0.05
+      });
+    }
+
+    function calculateAimToHitPoint(tx, ty) {
+      const time = AIM_TIME;
+      const gravityOffset = GRAVITY * gameScale * time * (time + 1) / 2;
+      const barrelLen = 30 * gameScale;
+      
+      // Loop a few times to perfectly align the barrel's physical tip with the mathematical velocity vector.
+      // This ensures the preview line and the actual bullet path match the crosshair perfectly.
+      let angle = Math.atan2(ty - launcherY, tx - launcherX);
+      
+      for(let i = 0; i < 3; i++) {
+        const startX = launcherX + Math.cos(angle) * barrelLen;
+        const startY = launcherY + Math.sin(angle) * barrelLen;
+        
+        aimVX = (tx - startX) / time;
+        aimVY = (ty - startY - gravityOffset) / time;
+        angle = Math.atan2(aimVY, aimVX);
+      }
+      
+      currentAngleRad = angle;
+      
+      const speed = Math.sqrt(aimVX * aimVX + aimVY * aimVY);
+      currentPower = Math.min(100, Math.max(1, Math.round(speed * 4)));
+    }
+
+    function fireFromLauncher() {
+      if (!gameActive || launchCooldown > 0) return;
+      if (projectiles.length >= maxProjectiles) {
+        projectiles.shift(); // Remove oldest projectile to keep limit
+      }
+      
+      const barrelLen = 30 * gameScale;
+      const startX = launcherX + Math.cos(currentAngleRad) * barrelLen;
+      const startY = launcherY + Math.sin(currentAngleRad) * barrelLen;
+
+      projectiles.push({
+        x: startX,
+        y: startY,
+        vx: aimVX,
+        vy: aimVY,
+        radius: 3.5 * gameScale,
+        trail: [],
+        active: true
+      });
+      
+      // Kickback effect
+      createExplosion(startX, startY, '#7ab0ff', 5, 1);
+      launchCooldown = LAUNCH_COOLDOWN_TIME;
+    }
+
+    function checkEarthCollision(obj) {
+      const dx = obj.x - earthX;
+      const dy = obj.y - earthY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      return dist < earthRadius + obj.radius;
+    }
+
+    function update() {
+      if (!gameActive) {
+        updateVisualsOnly();
+        return;
+      }
+      
+      if (launchCooldown > 0) launchCooldown--;
+      
+      // Spawning logic
+      alienSpawnTimer--;
+      if (alienSpawnTimer <= 0) {
+        spawnAlien();
+        alienSpawnTimer = Math.max(60, baseSpawnDelay - (aliensDestroyed * 1.5));
+        if (Math.random() < 0.15 && aliensDestroyed > 10) spawnAlien(); // Double spawn chance
+      }
+      
+      // Aliens logic
+      for (let i = aliens.length - 1; i >= 0; i--) {
+        const alien = aliens[i];
+        alien.wobble += alien.wobbleSpeed;
+        
+        // Wobble perpendicular to velocity
+        const speed = Math.sqrt(alien.vx*alien.vx + alien.vy*alien.vy);
+        const perpX = -alien.vy / speed;
+        const perpY = alien.vx / speed;
+        
+        const wobbleFactor = Math.sin(alien.wobble) * 0.4 * gameScale;
+        
+        alien.x += alien.vx + perpX * wobbleFactor;
+        alien.y += alien.vy + perpY * wobbleFactor;
+        
+        if (checkEarthCollision(alien)) {
+          aliens.splice(i, 1);
+          aliensReached++;
+          createExplosion(alien.x, alien.y, '#ff3333', 30, 2);
+          setMessage(`⚠️ Invasion! ${aliensReached}/${maxAliensReach}`);
+          
+          if (aliensReached >= maxAliensReach) {
+            endGame('💀 Alien Takeover! Game Over');
+            return;
+          }
+          continue;
+        }
+      }
+      
+      // Projectiles logic
+      for (let i = projectiles.length - 1; i >= 0; i--) {
+        const proj = projectiles[i];
+        if (!proj.active) { projectiles.splice(i, 1); continue; }
+        
+        proj.vy += GRAVITY * gameScale;
+        proj.x += proj.vx;
+        proj.y += proj.vy;
+        
+        proj.trail.push({x: proj.x, y: proj.y});
+        if (proj.trail.length > 25) proj.trail.shift();
+        
+        // Did we hit Earth?
+        if (checkEarthCollision(proj)) {
+          earthHealth--;
+          createExplosion(proj.x, proj.y, '#ffaa00', 20, 1.5);
+          floatingTexts.push({
+            x: proj.x, y: proj.y - 15 * gameScale,
+            text: '💥', life: 1.5, color: '#ff4444'
+          });
+          projectiles.splice(i, 1);
+          updateUI();
+          setMessage(`💔 Earth hit! Health: ${earthHealth}/5`);
+          if (earthHealth <= 0) {
+            endGame('🌍 Earth destroyed! Game Over');
+            return;
+          }
+          continue;
+        }
+        
+        // Did we hit Alien?
+        let hitAlien = false;
+        for (let j = aliens.length - 1; j >= 0; j--) {
+          const alien = aliens[j];
+          const dx = proj.x - alien.x;
+          const dy = proj.y - alien.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          
+          if (dist < alien.radius + proj.radius + 2 * gameScale) {
+            const points = 100 + (alien.type * 50);
+            score += points;
+            aliensDestroyed++;
+            createExplosion(alien.x, alien.y, ['#5effa8', '#ff5e9c', '#fce28b'][alien.type], 20, 2);
+            floatingTexts.push({
+              x: alien.x, y: alien.y - 15 * gameScale,
+              text: '+' + points, life: 1.5, color: '#fce28b'
+            });
+            aliens.splice(j, 1);
+            hitAlien = true;
+            updateUI();
+            setMessage('🎯 Target Destroyed!');
+            
+            // Level up logic
+            if (aliensDestroyed % 15 === 0) {
+              alienSpeed = Math.min(1.5, alienSpeed + 0.1);
+              maxProjectiles = Math.min(10, maxProjectiles + 1);
+              setMessage('⚡ Turret Upgraded!');
+            }
+            break;
+          }
+        }
+        
+        if (hitAlien) { projectiles.splice(i, 1); continue; }
+        
+        // Out of bounds
+        if (proj.x < -100 || proj.x > canvas.width + 100 || proj.y > canvas.height + 100) {
+          projectiles.splice(i, 1);
+        }
+      }
+      
+      updateVisualsOnly();
+    }
+
+    // Updates particles and stars even when game is paused
+    function updateVisualsOnly() {
+      stars.forEach(star => {
+        star.y += star.speed * gameScale;
+        if(star.y > canvas.height) {
+          star.y = 0;
+          star.x = Math.random() * canvas.width;
+        }
+      });
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.05 * gameScale; // particle gravity
+        p.life -= p.decay;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+      
+      for (let i = floatingTexts.length - 1; i >= 0; i--) {
+        const ft = floatingTexts[i];
+        ft.y -= 0.8 * gameScale;
+        ft.life -= 0.02;
+        if (ft.life <= 0) floatingTexts.splice(i, 1);
+      }
+    }
+
+    function createExplosion(x, y, color, count, speedMulti) {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = (0.5 + Math.random() * 3) * gameScale * speedMulti;
+        particles.push({
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 1,
+          decay: 0.02 + Math.random() * 0.03,
+          size: (1 + Math.random() * 3) * gameScale,
+          color
+        });
+      }
+    }
+
+    function endGame(reason) {
+      gameActive = false;
+      isAiming = false;
+      setMessage(reason);
+      showGameOverButtons();
+      updateUI();
+    }
+
+    function resetGame() {
+      gameActive = true;
+      score = 0;
+      aliensDestroyed = 0;
+      earthHealth = 5;
+      aliensReached = 0;
+      alienSpeed = 0.35;
+      maxProjectiles = 6;
+      baseSpawnDelay = 160;
+      
+      projectiles = [];
+      aliens = [];
+      particles = [];
+      floatingTexts = [];
+      isAiming = false;
+      launchCooldown = 0;
+      currentAngleRad = -Math.PI / 4;
+      
+      alienSpawnTimer = 60;
+      
+      hideGameOverButtons();
+      updateUI();
+      setMessage('👆 Aim carefully!');
+    }
+
+    // ---------- RENDERING ----------
+
+    function drawStars() {
+      stars.forEach(star => {
+        const twinkle = Math.sin(Date.now() * 0.003 + star.x) * 0.3 + 0.7;
+        ctx.fillStyle = `rgba(255,255,255,${star.brightness * twinkle})`;
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function drawEarth() {
+      // 1. Atmosphere Glow
+      const glow = ctx.createRadialGradient(earthX, earthY, earthRadius * 0.8, earthX, earthY, earthRadius * 1.6);
+      glow.addColorStop(0, 'rgba(74, 138, 255, 0.4)');
+      glow.addColorStop(1, 'rgba(74, 138, 255, 0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(earthX, earthY, earthRadius * 1.6, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // 2. Planet Base (Ocean)
+      const grad = ctx.createRadialGradient(
+        earthX - earthRadius*0.3, earthY - earthRadius*0.3, earthRadius*0.1, 
+        earthX, earthY, earthRadius
+      );
+      grad.addColorStop(0, '#3b8bdd');
+      grad.addColorStop(0.6, '#1a4f9a');
+      grad.addColorStop(1, '#071638');
+      
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(earthX, earthY, earthRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 3. Continents
+      ctx.save();
+      // Clip to earth boundary so continents don't overflow
+      ctx.beginPath();
+      ctx.arc(earthX, earthY, earthRadius, 0, Math.PI * 2);
+      ctx.clip();
+      
+      earthContinents.forEach(cont => {
+        const cx = earthX + cont.x * earthRadius;
+        const cy = earthY + cont.y * earthRadius;
+        const cRadius = cont.radius * earthRadius;
+        
+        const cGrad = ctx.createRadialGradient(cx - cRadius*0.2, cy - cRadius*0.2, 0, cx, cy, cRadius);
+        cGrad.addColorStop(0, '#5add76');
+        cGrad.addColorStop(0.7, '#23883a');
+        cGrad.addColorStop(1, '#114a1e');
+        
+        ctx.fillStyle = cGrad;
+        ctx.beginPath();
+        ctx.arc(cx, cy, cRadius, 0, Math.PI*2);
+        ctx.fill();
+      });
+      ctx.restore();
+      
+      // 4. Cloud overlay
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.beginPath();
+      ctx.arc(earthX - earthRadius*0.1, earthY + earthRadius*0.2, earthRadius*0.6, 0, Math.PI*2);
+      ctx.arc(earthX + earthRadius*0.3, earthY - earthRadius*0.3, earthRadius*0.4, 0, Math.PI*2);
+      ctx.fill();
+      
+      // 5. Shield Ring
+      const shieldColor = earthHealth > 2 ? '#5effa8' : '#ff5e5e';
+      ctx.strokeStyle = shieldColor;
+      ctx.lineWidth = 3 * gameScale;
+      ctx.globalAlpha = 0.5 + Math.sin(Date.now() * 0.005) * 0.2; // pulsing shield
+      ctx.setLineDash([8 * gameScale, 10 * gameScale]);
+      ctx.beginPath();
+      ctx.arc(earthX, earthY, earthRadius + 8 * gameScale, 0, Math.PI * 2 * (Math.max(0, earthHealth) / 5));
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+      
+      // Label
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `bold ${11*gameScale}px "Segoe UI"`;
+      ctx.textAlign = 'center';
+      ctx.shadowColor = '#000';
+      ctx.shadowBlur = 5;
+      ctx.fillText('🌍 EARTH', earthX, earthY - earthRadius - 20 * gameScale);
+      ctx.shadowBlur = 0;
+    }
+
+    function drawLauncher() {
+      ctx.save();
+      ctx.translate(launcherX, launcherY);
+      
+      // 1. Base Ring
+      ctx.fillStyle = '#1e2b45';
+      ctx.shadowColor = '#4a8aff';
+      ctx.shadowBlur = 15;
+      ctx.beginPath();
+      ctx.arc(0, 0, 20 * gameScale, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      ctx.strokeStyle = '#4a8aff';
+      ctx.lineWidth = 2 * gameScale;
+      ctx.stroke();
+      
+      // 2. Rotating Turret
+      ctx.save();
+      ctx.rotate(currentAngleRad);
+      
+      // Barrel
+      const barrelLen = 30 * gameScale;
+      const barrelWidth = 12 * gameScale;
+      
+      const barrelGrad = ctx.createLinearGradient(0, -barrelWidth/2, 0, barrelWidth/2);
+      barrelGrad.addColorStop(0, '#7ab0ff');
+      barrelGrad.addColorStop(0.5, '#2f5ea8');
+      barrelGrad.addColorStop(1, '#1a3a73');
+      
+      ctx.fillStyle = barrelGrad;
+      ctx.shadowColor = '#7ab0ff';
+      ctx.shadowBlur = 10;
+      // Round rect for barrel
+      ctx.beginPath();
+      ctx.roundRect(5 * gameScale, -barrelWidth/2, barrelLen, barrelWidth, 4 * gameScale);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      
+      // Glowing Core in Turret
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(0, 0, 10 * gameScale, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.fillStyle = '#fce28b';
+      ctx.beginPath();
+      ctx.arc(0, 0, 6 * gameScale, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Laser Tip
+      ctx.fillStyle = launchCooldown > 0 ? '#ff5e5e' : '#5effa8';
+      ctx.fillRect(barrelLen + 2*gameScale, -barrelWidth/2 + 2*gameScale, 6*gameScale, barrelWidth - 4*gameScale);
+      
+      ctx.restore(); // end rotation
+      
+      // Top Dome on base
+      ctx.fillStyle = '#2f5ea8';
+      ctx.beginPath();
+      ctx.arc(0, 0, 8 * gameScale, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.restore(); // end translation
+      
+      // Status text
+      ctx.fillStyle = '#b8d0ff';
+      ctx.font = `bold ${10*gameScale}px "Segoe UI"`;
+      ctx.textAlign = 'center';
+      ctx.fillText(`⚡ ${projectiles.length}/${maxProjectiles}`, launcherX, launcherY + 35 * gameScale);
+    }
+
+    function drawAimLine() {
+      if (!isAiming || !gameActive) return;
+      
+      const barrelLen = 30 * gameScale;
+      const startX = launcherX + Math.cos(currentAngleRad) * barrelLen;
+      const startY = launcherY + Math.sin(currentAngleRad) * barrelLen;
+
+      const dist = Math.sqrt(Math.pow(touchX - startX, 2) + Math.pow(touchY - startY, 2));
+      
+      ctx.strokeStyle = `rgba(252, 226, 139, ${Math.max(0.2, 1 - dist/(canvas.height*0.8))})`;
+      ctx.lineWidth = 2 * gameScale;
+      ctx.setLineDash([8 * gameScale, 12 * gameScale]);
+      
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      
+      // Simulate exact physics path of the projectile
+      let simX = startX;
+      let simY = startY;
+      let simVY = aimVY;
+      
+      for (let i = 0; i < AIM_TIME; i++) {
+        simVY += GRAVITY * gameScale;
+        simX += aimVX;
+        simY += simVY;
+        ctx.lineTo(simX, simY);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // Target Reticle
+      ctx.save();
+      ctx.translate(touchX, touchY);
+      ctx.rotate(Date.now() * 0.002);
+      
+      ctx.strokeStyle = '#5effa8';
+      ctx.lineWidth = 2 * gameScale;
+      ctx.shadowColor = '#5effa8';
+      ctx.shadowBlur = 10;
+      
+      ctx.beginPath();
+      ctx.arc(0, 0, 10 * gameScale, 0, Math.PI*2);
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.moveTo(-15*gameScale, 0); ctx.lineTo(-5*gameScale, 0);
+      ctx.moveTo(15*gameScale, 0); ctx.lineTo(5*gameScale, 0);
+      ctx.moveTo(0, -15*gameScale); ctx.lineTo(0, -5*gameScale);
+      ctx.moveTo(0, 15*gameScale); ctx.lineTo(0, 5*gameScale);
+      ctx.stroke();
+      
+      ctx.restore();
+      
+      // Info Text
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `bold ${10*gameScale}px "Segoe UI"`;
+      ctx.textAlign = 'left';
+      ctx.fillText(`PWR: ${currentPower}%`, touchX + 18 * gameScale, touchY - 5 * gameScale);
+    }
+
+    function drawAliens() {
+      const colors = [
+        { main: '#5effa8', glow: 'rgba(94, 255, 168, 0.6)' },
+        { main: '#ff5e9c', glow: 'rgba(255, 94, 156, 0.6)' },
+        { main: '#fce28b', glow: 'rgba(252, 226, 139, 0.6)' }
+      ];
+
+      aliens.forEach(alien => {
+        ctx.save();
+        ctx.translate(alien.x, alien.y);
+        // Rotate towards movement direction slightly
+        ctx.rotate(Math.atan2(alien.vy, alien.vx) + Math.PI/2);
+        
+        const color = colors[alien.type];
+        
+        // Ship Hull
+        ctx.fillStyle = color.main;
+        ctx.shadowColor = color.main;
+        ctx.shadowBlur = 15;
+        
+        ctx.beginPath();
+        ctx.moveTo(0, -alien.radius);
+        ctx.lineTo(alien.radius * 0.8, alien.radius * 0.5);
+        ctx.lineTo(0, alien.radius * 0.2);
+        ctx.lineTo(-alien.radius * 0.8, alien.radius * 0.5);
+        ctx.closePath();
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        
+        // Engine Glow
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(0, alien.radius * 0.3, alien.radius * 0.3, 0, Math.PI*2);
+        ctx.fill();
+        
+        ctx.restore();
+      });
+    }
+
+    function drawProjectiles() {
+      projectiles.forEach(proj => {
+        // Energy Trail
+        if (proj.trail.length > 1) {
+          ctx.beginPath();
+          ctx.moveTo(proj.trail[0].x, proj.trail[0].y);
+          for (let i = 1; i < proj.trail.length; i++) {
+            ctx.lineTo(proj.trail[i].x, proj.trail[i].y);
+          }
+          
+          const gradient = ctx.createLinearGradient(
+            proj.trail[0].x, proj.trail[0].y, 
+            proj.x, proj.y
+          );
+          gradient.addColorStop(0, 'rgba(74, 138, 255, 0)');
+          gradient.addColorStop(1, '#5effa8');
+          
+          ctx.strokeStyle = gradient;
+          ctx.lineWidth = proj.radius * 1.5;
+          ctx.lineCap = 'round';
+          ctx.stroke();
+        }
+        
+        // Core
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = '#5effa8';
+        ctx.shadowBlur = 15;
+        ctx.beginPath();
+        ctx.arc(proj.x, proj.y, proj.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      });
+    }
+
+    function drawParticles() {
+      particles.forEach(p => {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+      ctx.shadowBlur = 0;
+    }
+
+    function drawFloatingTexts() {
+      floatingTexts.forEach(ft => {
+        ctx.fillStyle = ft.color;
+        ctx.globalAlpha = Math.min(1, ft.life);
+        ctx.font = `bold ${14*gameScale}px "Segoe UI"`;
+        ctx.textAlign = 'center';
+        ctx.shadowColor = '#000000';
+        ctx.shadowBlur = 5;
+        ctx.fillText(ft.text, ft.x, ft.y);
+      });
+      ctx.globalAlpha = 1;
+      ctx.shadowBlur = 0;
+    }
+
+    function drawOverlays() {
+      if (aliensReached > 0) {
+        ctx.fillStyle = '#ff5e5e';
+        ctx.font = `bold ${11*gameScale}px "Segoe UI"`;
+        ctx.textAlign = 'right';
+        ctx.shadowColor = '#ff0000';
+        ctx.shadowBlur = 10;
+        ctx.fillText(`⚠️ BREACH: ${aliensReached}/${maxAliensReach}`, canvas.width - 20 * gameScale, 30 * gameScale);
+        ctx.shadowBlur = 0;
+      }
+      
+      if (!gameActive) {
+        ctx.fillStyle = 'rgba(4, 6, 20, 0.75)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        const titleY = canvas.height * 0.35;
+        const titleSize = Math.min(canvas.width / 10, 45);
+        
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `900 ${titleSize}px "Segoe UI", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.shadowColor = '#4a8aff';
+        ctx.shadowBlur = 30;
+        ctx.fillText('EARTH DEFENDER', canvas.width / 2, titleY);
+        ctx.shadowBlur = 0;
+        
+        if (earthHealth <= 0 || aliensReached >= maxAliensReach) {
+          ctx.fillStyle = '#ff5e5e';
+          ctx.font = `bold ${titleSize * 0.5}px "Segoe UI"`;
+          ctx.fillText('MISSION FAILED', canvas.width / 2, titleY + titleSize * 1.2);
+          
+          ctx.fillStyle = '#fce28b';
+          ctx.font = `${titleSize * 0.4}px "Segoe UI"`;
+          ctx.fillText(`Final Score: ${score}`, canvas.width / 2, titleY + titleSize * 2);
+        } else {
+          ctx.fillStyle = '#9fc1ff';
+          ctx.font = `600 ${titleSize * 0.4}px "Segoe UI"`;
+          ctx.fillText('Hold & drag to aim. Release to fire.', canvas.width / 2, titleY + titleSize * 1.5);
+        }
+      }
+    }
+
+    function draw() {
+      // Clear with dark void
+      ctx.fillStyle = '#040614';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Nebular background glow
+      const bg = ctx.createRadialGradient(canvas.width/2, canvas.height/2, canvas.width*0.2, canvas.width/2, canvas.height/2, canvas.width);
+      bg.addColorStop(0, '#0a102e');
+      bg.addColorStop(1, '#040614');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      drawStars();
+      drawEarth();
+      drawAliens();
+      drawProjectiles();
+      drawAimLine();
+      drawParticles();
+      drawFloatingTexts();
+      drawLauncher();
+      drawOverlays();
+    }
+
+    function gameLoop() {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Input Handling mapping DOM coords to actual canvas scaling
+    function getCoords(cx, cy) {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      return {
+        x: (cx - rect.left) * dpr,
+        y: (cy - rect.top) * dpr
+      };
+    }
+
+    canvas.addEventListener('mousedown', e => {
+      if (!gameActive) return;
+      const c = getCoords(e.clientX, e.clientY);
+      isAiming = true;
+      touchX = c.x;
+      touchY = c.y;
+      calculateAimToHitPoint(touchX, touchY);
+    });
+
+    canvas.addEventListener('mousemove', e => {
+      if (!isAiming) return;
+      const c = getCoords(e.clientX, e.clientY);
+      touchX = c.x;
+      touchY = c.y;
+      calculateAimToHitPoint(touchX, touchY);
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (!isAiming) return;
+      fireFromLauncher();
+      isAiming = false;
+    });
+
+    canvas.addEventListener('touchstart', e => {
+      e.preventDefault();
+      if (!gameActive) return;
+      const t = e.touches[0];
+      const c = getCoords(t.clientX, t.clientY);
+      isAiming = true;
+      touchX = c.x;
+      touchY = c.y;
+      calculateAimToHitPoint(touchX, touchY);
+    });
+
+    canvas.addEventListener('touchmove', e => {
+      e.preventDefault();
+      if (!isAiming) return;
+      const t = e.touches[0];
+      const c = getCoords(t.clientX, t.clientY);
+      touchX = c.x;
+      touchY = c.y;
+      calculateAimToHitPoint(touchX, touchY);
+    });
+
+    canvas.addEventListener('touchend', e => {
+      e.preventDefault();
+      if (!isAiming) return;
+      fireFromLauncher();
+      isAiming = false;
+    });
+
+    canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+    startBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      resizeCanvas();
+      resetGame();
+    });
+
+    playAgainBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      resizeCanvas();
+      resetGame();
+    });
+
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 150));
+
+    // Initialize
+    resizeCanvas();
+    updateUI();
+    gameLoop();
+  })();
+</script>
+</body>
+</html>

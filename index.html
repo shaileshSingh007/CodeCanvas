@@ -398,7 +398,7 @@
         }
 
         async function getGeminiTTSAudio(text) {
-            const response = await fetch('/api/gemini', {
+            const response = await fetch('/api/Gemini', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'tts', text: text })

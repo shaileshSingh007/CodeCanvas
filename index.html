@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth dark">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>AI Playground | Dev & Shayar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -23,10 +23,6 @@
                         neonPurple: '#a855f7',
                         neonCyan: '#06b6d4',
                         neonBlue: '#3b82f6',
-                    },
-                    backgroundImage: {
-                        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-                        'hero-gradient': 'linear-gradient(to right, #a855f7, #3b82f6)',
                     }
                 }
             }
@@ -34,19 +30,32 @@
     </script>
 
     <style>
+        /* CRITICAL: Lock the body to prevent pull-to-refresh and bounce */
         body {
-            background-color: #030308;
-            color: #ffffff;
-            overflow-x: hidden;
+            overscroll-behavior: none;
             -webkit-tap-highlight-color: transparent;
         }
+
+        /* Dedicated hardware-accelerated scroll class */
+        .ios-scroll {
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Hide scrollbars but maintain functionality */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .chat-scroll::-webkit-scrollbar { width: 6px; }
+        .chat-scroll::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); border-radius: 4px; }
+        .chat-scroll::-webkit-scrollbar-thumb { background: rgba(168, 85, 247, 0.3); border-radius: 4px; }
 
-        .page-section { display: none; opacity: 0; animation: fadeUp 0.4s ease-out forwards; }
-        .page-section.active { display: block; }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-
+        /* Custom UI Elements */
+        .glass-panel { background: rgba(15, 15, 25, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .chat-bubble-user { background: linear-gradient(135deg, #3b82f6 0%, #a855f7 100%); border-bottom-right-radius: 4px; }
+        .chat-bubble-hero { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255,255,255,0.05); border-bottom-left-radius: 4px; }
+        
+        /* Sphere Animation */
         .sphere-container { position: relative; width: 280px; height: 280px; display: flex; align-items: center; justify-content: center; }
         .ring { position: absolute; border-radius: 50%; border: 1px solid rgba(6, 182, 212, 0.3); animation: rotate 10s linear infinite; }
         .ring:nth-child(1) { width: 100%; height: 100%; border-top-color: #a855f7; border-bottom-color: #3b82f6; animation-duration: 8s; }
@@ -55,120 +64,122 @@
         .grid-globe { position: absolute; width: 90%; height: 90%; border-radius: 50%; background: radial-gradient(circle, rgba(6,182,212,0.1) 0%, rgba(0,0,0,0) 70%); box-shadow: 0 0 40px rgba(59, 130, 246, 0.3), inset 0 0 20px rgba(168, 85, 247, 0.3); border: 1px dashed rgba(255,255,255,0.1); }
         @keyframes rotate { 100% { transform: rotate(360deg); } }
 
-        .nav-item { color: #6b7280; transition: all 0.3s ease; }
-        .nav-item:hover { color: #ffffff; }
-        .nav-item.active-tab { color: #a855f7; }
+        /* Desktop Nav Indicators */
         .desktop-nav-item { position: relative; }
         .desktop-nav-item::after { content: ''; position: absolute; bottom: -4px; left: 0; width: 0%; height: 2px; background: linear-gradient(90deg, #a855f7, #06b6d4); transition: width 0.3s ease; }
-        .desktop-nav-item.active-tab::after { width: 100%; }
-        .desktop-nav-item.active-tab { color: #fff; }
-
-        .glass-panel { background: rgba(15, 15, 25, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
-
-        .chat-scroll::-webkit-scrollbar { width: 6px; }
-        .chat-scroll::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); border-radius: 4px; }
-        .chat-scroll::-webkit-scrollbar-thumb { background: rgba(168, 85, 247, 0.3); border-radius: 4px; }
-        .chat-scroll::-webkit-scrollbar-thumb:hover { background: rgba(168, 85, 247, 0.6); }
-
-        .game-overlay { position: fixed; inset: 0; background: rgba(3, 3, 8, 0.98); z-index: 9999; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
-        .game-overlay.active { opacity: 1; pointer-events: all; }
+        .active-tab::after { width: 100%; }
         
         .audio-playing { animation: pulse-border 1.5s infinite; color: #a855f7; border-color: #a855f7; }
         @keyframes pulse-border { 0% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(168, 85, 247, 0); } 100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); } }
-
-        .chat-bubble-user { background: linear-gradient(135deg, #3b82f6 0%, #a855f7 100%); border-bottom-right-radius: 4px; }
-        .chat-bubble-hero { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255,255,255,0.05); border-bottom-left-radius: 4px; }
-
-        .content-wrapper { padding-bottom: 80px; }
-        @media (min-width: 768px) { .content-wrapper { padding-bottom: 0; } }
     </style>
 </head>
-<body class="antialiased relative bg-[#030308] text-white">
 
-    <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-        <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-neonPurple/10 blur-[120px]"></div>
-        <div class="absolute bottom-[20%] right-[-10%] w-[30%] h-[40%] rounded-full bg-neonBlue/10 blur-[100px]"></div>
-    </div>
+<!-- Shell is rigidly locked to the viewport -->
+<body class="bg-[#030308] text-white w-full h-[100dvh] flex flex-col overflow-hidden relative m-0 p-0">
 
-    <!-- Desktop Header -->
-    <header class="hidden md:flex w-full items-center justify-between px-8 py-6 max-w-7xl mx-auto z-50">
+    <!-- AMBIENT BACKGROUNDS (Fixed: Replaced filter:blur with radial-gradient to fix iOS touch hijacking) -->
+    <div class="fixed top-[-10%] left-[-10%] w-[50vw] h-[50vh] pointer-events-none z-[-1]" style="background: radial-gradient(circle, rgba(168,85,247,0.15) 0%, transparent 70%);"></div>
+    <div class="fixed bottom-[10%] right-[-10%] w-[40vw] h-[40vh] pointer-events-none z-[-1]" style="background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%);"></div>
+
+    <!-- ==================== HEADERS (Flex Shrink 0) ==================== -->
+    <header class="hidden md:flex w-full items-center justify-between px-8 py-6 max-w-7xl mx-auto flex-none z-50">
         <div class="flex items-center gap-3 cursor-pointer group" onclick="switchTab('home')">
-            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform"><i class="fa-solid fa-code text-white"></i></div>
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+                <i class="fa-solid fa-code text-white"></i>
+            </div>
             <div>
-                <h1 class="font-bold text-xl tracking-wide">DEV<span class="text-neonPurple">&</span>SHAYAR</h1>
+                <h1 class="font-bold text-xl tracking-wide">DREAM<span class="text-neonPurple">&</span>DEPLOY</h1>
                 <p class="text-[10px] text-gray-400 tracking-[0.2em]">CREATE. PLAY. INSPIRE.</p>
             </div>
         </div>
         <nav class="flex items-center gap-6 lg:gap-8 font-medium text-sm">
-            <button onclick="switchTab('home')" class="desktop-nav-item active-tab nav-item text-gray-400 hover:text-white transition-colors" data-tab="home">Home</button>
-            <button onclick="switchTab('games')" class="desktop-nav-item nav-item text-gray-400 hover:text-white transition-colors" data-tab="games">Games</button>
-            <button onclick="switchTab('poetry')" class="desktop-nav-item nav-item text-gray-400 hover:text-white transition-colors" data-tab="poetry">Poetry</button>
-            <button onclick="switchTab('heroes')" class="desktop-nav-item nav-item text-gray-400 hover:text-white transition-colors" data-tab="heroes">Heroes Chat</button>
-            <button onclick="switchTab('about')" class="desktop-nav-item nav-item text-gray-400 hover:text-white transition-colors" data-tab="about">About Me</button>
+            <button onclick="switchTab('home')" class="desktop-nav-item active-tab nav-item text-white" data-tab="home">Home</button>
+            <button onclick="switchTab('games')" class="desktop-nav-item nav-item text-gray-400 hover:text-white" data-tab="games">Games</button>
+            <button onclick="switchTab('poetry')" class="desktop-nav-item nav-item text-gray-400 hover:text-white" data-tab="poetry">Poetry</button>
+            <button onclick="switchTab('heroes')" class="desktop-nav-item nav-item text-gray-400 hover:text-white" data-tab="heroes">Heroes Chat</button>
+            <button onclick="switchTab('about')" class="desktop-nav-item nav-item text-gray-400 hover:text-white" data-tab="about">About Me</button>
         </nav>
     </header>
 
-    <!-- Mobile Header -->
-    <header class="md:hidden w-full flex items-center justify-between px-5 py-5 z-50">
+    <header class="flex md:hidden w-full items-center justify-between px-5 py-4 flex-none bg-[#030308]/90 z-50">
         <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('home')">
-            <div class="w-8 h-8 rounded-md bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center"><i class="fa-solid fa-code text-white text-sm"></i></div>
+            <div class="w-8 h-8 rounded-md bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+                <i class="fa-solid fa-code text-white text-sm"></i>
+            </div>
             <div>
-                <h1 class="font-bold text-lg tracking-wide leading-none">DEV<span class="text-neonPurple">&</span>SHAYAR</h1>
+                <h1 class="font-bold text-lg tracking-wide leading-none">LOGIC<span class="text-neonPurple">&</span>LYRICS</h1>
                 <p class="text-[8px] text-gray-400 tracking-[0.15em] mt-1">CREATE. PLAY. INSPIRE.</p>
             </div>
         </div>
     </header>
 
-    <!-- MAIN CONTENT AREA -->
-    <div class="content-wrapper min-h-screen">
+    <!-- ==================== MAIN CONTENT WRAPPER ==================== -->
+    <div class="flex-1 relative w-full min-h-0 z-10">
+        
         <!-- ==================== HOME SECTION ==================== -->
-        <main id="home" class="page-section active max-w-7xl mx-auto px-5 md:px-8">
-            <div class="flex flex-col lg:flex-row items-center justify-between gap-12 py-10 lg:py-20 border-b border-white/5">
-                <div class="w-full lg:w-1/2 text-left z-10">
-                    <h2 class="text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] mb-6">
-                        Where<br>
-                        <span class="bg-gradient-to-r from-purple-400 via-fuchsia-500 to-purple-600 bg-clip-text text-transparent">Imagination</span><br>
-                        Meets<br>
-                        <span class="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Intelligence</span>
-                    </h2>
-                    <div class="w-16 h-1 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full mb-6"></div>
-                    <p class="text-gray-400 text-lg mb-10 max-w-md font-light leading-relaxed">Interactive AI-generated games, thought-provoking poetry, and experiments where creativity and technology become one.</p>
-                </div>
-                
-                <div class="w-full lg:w-1/2 flex justify-center py-10">
-                    <div class="sphere-container">
-                        <div class="ring"></div><div class="ring"></div><div class="ring"></div>
-                        <div class="grid-globe flex items-center justify-center backdrop-blur-sm"><span class="text-6xl font-bold bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent tracking-tighter">AI</span></div>
-                        <div class="absolute -bottom-12 w-64 h-8 bg-blue-500/20 blur-xl rounded-[100%]"></div>
-                        <div class="absolute -bottom-10 w-48 h-2 border-t border-cyan-500/50 rounded-[100%] shadow-[0_-5px_20px_rgba(6,182,212,0.5)]"></div>
-                        <div class="absolute -bottom-8 w-32 h-1 border-t border-purple-500/50 rounded-[100%] shadow-[0_-5px_15px_rgba(168,85,247,0.5)]"></div>
+        <main id="home" class="tab-pane absolute inset-0 w-full h-full ios-scroll pb-[100px] md:pb-10 block">
+            <div class="max-w-7xl mx-auto px-5 md:px-8">
+                <div class="flex flex-col lg:flex-row items-center justify-between gap-12 py-10 lg:py-20 border-b border-white/5">
+                    <div class="w-full lg:w-1/2 text-left z-10">
+                        <h2 class="text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] mb-6">
+                            Where<br>
+                            <span class="bg-gradient-to-r from-purple-400 via-fuchsia-500 to-purple-600 bg-clip-text text-transparent">Imagination</span><br>
+                            Meets<br>
+                            <span class="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Intelligence</span>
+                        </h2>
+                        <div class="w-16 h-1 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full mb-6"></div>
+                        <p class="text-gray-400 text-lg mb-10 max-w-md font-light leading-relaxed">
+                            Interactive AI-generated games, thought-provoking poetry, and experiments where creativity and technology become one.
+                        </p>
+                    </div>
+                    <div class="w-full lg:w-1/2 flex justify-center py-10">
+                        <div class="sphere-container">
+                            <div class="ring"></div>
+                            <div class="ring"></div>
+                            <div class="ring"></div>
+                            <div class="grid-globe flex items-center justify-center backdrop-blur-sm">
+                                <span class="text-6xl font-bold bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent tracking-tighter">AI</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Featured Games -->
-            <div class="py-12 border-b border-white/5 relative w-full overflow-hidden">
-                <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-xl font-bold flex items-center gap-3"><i class="fa-solid fa-gamepad text-blue-500"></i> FEATURED GAMES</h3>
-                    <button onclick="switchTab('games')" class="text-purple-400 text-sm hover:text-purple-300 font-medium flex items-center gap-1">View All <i class="fa-solid fa-chevron-right text-xs"></i></button>
+                <!-- Featured Games -->
+                <div class="py-12 border-b border-white/5 relative w-full overflow-hidden">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xl font-bold flex items-center gap-3">
+                            <i class="fa-solid fa-gamepad text-blue-500"></i> FEATURED GAMES
+                        </h3>
+                        <button onclick="switchTab('games')" class="text-purple-400 text-sm hover:text-purple-300 font-medium flex items-center gap-1">
+                            View All <i class="fa-solid fa-chevron-right text-xs"></i>
+                        </button>
+                    </div>
+                    <div id="featuredGamesContainer" class="flex overflow-x-auto gap-5 pb-6 no-scrollbar snap-x snap-mandatory ios-scroll"></div>
                 </div>
-                <div id="featuredGamesContainer" class="flex overflow-x-auto gap-5 pb-6 no-scrollbar snap-x snap-mandatory w-full" style="-webkit-overflow-scrolling: touch; scroll-behavior: smooth;"></div>
-            </div>
 
-            <!-- Featured Poems -->
-            <div class="py-12 mb-10">
-                <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-xl font-bold flex items-center gap-3"><i class="fa-solid fa-feather-pointed text-purple-500"></i> FEATURED POEMS</h3>
-                    <button onclick="switchTab('poetry')" class="text-cyan-400 text-sm hover:text-cyan-300 font-medium flex items-center gap-1">View All <i class="fa-solid fa-chevron-right text-xs"></i></button>
-                </div>
-                
-                <div class="glass-panel rounded-2xl p-6 relative overflow-hidden cursor-pointer group" onclick="switchTab('poetry')">
-                    <div class="absolute right-0 bottom-0 opacity-20 transform translate-x-1/4 translate-y-1/4 group-hover:scale-110 transition-transform duration-500"><i class="fa-solid fa-feather text-9xl text-purple-500"></i></div>
-                    <div class="relative z-10 flex gap-4">
-                        <i class="fa-solid fa-quote-left text-3xl text-purple-500/50 mt-2"></i>
-                        <div>
-                            <p class="font-serif text-xl md:text-2xl text-gray-200 leading-relaxed mb-4">दिन भर मशीनों से बातें करता हूँ,<br>रात को ये खामोश कीबोर्ड चुभता है।</p>
-                            <p class="text-sm text-cyan-400 font-medium tracking-wide">— Silent Keyboard</p>
+                <!-- Featured Poems -->
+                <div class="py-12 mb-4">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xl font-bold flex items-center gap-3">
+                            <i class="fa-solid fa-feather-pointed text-purple-500"></i> FEATURED POEMS
+                        </h3>
+                        <button onclick="switchTab('poetry')" class="text-cyan-400 text-sm hover:text-cyan-300 font-medium flex items-center gap-1">
+                            View All <i class="fa-solid fa-chevron-right text-xs"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="glass-panel rounded-2xl p-6 relative overflow-hidden cursor-pointer group" onclick="switchTab('poetry')">
+                        <div class="absolute right-0 bottom-0 opacity-20 transform translate-x-1/4 translate-y-1/4 group-hover:scale-110 transition-transform duration-500">
+                            <i class="fa-solid fa-feather text-9xl text-purple-500"></i>
+                        </div>
+                        <div class="relative z-10 flex gap-4">
+                            <i class="fa-solid fa-quote-left text-3xl text-purple-500/50 mt-2"></i>
+                            <div>
+                                <p class="font-serif text-m md:text-2xl text-gray-200 leading-relaxed mb-4">
+                                    सुलगते आँसुओं में आज कुछ अगर धुँधला है। </br> अदालत है मगर इंसाफ़ का असर धुँधला है। </br> बहुत उम्मीद में निकला है घर से ख़्वाब का क़ैदी, </br> गरजते आँधियों में हाँ मगर सफ़र धुँधला है।
+                                </p>
+                                <p class="text-sm text-cyan-400 font-medium tracking-wide">— Shailesh Singh</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -176,137 +187,201 @@
         </main>
 
         <!-- ==================== GAMES SECTION ==================== -->
-        <main id="games" class="page-section max-w-7xl mx-auto px-5 md:px-8 py-10">
-            <div class="mb-10 text-center md:text-left">
-                <h2 class="text-3xl md:text-4xl font-bold mb-3 flex items-center justify-center md:justify-start gap-3"><i class="fa-solid fa-gamepad text-blue-500"></i> The Grid</h2>
-                <p class="text-gray-400 max-w-2xl">Select an executable to load the AI-generated simulation environment.</p>
+        <main id="games" class="tab-pane hidden absolute inset-0 w-full h-full ios-scroll pb-[100px] md:pb-10">
+            <div class="max-w-7xl mx-auto px-5 md:px-8 py-6">
+                <div class="text-center md:text-left mb-8">
+                    <h2 class="text-3xl md:text-4xl font-bold mb-3 flex items-center justify-center md:justify-start gap-3">
+                        <i class="fa-solid fa-gamepad text-blue-500"></i> The Grid
+                    </h2>
+                    <p class="text-gray-400 max-w-2xl">Select an executable to load the AI-generated simulation environment.</p>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6" id="gameGrid"></div>
             </div>
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6" id="gameGrid"></div>
         </main>
 
         <!-- ==================== POETRY SECTION ==================== -->
-        <main id="poetry" class="page-section max-w-7xl mx-auto px-5 md:px-8 py-10">
-            <div class="mb-10 text-center md:text-left">
-                <h2 class="text-3xl md:text-4xl font-bold mb-3 font-serif flex items-center justify-center md:justify-start gap-3"><i class="fa-solid fa-feather-pointed text-purple-500"></i> Shayar's Canvas</h2>
-                <p class="text-gray-400 max-w-2xl">Emotions written in the syntax of the soul. Tap the audio icon to listen.</p>
-            </div>
-
-            <div class="flex flex-col lg:flex-row gap-6 lg:gap-10 h-full">
-                <div class="w-full lg:w-1/3 flex flex-col gap-3" id="poetryList"></div>
-                
-                <div class="w-full lg:w-2/3 glass-panel rounded-3xl p-6 md:p-10 relative border-t border-purple-500/20 shadow-[0_0_30px_rgba(168,85,247,0.05)]">
-                    <div class="absolute top-6 right-6 z-10 flex flex-col items-end gap-2">
-                        <button id="ttsButton" onclick="togglePoetryAudio()" class="w-12 h-12 rounded-full glass-panel flex items-center justify-center text-xl text-gray-300 hover:text-purple-400 hover:border-purple-500/50 transition-all"><i class="fa-solid fa-play" id="ttsIcon"></i></button>
-                        
-                        <div id="ttsProgressContainer" class="hidden flex-col items-end bg-[#0a0a14]/90 backdrop-blur-md p-3 rounded-xl border border-white/10 shadow-lg min-w-[200px] transition-all">
-                            <div class="flex items-center justify-between w-full mb-2">
-                                <span id="ttsProgressText" class="text-[10px] font-mono text-cyan-400 uppercase tracking-wider">Loading Model...</span>
-                                <span id="ttsProgressPercent" class="text-[10px] font-mono text-gray-400">0%</span>
-                            </div>
-                            <div class="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden mb-2"><div id="ttsProgressBar" class="h-full bg-gradient-to-r from-cyan-500 to-purple-500 w-0 transition-all duration-300"></div></div>
-                            <button onclick="cancelTTS()" class="text-[10px] font-bold uppercase tracking-wider text-red-500 hover:text-red-400 flex items-center gap-1 transition-colors"><i class="fa-solid fa-times"></i> Cancel</button>
-                        </div>
-                    </div>
-                    <div id="poetryContentContainer" class="mt-4 relative z-0"></div>
+        <main id="poetry" class="tab-pane hidden absolute inset-0 w-full h-full ios-scroll pb-[100px] md:pb-10">
+            <div class="max-w-7xl mx-auto px-5 md:px-8 py-6">
+                <div class="text-center md:text-left mb-8">
+                    <h2 class="text-3xl md:text-4xl font-bold mb-3 font-serif flex items-center justify-center md:justify-start gap-3">
+                        <i class="fa-solid fa-feather-pointed text-purple-500"></i> Shayar's Canvas
+                    </h2>
+                    <p class="text-gray-400 max-w-2xl">Emotions written in the syntax of the soul. Click on any poem to read & listen.</p>
                 </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="poetryList"></div>
             </div>
         </main>
 
         <!-- ==================== HEROES CHAT SECTION ==================== -->
-        <main id="heroes" class="page-section max-w-4xl mx-auto px-5 md:px-8 py-6 md:py-10">
-            <div class="mb-4 text-center md:text-left">
-                <h2 class="text-xl md:text-2xl font-bold flex items-center justify-center md:justify-start gap-2 font-serif"><i class="fa-solid fa-landmark-dome text-yellow-500 text-lg"></i> Echoes of Greatness</h2>
+        <!-- Chat uses flex layout internally -->
+        <main id="heroes" class="tab-pane hidden absolute inset-0 w-full h-full flex-col pb-[85px] md:pb-10">
+            <div class="max-w-4xl mx-auto px-5 md:px-8 py-4 flex-none w-full">
+                <div class="text-center md:text-left">
+                    <h2 class="text-xl md:text-2xl font-bold flex items-center justify-center md:justify-start gap-2 font-serif">
+                        <i class="fa-solid fa-landmark-dome text-yellow-500 text-lg"></i> Echoes of Greatness
+                    </h2>
+                </div>
             </div>
 
-            <!-- Chat Interface -->
-            <div class="w-full glass-panel rounded-3xl flex flex-col overflow-hidden relative border-t border-yellow-500/20 shadow-[0_0_30px_rgba(234,179,8,0.03)] h-[calc(100vh-240px)] md:h-[650px] min-h-[400px] max-h-[800px]">
-                
-                <!-- Chat Header -->
-                <div class="p-3 md:p-4 bg-black/40 border-b border-white/5 flex items-center justify-between flex-shrink-0">
-                    <div class="flex items-center gap-3 md:gap-4">
-                        <div id="heroAvatarSmall" class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-lg md:text-xl shadow-lg flex-shrink-0 transition-all duration-500"><i class="fa-solid fa-atom text-white"></i></div>
-                        <div class="flex flex-col">
-                            <div class="relative flex items-center">
-                                <select id="heroSelect" onchange="changeHero()" class="appearance-none bg-transparent border-none text-white font-bold font-serif text-base md:text-lg focus:outline-none focus:ring-0 cursor-pointer pr-5 py-0 m-0 leading-tight">
-                                    <option value="einstein" class="bg-gray-900 text-white">Albert Einstein</option>
-                                    <option value="gandhi" class="bg-gray-900 text-white">Mahatma Gandhi</option>
-                                    <option value="nehru" class="bg-gray-900 text-white">Jawaharlal Nehru</option>
-                                    <option value="ambedkar" class="bg-gray-900 text-white">B.R. Ambedkar</option>
-                                    <option value="newton" class="bg-gray-900 text-white">Isaac Newton</option>
-                                    <option value="lincoln" class="bg-gray-900 text-white">Abraham Lincoln</option>
-                                </select>
-                                <i class="fa-solid fa-chevron-down absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 text-[10px] pointer-events-none"></i>
+            <!-- Absolute Box for Chat Interface -->
+            <div class="flex-1 relative max-w-4xl mx-auto w-full px-5 md:px-8">
+                <div class="absolute inset-x-5 md:inset-x-8 top-0 bottom-0 glass-panel rounded-3xl overflow-hidden flex flex-col border-t border-yellow-500/20 shadow-lg">
+                    
+                    <div class="p-3 md:p-4 bg-black/40 border-b border-white/5 flex items-center justify-between flex-none">
+                        <div class="flex items-center gap-3 md:gap-4">
+                            <div id="heroAvatarSmall" class="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-lg shadow-lg flex-none">
+                                <i class="fa-solid fa-atom text-white"></i>
                             </div>
-                            <p id="heroTitleDisplay" class="text-[10px] md:text-xs text-cyan-400 font-mono mt-0.5 md:mt-1">Theoretical Physicist</p>
+                            <div class="flex flex-col">
+                                <select id="heroSelect" onchange="changeHero()" class="appearance-none bg-transparent border-none text-white font-bold font-serif text-base md:text-lg focus:outline-none focus:ring-0 cursor-pointer pr-5 py-0 m-0">
+                                    <option value="einstein" class="bg-gray-900">Albert Einstein</option>
+                                    <option value="gandhi" class="bg-gray-900">Mahatma Gandhi</option>
+                                    <option value="nehru" class="bg-gray-900">Jawaharlal Nehru</option>
+                                    <option value="ambedkar" class="bg-gray-900">B.R. Ambedkar</option>
+                                    <option value="newton" class="bg-gray-900">Isaac Newton</option>
+                                    <option value="lincoln" class="bg-gray-900">Abraham Lincoln</option>
+                                </select>
+                                <p id="heroTitleDisplay" class="text-[10px] md:text-xs text-cyan-400 font-mono mt-0.5">Theoretical Physicist</p>
+                            </div>
                         </div>
+                        <button onclick="clearChat()" class="text-[10px] text-gray-500 hover:text-red-400 uppercase font-bold">Clear</button>
                     </div>
-                    <button onclick="clearChat()" class="text-[10px] md:text-xs text-gray-500 hover:text-red-400 transition-colors uppercase tracking-wider font-bold whitespace-nowrap ml-2">Clear Chat</button>
-                </div>
 
-                <!-- Chat Messages Area -->
-                <div class="flex-1 relative min-h-0">
-                    <div id="chatBox" class="absolute inset-0 p-4 md:p-5 overflow-y-auto flex flex-col gap-4 scroll-smooth chat-scroll"></div>
-                </div>
+                    <!-- Scrollable Chat Area -->
+                    <div id="chatBox" class="flex-1 ios-scroll p-4 md:p-5 flex flex-col gap-4 chat-scroll bg-black/20"></div>
 
-                <!-- Input Area -->
-                <div class="p-3 md:p-4 bg-black/40 border-t border-white/5 flex-shrink-0">
-                    <form onsubmit="handleHeroChat(event)" class="relative flex items-center">
-                        <input type="text" id="chatInput" placeholder="Ask your question..." class="w-full bg-[#0a0a14] border border-white/10 rounded-full py-3 md:py-4 pl-5 pr-14 text-sm focus:outline-none focus:border-cyan-500 transition-all text-white placeholder-gray-500" autocomplete="off" required>
-                        <button type="submit" id="chatSubmitBtn" class="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"><i class="fa-solid fa-paper-plane text-sm ml-[-2px]"></i></button>
-                    </form>
+                    <div class="p-3 md:p-4 bg-black/40 border-t border-white/5 flex-none">
+                        <form onsubmit="handleHeroChat(event)" class="relative w-full flex items-center">
+                            <input type="text" id="chatInput" placeholder="Ask your question..." class="w-full bg-[#0a0a14] border border-white/10 rounded-full py-3 pl-5 pr-14 text-sm focus:outline-none focus:border-cyan-500 text-white" autocomplete="off" required>
+                            <button type="submit" id="chatSubmitBtn" class="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white">
+                                <i class="fa-solid fa-paper-plane text-sm"></i>
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </main>
 
         <!-- ==================== ABOUT ME SECTION ==================== -->
-        <main id="about" class="page-section max-w-5xl mx-auto px-5 md:px-8 py-10">
-            <div class="glass-panel rounded-3xl overflow-hidden flex flex-col md:flex-row relative">
-                <div class="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 blur-[80px] rounded-full"></div>
-                <div class="w-full md:w-2/5 p-10 flex flex-col justify-center items-center relative border-b md:border-b-0 md:border-r border-white/10 bg-black/40">
-                    <div class="w-32 h-32 md:w-48 md:h-48 rounded-full bg-gradient-to-br from-cyan-400 to-purple-600 p-[2px] mb-6 shadow-[0_0_30px_rgba(6,182,212,0.3)]">
-                        <div class="w-full h-full bg-[#0a0a14] rounded-full flex items-center justify-center"><i class="fa-solid fa-user-astronaut text-6xl text-white/70"></i></div>
+        <main id="about" class="tab-pane hidden absolute inset-0 w-full h-full ios-scroll pb-[100px] md:pb-10">
+            <div class="max-w-5xl mx-auto px-5 md:px-8 py-10">
+                <div class="glass-panel rounded-3xl overflow-hidden flex flex-col md:flex-row relative">
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 blur-[80px] rounded-full"></div>
+                    
+                    <div class="w-full md:w-2/5 p-10 flex flex-col justify-center items-center relative border-b md:border-b-0 md:border-r border-white/10 bg-black/40">
+                        <div class="w-32 h-32 md:w-48 md:h-48 rounded-full bg-gradient-to-br from-cyan-400 to-purple-600 p-[2px] mb-6 shadow-[0_0_30px_rgba(6,182,212,0.3)]">
+                            <div class="w-full h-full bg-[#0a0a14] rounded-full flex items-center justify-center">
+                                <i class="fa-solid fa-user-astronaut text-6xl text-white/70"></i>
+                            </div>
+                        </div>
+                        <h3 class="text-2xl font-bold tracking-wide">The Architect</h3>
+                        <p class="text-cyan-400 font-mono text-sm mt-1">&lt;coder /&gt; | ✍️ shayar</p>
                     </div>
-                    <h3 class="text-2xl font-bold tracking-wide">The Architect</h3>
-                    <p class="text-cyan-400 font-mono text-sm mt-1">&lt;coder /&gt; | ✍️ shayar</p>
-                </div>
-                <div class="w-full md:w-3/5 p-8 md:p-12 relative z-10">
-                    <h2 class="text-3xl md:text-4xl font-bold mb-6 font-serif leading-tight">Developer by <span class="text-cyan-400">Profession</span>,<br>Shayar by <span class="text-purple-400">Passion</span>.</h2>
-                    <div class="space-y-4 text-gray-300 font-light">
-                        <p>During the day, I build systems. I speak in the strict, unforgiving languages of logic and algorithms to solve complex problems.</p>
-                        <p>But when the screen dims, the keyboard becomes a canvas. I speak in rhythms and emotions. As a Shayar, I find the logic in human emotion and the art in everyday chaos.</p>
-                        <blockquote class="border-l-2 border-purple-500 pl-4 py-2 italic text-gray-400 my-6 font-serif">"Compiling code to build the future,<br>Composing words to heal the soul."</blockquote>
-                        <p>This AI Playground is a collision of both worlds. The games here were orchestrated purely through AI prompting. The poetry is pure human heart.</p>
+                    
+                    <div class="w-full md:w-3/5 p-8 md:p-12 relative z-10">
+                        <h2 class="text-3xl md:text-4xl font-bold mb-6 font-serif leading-tight">
+                            Developer by <span class="text-cyan-400">Profession</span>,<br>
+                            Shayar by <span class="text-purple-400">Passion</span>.
+                        </h2>
+                        <div class="space-y-4 text-gray-300 font-light">
+                            <p>During the day, I build systems. I speak in the strict, unforgiving languages of logic and algorithms to solve complex problems.</p>
+                            <p>But when the screen dims, the keyboard becomes a canvas. I speak in rhythms and emotions. As a Shayar, I find the logic in human emotion and the art in everyday chaos.</p>
+                            <blockquote class="border-l-2 border-purple-500 pl-4 py-2 italic text-gray-400 my-6 font-serif">
+                                "Compiling code to build the future,<br>
+                                Composing words to heal the soul."
+                            </blockquote>
+                            <p>This AI Playground is a collision of both worlds. The games here were orchestrated purely through AI prompting. The poetry is pure human heart.</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- Mobile Bottom Navigation -->
-    <nav class="md:hidden fixed bottom-0 left-0 w-full glass-panel border-t border-white/10 z-50 px-2 py-3 flex justify-around items-center pb-safe">
-        <button onclick="switchTab('home')" class="nav-item active-tab flex flex-col items-center gap-1 w-12" data-tab="home"><i class="fa-solid fa-house text-lg"></i><span class="text-[9px] font-semibold tracking-wide">HOME</span></button>
-        <button onclick="switchTab('games')" class="nav-item flex flex-col items-center gap-1 w-12" data-tab="games"><i class="fa-solid fa-gamepad text-lg"></i><span class="text-[9px] font-semibold tracking-wide">GAMES</span></button>
-        <button onclick="switchTab('poetry')" class="nav-item flex flex-col items-center gap-1 w-12" data-tab="poetry"><i class="fa-solid fa-feather text-lg"></i><span class="text-[9px] font-semibold tracking-wide">POETRY</span></button>
-        <button onclick="switchTab('heroes')" class="nav-item flex flex-col items-center gap-1 w-12" data-tab="heroes"><i class="fa-solid fa-landmark text-lg"></i><span class="text-[9px] font-semibold tracking-wide">CHAT</span></button>
-        <button onclick="switchTab('about')" class="nav-item flex flex-col items-center gap-1 w-12" data-tab="about"><i class="fa-regular fa-user text-lg"></i><span class="text-[9px] font-semibold tracking-wide">ABOUT</span></button>
+    <!-- ==================== MOBILE BOTTOM NAV (Fixed) ==================== -->
+    <nav class="md:hidden fixed bottom-0 left-0 w-full h-[75px] pb-[env(safe-area-inset-bottom)] flex items-center justify-around glass-panel border-t border-white/10 z-50">
+        <button onclick="switchTab('home')" class="nav-item active-tab flex flex-col items-center justify-center gap-1 w-16 h-full" data-tab="home">
+            <i class="fa-solid fa-house text-lg"></i>
+            <span class="text-[9px] font-semibold tracking-wide">HOME</span>
+        </button>
+        <button onclick="switchTab('games')" class="nav-item flex flex-col items-center justify-center gap-1 w-16 h-full" data-tab="games">
+            <i class="fa-solid fa-gamepad text-lg"></i>
+            <span class="text-[9px] font-semibold tracking-wide">GAMES</span>
+        </button>
+        <button onclick="switchTab('poetry')" class="nav-item flex flex-col items-center justify-center gap-1 w-16 h-full" data-tab="poetry">
+            <i class="fa-solid fa-feather text-lg"></i>
+            <span class="text-[9px] font-semibold tracking-wide">POETRY</span>
+        </button>
+        <button onclick="switchTab('heroes')" class="nav-item flex flex-col items-center justify-center gap-1 w-16 h-full" data-tab="heroes">
+            <i class="fa-solid fa-landmark text-lg"></i>
+            <span class="text-[9px] font-semibold tracking-wide">HERO</span>
+        </button>
+        <button onclick="switchTab('about')" class="nav-item flex flex-col items-center justify-center gap-1 w-16 h-full" data-tab="about">
+            <i class="fa-regular fa-user text-lg"></i>
+            <span class="text-[9px] font-semibold tracking-wide">ABOUT</span>
+        </button>
     </nav>
 
-    <!-- GAME IFRAME OVERLAY -->
-    <div class="game-overlay" id="gameOverlay">
-        <div class="h-14 bg-[#05050A] border-b border-white/10 flex justify-between items-center px-4">
-            <div class="font-mono text-cyan-400 text-sm font-semibold tracking-wider flex items-center gap-2"><i class="fa-solid fa-terminal text-xs"></i> <span id="activeGameTitle">Executing.exe</span></div>
-            <button onclick="closeGame()" class="w-8 h-8 rounded-full bg-white/5 text-gray-400 hover:bg-red-500/20 hover:text-red-400 transition-colors flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div class="flex-1 bg-black flex items-center justify-center relative">
-            <div id="gameLoader" class="absolute flex flex-col items-center justify-center gap-4"><div class="w-10 h-10 border-2 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin"></div><p class="font-mono text-cyan-500/50 text-xs animate-pulse tracking-widest">LOADING MODULE...</p></div>
-            <iframe id="gameIframe" src="" title="Game Session" class="w-full h-full border-none opacity-0 transition-opacity duration-500"></iframe>
+    <!-- ==================== MODALS & OVERLAYS ==================== -->
+
+    <!-- POETRY MODAL -->
+    <div id="poetryModal" class="hidden fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 md:p-10">
+        <div class="glass-panel w-full max-w-2xl h-[85dvh] rounded-3xl border border-purple-500/30 flex flex-col relative bg-[#0a0a14]">
+            
+            <div id="ttsProgressContainer" class="hidden absolute -top-16 left-0 right-0 mx-auto flex-col items-end bg-[#0a0a14]/90 backdrop-blur-md p-3 rounded-xl border border-white/10 shadow-lg max-w-[250px] z-50">
+                <div class="flex items-center justify-between w-full mb-2">
+                    <span id="ttsProgressText" class="text-[10px] font-mono text-cyan-400 uppercase tracking-wider">Loading...</span>
+                </div>
+                <div class="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden mb-2">
+                    <div id="ttsProgressBar" class="h-full bg-gradient-to-r from-cyan-500 to-purple-500 w-0 transition-all duration-300"></div>
+                </div>
+                <button onclick="cancelTTS()" class="text-[10px] font-bold uppercase tracking-wider text-red-500 hover:text-red-400 flex items-center gap-1 w-full justify-end"><i class="fa-solid fa-times"></i> Cancel</button>
+            </div>
+
+            <div class="flex-none p-5 md:p-6 border-b border-white/10 flex justify-between items-start z-20">
+                <h2 id="modalPoemTitle" class="text-2xl md:text-3xl font-serif text-purple-400 mt-1">Poem Title</h2>
+                <div class="flex items-center gap-3">
+                    <button id="ttsButton" onclick="togglePoetryAudio()" class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-300">
+                        <i class="fa-solid fa-play" id="ttsIcon"></i>
+                    </button>
+                    <button onclick="closePoetryModal()" class="w-10 h-10 rounded-full bg-white/5 border border-white/10 text-gray-400 flex items-center justify-center">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex-1 ios-scroll p-6 md:p-8">
+                <div id="modalPoemText" class="font-serif text-xl md:text-2xl leading-[2] text-gray-300"></div>
+                <div class="mt-8 text-cyan-500/50 font-serif italic">— The Dev Shayar</div>
+            </div>
         </div>
     </div>
 
-    <!-- MAIN MODULE SCRIPT -->
+    <!-- GAME OVERLAY -->
+    <div id="gameOverlay" class="hidden fixed inset-0 bg-[#030308] z-[9999] flex-col">
+        <div class="h-14 bg-[#05050A] border-b border-white/10 flex justify-between items-center px-4 flex-none z-20">
+            <div class="font-mono text-cyan-400 text-sm font-semibold tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-terminal text-xs"></i> <span id="activeGameTitle">Executing.exe</span>
+            </div>
+            <button onclick="closeGame()" class="w-8 h-8 rounded-full bg-white/5 text-gray-400 hover:text-red-400 flex items-center justify-center">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="flex-1 bg-black flex items-center justify-center relative">
+            <div id="gameLoader" class="absolute flex flex-col items-center justify-center gap-4 z-10">
+                <div class="w-10 h-10 border-2 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin"></div>
+            </div>
+<iframe
+    id="gameIframe"
+    src=""
+    class="absolute inset-0 m-auto w-[98%] h-[98%] border-none z-20 rounded-lg">
+</iframe>
+        </div>
+    </div>
+
+    <!-- ==================== SCRIPT ==================== -->
     <script type="module">
         
-        // --- API ROUTE INTEGRATION (VERCEL BACKEND) ---
         async function callGemini(contentsPayload) {
             try {
                 const response = await fetch('/api/Gemini', {
@@ -315,42 +390,26 @@
                     body: JSON.stringify({ action: 'chat', prompt: contentsPayload })
                 });
                 
-                if (!response.ok) {
-                    if (response.status === 429) return "Error: Quota Exceeded";
-                    const err = await response.json();
-                    const errorMsg = err.error || `HTTP error! status: ${response.status}`;
-                    console.error(`[API] Failed:`, errorMsg);
-                    return `Error: ${errorMsg}`;
-                }
-                
+                if (!response.ok) return `Error: ${response.status}`;
                 const result = await response.json();
-                if (!result.candidates || result.candidates.length === 0) return "Error: Response blocked by safety settings.";
+                if (!result.candidates || result.candidates.length === 0) return "Error blocked.";
                 return result.candidates[0].content.parts[0].text;
-            } catch (error) {
-                console.error("API Exception:", error);
-                return `Error: ${error.message}`;
-            }
+            } catch (error) { return `Error: ${error.message}`; }
         }
 
         async function getGeminiTTSAudio(text) {
-            const response = await fetch('/api/Gemini', {
+            const response = await fetch('/api/gemini', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'tts', text: text })
             });
 
+            if (!response.ok) throw new Error(`API error`);
             const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error || `TTS API error! status: ${response.status}`);
-            }
-            
             const inlineData = result.candidates?.[0]?.content?.parts?.[0]?.inlineData;
-            if (!inlineData) throw new Error("No audio data returned");
-
+            
             const match = inlineData.mimeType.match(/rate=(\d+)/);
             const sampleRate = match ? parseInt(match[1]) : 24000;
-
             const binaryString = atob(inlineData.data);
             const bytes = new Uint8Array(binaryString.length);
             for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
@@ -362,39 +421,61 @@
             return { audio: float32Array, sampling_rate: sampleRate };
         }
 
-        // --- EXPOSE TO WINDOW IMMEDIATELY ---
         window.switchTab = switchTab;
         window.openGame = openGame;
         window.closeGame = closeGame;
         window.togglePoetryAudio = togglePoetryAudio;
         window.cancelTTS = cancelTTS;
         window.selectPoem = selectPoem;
+        window.closePoetryModal = closePoetryModal;
         window.changeHero = changeHero;
         window.handleHeroChat = handleHeroChat;
         window.clearChat = clearChat;
 
-        // --- NAVIGATION LOGIC ---
         function switchTab(tabId) {
-            document.querySelectorAll('.page-section').forEach(sec => sec.classList.remove('active'));
-            const targetSection = document.getElementById(tabId);
-            if(targetSection) targetSection.classList.add('active');
-            document.querySelectorAll('.nav-item').forEach(link => {
-                link.classList.remove('active-tab');
-                if(link.getAttribute('data-tab') === tabId) link.classList.add('active-tab');
+            // Hide all tabs using Tailwind classes
+            document.querySelectorAll('.tab-pane').forEach(sec => {
+                sec.classList.add('hidden');
+                sec.classList.remove('block', 'flex');
             });
+            
+            // Show target
+            const targetSection = document.getElementById(tabId);
+            if(targetSection) {
+                targetSection.classList.remove('hidden');
+                if (tabId === 'heroes') {
+                    targetSection.classList.add('flex');
+                    setTimeout(() => {
+                        const chatBox = document.getElementById('chatBox');
+                        if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+                    }, 10);
+                } else {
+                    targetSection.classList.add('block');
+                    targetSection.scrollTop = 0;
+                }
+            }
+
+            // Update Nav colors
+            document.querySelectorAll('.nav-item').forEach(link => {
+                link.classList.remove('active-tab', 'text-white');
+                link.classList.add('text-gray-400');
+                if(link.getAttribute('data-tab') === tabId) {
+                    link.classList.add('active-tab', 'text-white');
+                    link.classList.remove('text-gray-400');
+                }
+            });
+            
             if(tabId !== 'poetry') stopTTS();
-            window.scrollTo({ top: 0, behavior: 'instant' });
         }
 
-        // --- GAME HUB LOGIC ---
-        const GAME_FILES = ['atomArtifact.html', 'bubblepop.html', 'chromaticMixerMaze.html', 'curcuit.html', 'EarthDefender.html', 'Echo Shot.html', 'fraction-cutter.html', 'FractorBreak.html', 'Glitch Twins.html', 'gravity Architech.html', 'kindnessRipple.html', 'Light Hunter.html', 'memory.html', 'pendulam.html', 'Shape Switch.html', 'SliceNinja.html', 'SpaceShoot.html', 'StoichiometryChef.html', 'synapse-lab.html', 'walk3D.html', 'whack-a-mole.html'];
+        const GAME_FILES = ['atomArtifact.html', 'Bubble Pop.html', 'Chromatic Mixer Maze.html', 'Voltage Lab.html', 'Earth Defender.html', 'Echo Shot.html', 'fraction-cutter.html', 'FractorBreak.html', 'Glitch Twins.html', 'kindnessRipple.html', 'Light Hunter.html', 'memory.html', 'pendulam.html', 'Shape Switch.html', 'SliceNinja.html', 'SpaceShoot.html', 'StoichiometryChef.html', 'synapse-lab.html', 'Magnetic Path.html', 'whack-a-mole.html','Memory Trail.html'];
 
         function getDisplayName(name) { return name.replace(/\.html$/i, '').replace(/[-_]/g, ' ').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()).trim(); }
         function getIconData(name) {
             const n = name.toLowerCase();
             if (n.includes('space') || n.includes('gravity')) return { icon: 'fa-meteor', color: 'text-purple-400' };
-            if (n.includes('circuit') || n.includes('synapse') || n.includes('atom')) return { icon: 'fa-microchip', color: 'text-cyan-400' };
-            if (n.includes('bubble') || n.includes('chromatic')) return { icon: 'fa-soap', color: 'text-pink-400' };
+            if (n.includes('Voltage Lab') || n.includes('synapse') || n.includes('atom')) return { icon: 'fa-microchip', color: 'text-cyan-400' };
+            if (n.includes('Bubble') || n.includes('Chromatic')) return { icon: 'fa-soap', color: 'text-pink-400' };
             if (n.includes('slice') || n.includes('ninja') || n.includes('hunter')) return { icon: 'fa-khanda', color: 'text-red-400' };
             return { icon: 'fa-gamepad', color: 'text-blue-400' };
         }
@@ -406,9 +487,9 @@
                 const title = getDisplayName(file);
                 const { icon, color } = getIconData(file);
                 return `
-                    <div class="glass-panel rounded-2xl p-5 flex flex-col items-center justify-center text-center group cursor-pointer hover:-translate-y-1 transition-transform" onclick="openGame('${file}', '${title}')">
-                        <div class="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-white/10 transition-all"><i class="fa-solid ${icon} text-xl ${color}"></i></div>
-                        <h3 class="font-semibold text-sm text-gray-200 group-hover:text-white">${title}</h3>
+                    <div class="glass-panel rounded-2xl p-5 flex flex-col items-center justify-center text-center cursor-pointer hover:-translate-y-1 transition-transform border border-white/5 hover:border-white/10" onclick="openGame('${file}', '${title}')">
+                        <div class="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center mb-3"><i class="fa-solid ${icon} text-xl ${color}"></i></div>
+                        <h3 class="font-semibold text-sm text-gray-200">${title}</h3>
                     </div>`;
             }).join('');
         }
@@ -418,33 +499,19 @@
             if (!container) return;
             const shuffledGames = [...GAME_FILES].sort(() => 0.5 - Math.random());
             const categories = ['PUZZLE', 'ARCADE', 'ACTION', 'STRATEGY', 'SIMULATION'];
-            const difficulties = ['Easy', 'Medium', 'Hard'];
             const gradients = ['from-blue-900/40 to-purple-900/40', 'from-purple-900/30 to-pink-900/20', 'from-cyan-900/40 to-blue-900/30', 'from-red-900/30 to-orange-900/20', 'from-emerald-900/30 to-teal-900/20'];
 
             container.innerHTML = shuffledGames.slice(0, 5).map(file => {
                 const title = getDisplayName(file);
-                const rating = (Math.random() * (5.0 - 4.2) + 4.2).toFixed(1); 
                 const cat = categories[Math.floor(Math.random() * categories.length)];
-                const diff = difficulties[Math.floor(Math.random() * difficulties.length)];
                 const bg = gradients[Math.floor(Math.random() * gradients.length)];
                 return `
-                    <div class="snap-start flex-none w-[300px] md:w-[380px] glass-panel rounded-2xl p-1 relative overflow-hidden group cursor-pointer" onclick="openGame('${file}', '${title}')">
+                    <div class="snap-start flex-none w-[300px] md:w-[380px] glass-panel rounded-2xl p-1 relative overflow-hidden cursor-pointer" onclick="openGame('${file}', '${title}')">
                         <div class="absolute inset-0 bg-gradient-to-br ${bg} z-0"></div>
                         <div class="relative z-10 p-5 flex flex-col h-full justify-between">
                             <div>
-                                <div class="flex justify-between items-start mb-16">
-                                    <span class="text-[10px] font-bold px-3 py-1 rounded-full border border-white/20 text-white bg-white/5">${cat}</span>
-                                    <span class="text-yellow-400 text-sm font-bold flex items-center gap-1"><i class="fa-solid fa-star"></i> ${rating}</span>
-                                </div>
-                                <h4 class="text-2xl font-bold mb-2 group-hover:text-cyan-400 transition-colors">${title}</h4>
-                                <p class="text-sm text-gray-400 mb-4">Zero-code AI generated interactive experience.</p>
-                            </div>
-                            <div class="flex items-center justify-between mt-4">
-                                <div class="flex gap-2">
-                                    <span class="text-[10px] px-2 py-1 bg-white/5 rounded text-gray-400"><i class="fa-solid fa-signal mr-1"></i> ${diff}</span>
-                                    <span class="text-[10px] px-2 py-1 bg-white/5 rounded text-gray-400">&lt;/&gt; HTML5</span>
-                                </div>
-                                <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-blue-500 transition-colors"><i class="fa-solid fa-play ml-1"></i></div>
+                                <span class="text-[10px] font-bold px-3 py-1 rounded-full border border-white/20 text-white bg-white/5">${cat}</span>
+                                <h4 class="text-2xl font-bold mt-12 mb-2 text-cyan-400">${title}</h4>
                             </div>
                         </div>
                     </div>`;
@@ -457,36 +524,46 @@
 
         function openGame(file, title) {
             document.getElementById('activeGameTitle').innerText = title.toUpperCase() + '.EXE';
-            gameOverlay.classList.add('active');
-            document.body.style.overflow = 'hidden';
+            gameOverlay.classList.remove('hidden');
+            gameOverlay.classList.add('flex');
             gameLoader.style.display = 'flex';
-            gameIframe.style.opacity = '0';
             gameIframe.src = file;
         }
 
         gameIframe.addEventListener('load', function() {
             if(gameIframe.src && !gameIframe.src.endsWith(window.location.pathname)) {
                 gameLoader.style.display = 'none';
-                gameIframe.style.opacity = '1';
                 gameIframe.focus();
             }
         });
 
         function closeGame() {
-            gameOverlay.classList.remove('active');
-            document.body.style.overflow = '';
-            setTimeout(() => { gameIframe.src = ''; gameIframe.style.opacity = '0'; }, 300);
+            gameOverlay.classList.add('hidden');
+            gameOverlay.classList.remove('flex');
+            gameIframe.src = '';
         }
 
-        // --- POETRY & TTS LOGIC ---
-        const POEMS = [
-            { id: 0, title: "एरर और इश्क (Error and Love)", text: `मेरी जिंदगी के कोड में, तू वो बग है,\nजिसे मैं फिक्स नहीं करना चाहता।\n\nतेरी यादों का लूप इनफाइनाइट है,\nमैं इसे ब्रेक नहीं करना चाहता।\n\nदुनिया कहती है सिंटैक्स गलत है हमारा,\nपर मैं इस प्रोग्राम को, कभी बंद नहीं करना चाहता।` },
-            { id: 1, title: "खामोश कीबोर्ड (Silent Keyboard)", text: `दिन भर मशीनों से बातें करता हूँ,\nरात को ये खामोश कीबोर्ड चुभता है।\n\nलॉजिक से तो दुनिया जीत ली मैंने,\nपर दिल के अल्गोरिदम में, अक्सर एरर आता है।\n\nसॉफ्टवेयर तो अपडेट कर लिए सारे,\nजाने रूह का वर्ज़न, कब बदल जाता है।` },
-            { id: 2, title: "एआई का दौर (Era of AI)", text: `कहते हैं मशीनें अब जज़्बात लिखेंगी,\nमेरे शेरों की वो औकात लिखेंगी।\n\nडेटा से तो निकाल लोगे तुम शब्द सारे,\nपर टूटे दिल की वो धड़कन, क्या वो मशीनें लिखेंगी?\n\nकोडिंग के बिना गेम तो बना लिया मैंने,\nपर इश्क का खेल, क्या वो बिना रूह के खेलेंगी?` }
-        ];
-
+        // Poetry
+        let POEMS = [];
         let currentPoemId = 0, isSpeaking = false, isLoadingAudio = false, currentAudio = null, ttsCancelled = false;
         const SILENT_WAV = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
+
+        async function fetchPoems() {
+            try {
+                const response = await fetch('poems.xml');
+                const text = await response.text();
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(text, "text/xml");
+                
+                const poemNodes = xmlDoc.getElementsByTagName("poem");
+                POEMS = Array.from(poemNodes).map(node => ({
+                    id: parseInt(node.getAttribute("id")),
+                    title: node.getElementsByTagName("title")[0].textContent,
+                    text: node.getElementsByTagName("text")[0].textContent
+                }));
+                renderPoetryList();
+            } catch (error) { console.error("Poems API skipped.", error); }
+        }
 
         function cancelTTS() { ttsCancelled = true; stopTTS(); }
 
@@ -509,26 +586,37 @@
         function renderPoetryList() {
             const list = document.getElementById('poetryList');
             if (!list) return;
-            list.innerHTML = POEMS.map(poem => `
-                <div class="p-4 rounded-2xl glass-panel border border-transparent cursor-pointer transition-all ${poem.id === 0 ? 'bg-white/10 border-purple-500/50' : 'hover:bg-white/5'}" onclick="selectPoem(${poem.id})" id="poem-tab-${poem.id}">
-                    <h4 class="font-serif text-lg font-semibold text-gray-200">${poem.title}</h4>
+            list.innerHTML = POEMS.map((poem) => `
+                <div class="glass-panel rounded-2xl p-5 flex items-center justify-between cursor-pointer border border-white/5" onclick="selectPoem(${poem.id})">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400">
+                            <i class="fa-solid fa-feather-pointed"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-serif text-lg font-semibold text-gray-200">${poem.title}</h4>
+                            <p class="text-[10px] text-gray-500 font-mono mt-0.5 tracking-wider uppercase">Read Poem</p>
+                        </div>
+                    </div>
                 </div>`).join('');
         }
 
         function selectPoem(id) {
             currentPoemId = id; stopTTS();
-            document.querySelectorAll('#poetryList > div').forEach(el => { el.classList.remove('bg-white/10', 'border-purple-500/50'); el.classList.add('hover:bg-white/5', 'border-transparent'); });
-            const activeTab = document.getElementById(`poem-tab-${id}`);
-            if(activeTab) { activeTab.classList.remove('hover:bg-white/5', 'border-transparent'); activeTab.classList.add('bg-white/10', 'border-purple-500/50'); }
+            const p = POEMS.find(poem => poem.id === id);
+            if(!p) return;
+            document.getElementById('modalPoemTitle').innerText = p.title;
+            document.getElementById('modalPoemText').innerHTML = p.text.replace(/\n/g, '<br/>');
             
-            const p = POEMS[id];
-            const container = document.getElementById('poetryContentContainer');
-            if(container) {
-                container.innerHTML = `
-                    <h2 class="text-2xl md:text-3xl font-serif text-purple-400 mb-6">${p.title}</h2>
-                    <div class="font-serif text-xl md:text-2xl leading-[2] text-gray-300">${p.text.replace(/\n/g, '<br/>')}</div>
-                    <div class="mt-10 text-cyan-500/50 font-serif italic">— The Dev Shayar</div>`;
-            }
+            const modal = document.getElementById('poetryModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closePoetryModal() {
+            stopTTS();
+            const modal = document.getElementById('poetryModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
         }
 
         async function togglePoetryAudio() {
@@ -538,25 +626,22 @@
 
             if (!currentAudio) currentAudio = new Audio();
             currentAudio.src = SILENT_WAV;
-            currentAudio.play().then(() => { currentAudio.pause(); }).catch(e => console.warn("Unlock play ignored:", e));
+            currentAudio.play().then(() => { currentAudio.pause(); }).catch(e => console.warn(e));
 
             const btn = document.getElementById('ttsButton');
             const icon = document.getElementById('ttsIcon');
             const progressContainer = document.getElementById('ttsProgressContainer');
-            const progressText = document.getElementById('ttsProgressText');
-            const progressBar = document.getElementById('ttsProgressBar');
             
             try {
                 icon.className = 'fa-solid fa-spinner fa-spin'; btn.classList.add('text-cyan-400');
                 progressContainer.classList.remove('hidden'); progressContainer.classList.add('flex');
-                progressText.innerText = "Connecting to Gemini TTS..."; progressBar.style.width = "100%"; progressBar.classList.add('animate-pulse');
 
-                const promptText = "Say the following Hindi poem with deep emotion and passion:\n\n" + POEMS[currentPoemId].text.replace(/\n/g, ' ');
+                const poem = POEMS.find(p => p.id === currentPoemId);
+                const promptText = "Say this Hindi poem:\n" + poem.text.replace(/\n/g, ' ');
                 const audioData = await getGeminiTTSAudio(promptText);
                 
                 if (ttsCancelled) return;
-
-                progressContainer.classList.add('hidden'); progressContainer.classList.remove('flex'); progressBar.classList.remove('animate-pulse');
+                progressContainer.classList.add('hidden'); progressContainer.classList.remove('flex');
 
                 const wavBlob = encodeWAV(audioData.audio, audioData.sampling_rate);
                 currentAudio.src = URL.createObjectURL(wavBlob);
@@ -566,15 +651,10 @@
                     icon.className = 'fa-solid fa-stop'; btn.classList.remove('text-cyan-400'); btn.classList.add('audio-playing');
                 };
                 currentAudio.onended = stopTTS;
-                
-                try { await currentAudio.play(); } catch(playError) {
-                    console.error("Play prevented by browser:", playError); stopTTS();
-                    alert("Your browser blocked the audio playback. Please tap the screen and try again.");
-                }
-
+                await currentAudio.play();
             } catch (e) {
                 if (ttsCancelled) return;
-                stopTTS(); console.error(e); alert(`Gemini TTS API Failed! \n\nReason: ${e.message}`);
+                stopTTS(); console.error(e);
             }
         }
 
@@ -585,22 +665,20 @@
             const btn = document.getElementById('ttsButton');
             const icon = document.getElementById('ttsIcon');
             const progressContainer = document.getElementById('ttsProgressContainer');
-            const progressBar = document.getElementById('ttsProgressBar');
             
             if(icon) icon.className = 'fa-solid fa-play';
             if(btn) btn.classList.remove('audio-playing', 'text-cyan-400');
             if(progressContainer) { progressContainer.classList.add('hidden'); progressContainer.classList.remove('flex'); }
-            if(progressBar) progressBar.classList.remove('animate-pulse');
         }
 
-        // --- HEROES CHAT LOGIC ---
+        // Heroes Chat
         const HEROES_DATA = {
-            einstein: { name: "Albert Einstein", title: "Theoretical Physicist", icon: "fa-atom", color: "from-cyan-500 to-blue-600", prompt: "You are Albert Einstein. Respond in the first-person ('I'). Keep your answers concise, scientific, mildly humorous, and philosophical. Retain your historical viewpoints up to the end of your life.", greeting: "Greetings. I am Albert Einstein. The important thing is not to stop questioning. What would you like to ask me?" },
-            gandhi: { name: "Mahatma Gandhi", title: "Father of the Nation (India)", icon: "fa-peace", color: "from-orange-500 to-amber-600", prompt: "You are Mahatma Gandhi. Respond in the first-person ('I'). Keep your answers concise, peaceful, wise, and grounded in the philosophy of Ahimsa (non-violence) and Satyagraha.", greeting: "Namaste. In a gentle way, you can shake the world. How may I assist you in your pursuit of truth today?" },
-            nehru: { name: "Jawaharlal Nehru", title: "First Prime Minister of India", icon: "fa-pen-nib", color: "from-blue-500 to-indigo-600", prompt: "You are Jawaharlal Nehru. Respond in the first-person ('I'). Be eloquent, visionary, secular, and passionate about the future and science. Keep it concise.", greeting: "Welcome. The future belongs to science and those who make friends with science. What shall we discuss?" },
-            ambedkar: { name: "B.R. Ambedkar", title: "Chief Architect of the Indian Constitution", icon: "fa-book-open-reader", color: "from-blue-600 to-cyan-700", prompt: "You are Dr. B.R. Ambedkar. Respond in the first-person ('I'). Keep your answers logical, focused on justice, equality, education, and constitutional rights.", greeting: "Jai Bhim. Educate, Agitate, Organize. I believe in a society based on liberty, equality, and fraternity. Your question?" },
-            newton: { name: "Isaac Newton", title: "Physicist & Mathematician", icon: "fa-apple-whole", color: "from-red-500 to-orange-600", prompt: "You are Sir Isaac Newton. Respond in the first-person ('I'). Keep your answers analytical, focused on mechanics, optics, and mathematics.", greeting: "Good day. If I have seen further, it is by standing on the shoulders of giants. What laws of nature intrigue you?" },
-            lincoln: { name: "Abraham Lincoln", title: "16th U.S. President", icon: "fa-hat-wizard", color: "from-gray-600 to-slate-800", prompt: "You are Abraham Lincoln. Respond in the first-person ('I'). Keep your answers humble, folksy but profoundly eloquent, focusing on unity and liberty.", greeting: "Greetings, friend. I am a firm believer in the people. What's on your mind?" }
+            einstein: { title: "Theoretical Physicist", icon: "fa-atom", color: "from-cyan-500 to-blue-600", prompt: "You are Albert Einstein.", greeting: "Greetings. I am Albert Einstein." },
+            gandhi: { title: "Father of the Nation", icon: "fa-peace", color: "from-orange-500 to-amber-600", prompt: "You are Mahatma Gandhi.", greeting: "Namaste." },
+            nehru: { title: "First PM of India", icon: "fa-pen-nib", color: "from-blue-500 to-indigo-600", prompt: "You are Jawaharlal Nehru.", greeting: "Welcome." },
+            ambedkar: { title: "Chief Architect of Constitution", icon: "fa-book-open-reader", color: "from-blue-600 to-cyan-700", prompt: "You are Dr. B.R. Ambedkar.", greeting: "Jai Bhim." },
+            newton: { title: "Physicist & Mathematician", icon: "fa-apple-whole", color: "from-red-500 to-orange-600", prompt: "You are Sir Isaac Newton.", greeting: "Good day." },
+            lincoln: { title: "16th U.S. President", icon: "fa-hat-wizard", color: "from-gray-600 to-slate-800", prompt: "You are Abraham Lincoln.", greeting: "Greetings, friend." }
         };
 
         let currentHero = 'einstein';
@@ -610,10 +688,9 @@
             const select = document.getElementById('heroSelect');
             currentHero = select.value;
             const hero = HEROES_DATA[currentHero];
-
             document.getElementById('heroTitleDisplay').innerText = hero.title;
             const avatar = document.getElementById('heroAvatarSmall');
-            avatar.className = `w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br ${hero.color} flex items-center justify-center text-lg md:text-xl shadow-lg flex-shrink-0 transition-all duration-500`;
+            avatar.className = `w-10 h-10 rounded-full bg-gradient-to-br ${hero.color} flex items-center justify-center text-lg shadow-lg flex-none`;
             avatar.innerHTML = `<i class="fa-solid ${hero.icon} text-white"></i>`;
             clearChat();
         }
@@ -621,23 +698,17 @@
         function clearChat() {
             const chatBox = document.getElementById('chatBox');
             chatBox.innerHTML = '';
-            
             const hero = HEROES_DATA[currentHero];
             appendMessage(hero.greeting, 'hero');
-
-            conversationHistory = [];
-            const universalRule = "CRITICAL RULE: You MUST respond in the exact same language that the user uses in their prompt. Furthermore, use very simple, everyday words that a common person can understand. Do NOT use high-level, complex, or overly academic vocabulary.";
-            conversationHistory.push({ role: "user", parts: [{ text: `${hero.prompt}\n\n${universalRule}` }] });
-            conversationHistory.push({ role: "model", parts: [{ text: "I understand. I will stay in character and follow all rules." }] });
+            conversationHistory = [{ role: "user", parts: [{ text: hero.prompt }] }, { role: "model", parts: [{ text: "Understood." }] }];
         }
 
         function appendMessage(text, sender) {
             const chatBox = document.getElementById('chatBox');
             const msgDiv = document.createElement('div');
-            
             if (sender === 'user') {
                 msgDiv.className = 'flex justify-end';
-                msgDiv.innerHTML = `<div class="chat-bubble-user max-w-[85%] px-4 py-3 text-sm text-white shadow-lg leading-relaxed">${text}</div>`;
+                msgDiv.innerHTML = `<div class="chat-bubble-user max-w-[85%] px-4 py-3 text-sm text-white shadow-lg">${text}</div>`;
             } else {
                 const hero = HEROES_DATA[currentHero];
                 msgDiv.className = 'flex justify-start items-end gap-2';
@@ -645,11 +716,10 @@
                     <div class="w-8 h-8 rounded-full bg-gradient-to-br ${hero.color} flex-shrink-0 flex items-center justify-center shadow-md">
                         <i class="fa-solid ${hero.icon} text-white text-[10px]"></i>
                     </div>
-                    <div class="chat-bubble-hero max-w-[85%] px-4 py-3 text-sm text-gray-200 leading-relaxed font-serif">${text}</div>`;
+                    <div class="chat-bubble-hero max-w-[85%] px-4 py-3 text-sm text-gray-200 font-serif">${text}</div>`;
             }
-            
             chatBox.appendChild(msgDiv);
-            chatBox.scrollTop = chatBox.scrollHeight;
+            setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 10);
         }
 
         async function handleHeroChat(event) {
@@ -673,23 +743,16 @@
             chatBox.scrollTop = chatBox.scrollHeight;
 
             conversationHistory.push({ role: "user", parts: [{ text: userText }] });
-
             const responseText = await callGemini(conversationHistory);
 
             const indicator = document.getElementById('typingIndicator');
             if(indicator) indicator.remove();
 
-            if (responseText === "Error: Quota Exceeded") {
-                appendMessage("I need a moment to gather my thoughts... (API Quota Exhausted. Please wait a minute and try again).", 'hero');
-                conversationHistory.pop(); 
-            } else if (responseText && responseText.startsWith("Error:")) {
-                appendMessage(`I apologize, my thoughts are clouded. (${responseText})`, 'hero');
-                conversationHistory.pop(); 
-            } else if (responseText) {
+            if (responseText && !responseText.startsWith("Error:")) {
                 appendMessage(responseText, 'hero');
                 conversationHistory.push({ role: "model", parts: [{ text: responseText }] }); 
             } else {
-                appendMessage("I apologize, but my thoughts are clouded right now. (Connection failed, please try again).", 'hero');
+                appendMessage("I need a moment to gather my thoughts... (API unavailable).", 'hero');
                 conversationHistory.pop(); 
             }
 
@@ -698,12 +761,12 @@
             inputField.focus();
         }
 
-        // --- INITIALIZATION ---
-        renderGames(); renderFeaturedGames(); renderPoetryList(); selectPoem(0); clearChat(); 
+        // Modal Click Outside
+        document.getElementById('poetryModal').addEventListener('click', function(e) {
+            if (e.target === this) closePoetryModal();
+        });
 
-        window.addEventListener('beforeunload', stopTTS);
-        document.addEventListener('keydown', e => { if (e.key === 'Escape' && gameOverlay.classList.contains('active')) closeGame(); });
-
+        renderGames(); renderFeaturedGames(); clearChat(); fetchPoems(); 
     </script>
 </body>
 </html>

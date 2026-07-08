@@ -527,7 +527,7 @@
             gameOverlay.classList.remove('hidden');
             gameOverlay.classList.add('flex');
             gameLoader.style.display = 'flex';
-            gameIframe.src = file;
+            gameIframe.src = `Games/${file}`;
         }
 
         gameIframe.addEventListener('load', function() {

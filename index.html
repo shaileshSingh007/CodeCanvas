@@ -495,48 +495,76 @@
             } catch (error) { return `Error: ${error.message}`; }
         }
 
-        // USING THE PROXY BACKEND FOR SECURITY (WITH VOICE PARAMETER)
+        // USING THE PROXY BACKEND FOR SECURITY (WITH VOICE PARAMETER & EXPONENTIAL BACKOFF)
         async function getGeminiTTSAudio(text, voiceName = "Kore") {
-            const response = await fetch('/api/Gemini', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    action: 'tts', 
-                    text: text,
-                    voice: voiceName 
-                })
-            });
-            
-            // Fix: Expose the actual HTTP status code for correct error handling logic (429, 504, etc)
-            if (!response.ok) {
-                throw new Error(`API error ${response.status}: ${response.statusText}`);
-            }
+            const delays = [1000, 2000, 4000, 8000, 16000];
+            const maxRetries = 5;
 
-            const result = await response.json();
-            
-            if (!result.candidates || !result.candidates[0].content || !result.candidates[0].content.parts[0].inlineData) {
-                throw new Error("Invalid format received from TTS generation");
-            }
-            
-            const inlineData = result.candidates[0].content.parts[0].inlineData;
-            
-            const match = inlineData.mimeType.match(/rate=(\d+)/);
-            const sampleRate = match ? parseInt(match[1]) : 24000;
-            const binaryString = atob(inlineData.data);
-            
-            const bytes = new Uint8Array(binaryString.length);
-            for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
-            
-            // Fix: Prevent RangeError if Base64 padding creates an odd number of bytes
-            const validLength = bytes.length - (bytes.length % 2);
-            const int16Array = new Int16Array(bytes.buffer, 0, validLength / 2);
-            const float32Array = new Float32Array(int16Array.length);
-            
-            for (let i = 0; i < int16Array.length; i++) {
-                float32Array[i] = int16Array[i] / 32768.0;
-            }
+            // FIX: Natural Language control to enforce the correct tone/gender
+            const stylePrefix = voiceName === "Puck" 
+                ? "Say in a deep, expressive male voice: " 
+                : "Say in a gentle, expressive female voice: ";
+            const modifiedText = stylePrefix + text;
 
-            return { audio: float32Array, sampling_rate: sampleRate };
+            for (let attempt = 0; attempt <= maxRetries; attempt++) {
+                if (ttsCancelled) throw new Error("Cancelled");
+                
+                try {
+                    const response = await fetch('/api/Gemini', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            action: 'tts', 
+                            text: modifiedText,
+                            voice: voiceName 
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        if (response.status === 429) {
+                            throw new Error("429"); // Throw to trigger retry block
+                        }
+                        throw new Error(`API error ${response.status}: ${response.statusText}`);
+                    }
+
+                    const result = await response.json();
+                    
+                    if (!result.candidates || !result.candidates[0].content || !result.candidates[0].content.parts[0].inlineData) {
+                        throw new Error("Invalid format received from TTS generation");
+                    }
+                    
+                    const inlineData = result.candidates[0].content.parts[0].inlineData;
+                    
+                    const match = inlineData.mimeType.match(/rate=(\d+)/);
+                    const sampleRate = match ? parseInt(match[1]) : 24000;
+                    const binaryString = atob(inlineData.data);
+                    
+                    const bytes = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+                    
+                    const validLength = bytes.length - (bytes.length % 2);
+                    const int16Array = new Int16Array(bytes.buffer, 0, validLength / 2);
+                    const float32Array = new Float32Array(int16Array.length);
+                    
+                    for (let i = 0; i < int16Array.length; i++) {
+                        float32Array[i] = int16Array[i] / 32768.0;
+                    }
+
+                    return { audio: float32Array, sampling_rate: sampleRate };
+                    
+                } catch (error) {
+                    if (error.message === "Cancelled") throw error;
+                    
+                    // If it's a 429 Rate Limit and we have retries left, wait and loop again
+                    if (error.message.includes("429") && attempt < maxRetries) {
+                        await new Promise(res => setTimeout(res, delays[attempt]));
+                        continue; 
+                    }
+                    
+                    // If we ran out of retries or it's a different error
+                    throw new Error(error.message.includes("429") ? "429 - Rate Limit Exceeded after retries" : error.message);
+                }
+            }
         }
 
         window.switchTab = switchTab;

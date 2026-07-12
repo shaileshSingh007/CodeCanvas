@@ -51,17 +51,16 @@ export default async function handler(req, res) {
             const selectedVoice = (voice === "Puck") ? "Puck" : "Kore";
 
             const payload = {
-                contents: [{ parts: [{ text: text }] }],
-                generationConfig: {
-                    responseModalities: ["AUDIO"],
-                    speechConfig: { 
-                        voiceConfig: { 
-                            prebuiltVoiceConfig: { voiceName: selectedVoice } 
-                        } 
-                    }
-                },
-                model: "gemini-2.5-flash-preview-tts" // Added strictly for compliant payload structure
-            };
+    contents: [{ parts: [{ text: text }] }],
+    generationConfig: {
+        responseModalities: ["AUDIO"],
+        speechConfig: {
+            voiceConfig: {
+                prebuiltVoiceConfig: { voiceName: selectedVoice }
+            }
+        }
+    }
+};
 
 
             const response = await fetch(endpoint, {

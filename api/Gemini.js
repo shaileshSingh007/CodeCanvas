@@ -42,26 +42,24 @@ export default async function handler(req, res) {
             return res.status(response.status).json(data);
         } 
         
-        // --- 2. POETRY TTS LOGIC ---
+        // --- 2. POETRY TTS LOGIC (using multimodal model for better quota) ---
         else if (action === 'tts') {
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+            // Use the multimodal Gemini 2.5 Flash model to generate audio from text
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
             
-            // This mapping ensures that TTS only uses allowed voices
-            // without interfering with any 'prompt' variable used for chat
             const selectedVoice = (voice === "Puck") ? "Puck" : "Kore";
 
             const payload = {
-    contents: [{ parts: [{ text: text }] }],
-    generationConfig: {
-        responseModalities: ["AUDIO"],
-        speechConfig: {
-            voiceConfig: {
-                prebuiltVoiceConfig: { voiceName: selectedVoice }
-            }
-        }
-    }
-};
-
+                contents: [{ parts: [{ text: text }] }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: { 
+                        voiceConfig: { 
+                            prebuiltVoiceConfig: { voiceName: selectedVoice } 
+                        } 
+                    }
+                }
+            };
 
             const response = await fetch(endpoint, {
                 method: 'POST',
@@ -80,4 +78,3 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: error.message });
     }
 }
-

@@ -391,9 +391,7 @@
                 <div class="flex items-center gap-2 md:gap-3">
                     <select id="ttsVoiceSelect" class="bg-white/5 border border-white/10 rounded-full text-xs text-gray-300 px-3 py-2 outline-none cursor-pointer">
                         <option value="Kore">Neutral (Kore)</option>
-                        <option value="Fenrir">Male (Fenrir)</option>
-                        <option value="Aoede">Female (Aoede)</option>
-                        <option value="Puck">Kid (Puck)</option>
+                        <option value="Puck">Male (Puck)</option>
                     </select>
                     <button id="ttsButton" onclick="togglePoetryAudio()" class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-300 hover:text-white transition-colors">
                         <i class="fa-solid fa-play" id="ttsIcon"></i>
@@ -990,50 +988,69 @@
         function cancelTTS() { ttsCancelled = true; stopTTS(); }
 
         // General Audio Player
-        async function playTTSLogic(textToSpeak, btnElem, iconElem, voiceName = "Kore", isCard = false) {
-            if (isLoadingAudio) return;
-            if (isSpeaking) { stopTTS(); return; }
-            ttsCancelled = false; isLoadingAudio = true;
-
-            if (!currentAudio) currentAudio = new Audio();
-            currentAudio.src = SILENT_WAV;
-            currentAudio.play().then(() => { currentAudio.pause(); }).catch(e => console.warn(e));
-            
-            const progressContainer = document.getElementById('ttsProgressContainer');
+                async function playTTSLogic(textToSpeak, voiceName, btnElement) {
+            // 1. Reset UI and cleanup
+            stopTTS();
+            ttsCancelled = false;
+            btnElement.style.border = "2px solid transparent"; // Clear previous status
             
             try {
-                iconElem.className = 'fa-solid fa-spinner fa-spin'; 
-                if(!isCard) btnElem.classList.add('text-cyan-400');
-                if(!isCard) { progressContainer.classList.remove('hidden'); progressContainer.classList.add('flex'); }
+                // 2. Add loading state to button
+                btnElement.classList.add('loading'); 
 
-                                // Removed prefix instruction so it doesn't read the instruction aloud
-                const promptText = textToSpeak.replace(/\n/g, ' '); 
-                const audioData = await getGeminiTTSAudio(promptText, voiceName);
+                // 3. Truncate to strictly 8 lines to stay within Vercel time limits
+                let lines = textToSpeak.split('\n').filter(line => line.trim().length > 0);
+                if (lines.length > 8) {
+                    lines = lines.slice(0, 8);
+                }
+                const truncatedText = lines.join(' ');
 
+                // 4. Fetch Audio (using the refined 2-voice mapping)
+                // Ensure voiceName is "Kore" or "Puck"
+                const selectedVoice = (voiceName === "Puck") ? "Puck" : "Kore";
+                const audioData = await getGeminiTTSAudio(truncatedText, selectedVoice);
+
+                if (!audioData || !audioData.audioContent) {
+                    throw new Error("Logic Error: No audio content received.");
+                }
+
+                // 5. Decode and Play
+                const binaryData = atob(audioData.audioContent);
+                const bytes = new Uint8Array(binaryData.length);
+                for (let i = 0; i < binaryData.length; i++) {
+                    bytes[i] = binaryData.charCodeAt(i);
+                }
+
+                const blob = new Blob([bytes], { type: 'audio/wav' });
+                const url = URL.createObjectURL(blob);
                 
-                if (ttsCancelled) return;
-                if(!isCard) { progressContainer.classList.add('hidden'); progressContainer.classList.remove('flex'); }
-
-                const wavBlob = encodeWAV(audioData.audio, audioData.sampling_rate);
-                currentAudio.src = URL.createObjectURL(wavBlob);
-                
-                currentAudio.onplay = () => {
-                    isLoadingAudio = false; isSpeaking = true;
-                    iconElem.className = 'fa-solid fa-stop'; 
-                    if(isCard) {
-                        btnElem.classList.add('bg-cyan-500', 'text-white');
-                        btnElem.classList.remove('bg-white/10', 'text-cyan-400');
-                    } else {
-                        btnElem.classList.remove('text-cyan-400'); btnElem.classList.add('audio-playing');
-                    }
+                currentAudio = new Audio(url);
+                currentAudio.onended = () => {
+                    btnElement.classList.remove('loading');
                 };
-                currentAudio.onended = stopTTS;
+                
                 await currentAudio.play();
+
             } catch (e) {
                 if (ttsCancelled) return;
-                stopTTS(); console.error(e);
+                
+                btnElement.classList.remove('loading');
+                console.error("TTS Failure:", e.message);
+
+                // 6. UI Feedback based on failure type
+                if (e.message.includes("504")) {
+                    // Vercel Timeout (Too long or server busy)
+                    btnElement.style.border = "2px solid orange"; 
+                } else if (e.message.includes("429")) {
+                    // API Exhausted (Rate limit)
+                    btnElement.style.border = "2px solid red";    
+                } else {
+                    // General Logic Issue (Format mismatch, code error, etc)
+                    btnElement.style.border = "2px solid white";  
+                }
             }
         }
+
 
         async function togglePoetryAudio() {
             const btn = document.getElementById('ttsButton');
@@ -1043,7 +1060,7 @@
             
             if(!poem) return;
             playingCardId = null; // We are in modal mode
-            await playTTSLogic(poem.text, btn, icon, voice, false);
+            await playTTSLogic(poem.text,voice, btn);
         }
 
         async function playCardTTS(event, id) {
@@ -1063,7 +1080,7 @@
             const lines = poem.text.split('\n').filter(l => l.trim() !== '');
             const textToSpeak = lines.slice(0, 4).join(' ');
 
-            await playTTSLogic(textToSpeak, btn, icon, "Kore", true);
+            await playTTSLogic(textToSpeak,"Kore",btn);
         }
 
         function stopTTS() {

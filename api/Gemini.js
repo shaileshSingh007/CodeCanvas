@@ -1,8 +1,10 @@
 export default async function handler(req, res) {
+    // Only allow POST requests
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
+    // Securely grab the API key from Vercel Environment Variables
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
         return res.status(500).json({ error: 'GEMINI_API_KEY is not set in Vercel settings.' });
@@ -11,7 +13,7 @@ export default async function handler(req, res) {
     const { action, prompt, text, voice } = req.body;
 
     try {
-        // --- 1. HEROES CHAT LOGIC (unchanged) ---
+        // --- 1. HEROES CHAT LOGIC ---
         if (action === 'chat') {
             const modelsRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
             if (!modelsRes.ok) {
@@ -24,6 +26,7 @@ export default async function handler(req, res) {
                 m.supportedGenerationMethods.includes("generateContent") && 
                 !m.name.includes("tts") && !m.name.includes("embedding") && m.name.includes("gemini")
             );
+
             if (!validModelObj) return res.status(500).json({ error: "No text models enabled." });
 
             const endpoint = `https://generativelanguage.googleapis.com/v1beta/${validModelObj.name}:generateContent?key=${apiKey}`;
@@ -31,19 +34,21 @@ export default async function handler(req, res) {
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: prompt })
+                body: JSON.stringify({ contents: prompt }) 
             });
             
             const data = await response.json();
             return res.status(response.status).json(data);
         } 
         
-        // --- 2. POETRY TTS LOGIC (back to dedicated TTS model) ---
+        // --- 2. POETRY TTS LOGIC ---
         else if (action === 'tts') {
             const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
             
+            // Map the requested voice (defaults to Kore if invalid)
             const selectedVoice = (voice === "Puck") ? "Puck" : "Kore";
 
+            // Clean, compliant payload without extra parameters that might break the endpoint
             const payload = {
                 contents: [{ parts: [{ text: text }] }],
                 generationConfig: {
@@ -73,3 +78,5 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: error.message });
     }
 }
+
+

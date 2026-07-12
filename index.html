@@ -86,6 +86,12 @@
     <div class="fixed top-[-10%] left-[-10%] w-[50vw] h-[50vh] pointer-events-none z-[-1]" style="background: radial-gradient(circle, rgba(168,85,247,0.15) 0%, transparent 70%);"></div>
     <div class="fixed bottom-[10%] right-[-10%] w-[40vw] h-[40vh] pointer-events-none z-[-1]" style="background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%);"></div>
 
+    <!-- GLOBAL AUDIO STATUS TOAST -->
+    <div id="audioStatusToast" class="fixed top-6 left-1/2 -translate-x-1/2 bg-[#0a0a14]/90 backdrop-blur-md border border-white/10 shadow-lg shadow-purple-500/10 px-5 py-2.5 rounded-full z-[99999] flex items-center gap-3 transition-transform duration-300 translate-y-[-150%] pointer-events-none">
+        <i id="audioStatusIcon" class="fa-solid fa-spinner fa-spin text-cyan-400 text-sm"></i>
+        <span id="audioStatusText" class="text-xs font-mono text-gray-200 uppercase tracking-wider">Loading...</span>
+    </div>
+
     <!-- HEADERS -->
     <header class="hidden md:flex w-full items-center justify-between px-8 py-6 max-w-7xl mx-auto flex-none z-50">
         <div class="flex items-center gap-3 cursor-pointer group" onclick="switchTab('home')">
@@ -376,16 +382,6 @@
     <div id="poetryModal" class="hidden fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 md:p-10">
         <div class="glass-panel w-full max-w-2xl h-[85dvh] rounded-3xl border border-purple-500/30 flex flex-col relative bg-[#0a0a14]">
             
-            <div id="ttsProgressContainer" class="hidden absolute -top-16 left-0 right-0 mx-auto flex-col items-end bg-[#0a0a14]/90 backdrop-blur-md p-3 rounded-xl border border-white/10 shadow-lg max-w-[250px] z-50">
-                <div class="flex items-center justify-between w-full mb-2">
-                    <span id="ttsProgressText" class="text-[10px] font-mono text-cyan-400 uppercase tracking-wider">Loading...</span>
-                </div>
-                <div class="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden mb-2">
-                    <div id="ttsProgressBar" class="h-full bg-gradient-to-r from-cyan-500 to-purple-500 w-0 transition-all duration-300"></div>
-                </div>
-                <button onclick="cancelTTS()" class="text-[10px] font-bold uppercase tracking-wider text-red-500 hover:text-red-400 flex items-center gap-1 w-full justify-end"><i class="fa-solid fa-times"></i> Cancel</button>
-            </div>
-
             <div class="flex-none p-5 md:p-6 border-b border-white/10 flex justify-between items-start z-20">
                 <h2 id="modalPoemTitle" class="text-2xl md:text-3xl font-serif text-purple-400 mt-1">Poem Title</h2>
                 <div class="flex items-center gap-2 md:gap-3">
@@ -480,6 +476,42 @@
     <!-- ==================== SCRIPT ==================== -->
     <script type="module">
         
+        // --- NEW STATUS TOAST SYSTEM ---
+        function showAudioStatus(text, iconClass, isError = false) {
+            const toast = document.getElementById('audioStatusToast');
+            const textEl = document.getElementById('audioStatusText');
+            const iconEl = document.getElementById('audioStatusIcon');
+            if(!toast) return;
+
+            textEl.innerText = text;
+            iconEl.className = iconClass;
+            
+            if(isError) {
+                iconEl.classList.add('text-red-400');
+                iconEl.classList.remove('text-cyan-400');
+                textEl.classList.add('text-red-400');
+                textEl.classList.remove('text-gray-200');
+            } else {
+                iconEl.classList.add('text-cyan-400');
+                iconEl.classList.remove('text-red-400');
+                textEl.classList.add('text-gray-200');
+                textEl.classList.remove('text-red-400');
+            }
+
+            toast.style.transform = 'translate(-50%, 0)';
+            
+            // Auto hide if it's an error or just finished playing
+            if(isError) {
+                setTimeout(() => hideAudioStatus(), 4000);
+            }
+        }
+
+        function hideAudioStatus() {
+            const toast = document.getElementById('audioStatusToast');
+            if(toast) toast.style.transform = 'translate(-50%, -150%)';
+        }
+
+
         async function callGemini(contentsPayload) {
             try {
                 const response = await fetch('/api/Gemini', {
@@ -495,19 +527,22 @@
             } catch (error) { return `Error: ${error.message}`; }
         }
 
-        // USING THE PROXY BACKEND FOR SECURITY (WITH VOICE PARAMETER & EXPONENTIAL BACKOFF)
-        async function getGeminiTTSAudio(text, voiceName = "Kore") {
+
+        // USING THE PROXY BACKEND FOR SECURITY 
+        // Receives playbackId to instantly abort background tasks if user clicked something else
+        async function getGeminiTTSAudio(text, voiceName = "Kore", requestPlaybackId) {
             const delays = [1000, 2000, 4000, 8000, 16000];
             const maxRetries = 5;
 
-            // FIX: Natural Language control to enforce the correct tone/gender
             const stylePrefix = voiceName === "Puck" 
                 ? "Say in a deep, expressive male voice: " 
                 : "Say in a gentle, expressive female voice: ";
             const modifiedText = stylePrefix + text;
 
             for (let attempt = 0; attempt <= maxRetries; attempt++) {
-                if (ttsCancelled) throw new Error("Cancelled");
+                
+                // If user pressed stop/play while we were looping or waiting, abort instantly
+                if (requestPlaybackId !== currentPlaybackId) throw new Error("Cancelled");
                 
                 try {
                     const response = await fetch('/api/Gemini', {
@@ -534,7 +569,6 @@
                     }
                     
                     const inlineData = result.candidates[0].content.parts[0].inlineData;
-                    
                     const match = inlineData.mimeType.match(/rate=(\d+)/);
                     const sampleRate = match ? parseInt(match[1]) : 24000;
                     const binaryString = atob(inlineData.data);
@@ -557,12 +591,12 @@
                     
                     // If it's a 429 Rate Limit and we have retries left, wait and loop again
                     if (error.message.includes("429") && attempt < maxRetries) {
+                        showAudioStatus(`Retrying connection (${attempt + 1}/${maxRetries})...`, "fa-solid fa-rotate fa-spin");
                         await new Promise(res => setTimeout(res, delays[attempt]));
                         continue; 
                     }
                     
-                    // If we ran out of retries or it's a different error
-                    throw new Error(error.message.includes("429") ? "429 - Rate Limit Exceeded after retries" : error.message);
+                    throw new Error(error.message.includes("429") ? "429 - Rate Limit Hit" : error.message);
                 }
             }
         }
@@ -572,7 +606,6 @@
         window.closeGame = closeGame;
         window.togglePoetryAudio = togglePoetryAudio;
         window.playCardTTS = playCardTTS;
-        window.cancelTTS = cancelTTS;
         window.selectPoem = selectPoem;
         window.closePoetryModal = closePoetryModal;
         window.openAddPoetryModal = openAddPoetryModal;
@@ -695,7 +728,8 @@
 
         // Poetry
         let POEMS = [];
-        let currentPoemId = 0, isSpeaking = false, isLoadingAudio = false, currentAudio = null, ttsCancelled = false, playingCardId = null;
+        let currentPoemId = 0, isSpeaking = false, isLoadingAudio = false, currentAudio = null, playingCardId = null;
+        let currentPlaybackId = 0; // The core fix for background audio bugs
         const SILENT_WAV = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
 
         // Mock Fallback Poetry Data if XML fails
@@ -838,7 +872,7 @@
 
             // --- Draw the poem (LEFT‑ALIGNED at x=100) ---
             ctx.fillStyle = '#f3f4f6';
-            ctx.textAlign = 'left';          // 👈 changed from 'center'
+            ctx.textAlign = 'left';          
             ctx.textBaseline = 'middle';
 
             const lineHeight = fontSize * lineHeightMultiplier;
@@ -846,7 +880,7 @@
 
             displayLines.forEach((line, index) => {
                 const y = startY + index * lineHeight;
-                ctx.fillText(line, leftX, y); // 👈 drawn at x=100
+                ctx.fillText(line, leftX, y); 
             });
 
             // --- Author (centered) ---
@@ -1026,14 +1060,15 @@
             return new Blob([view], { type: 'audio/wav' });
         }
 
-        function cancelTTS() { ttsCancelled = true; stopTTS(); }
 
         // General Audio Player
         async function playTTSLogic(textToSpeak, voiceName, btnElement, isModal = false) {
-            // 1. Setup loading state
+            
+            // 1. Generate unique ID for this specific button click.
+            // If the user clicks something else, this ID won't match, killing this request.
+            const myPlaybackId = ++currentPlaybackId; 
+
             isLoadingAudio = true;
-            ttsCancelled = false;
-            btnElement.style.border = "1px solid rgba(255, 255, 255, 0.1)"; // Clear previous error status
             
             // Swap to spinner icon immediately
             const iconElement = btnElement.querySelector('i');
@@ -1041,8 +1076,7 @@
                 iconElement.className = `fa-solid fa-spinner fa-spin ${isModal ? '' : 'text-xs'}`;
             }
 
-            // FIX 2: Mobile Audio Unlock Strategy 
-            // Browsers block audio loaded asynchronously unless unlocked by a direct click.
+            // Mobile Audio Unlock Strategy 
             if (!currentAudio) {
                 currentAudio = new Audio();
             }
@@ -1051,36 +1085,46 @@
             currentAudio.play().catch(e => console.log("Silence autoplay handled"));
             
             try {
-                // 2. Truncate to strictly 8 lines to stay within limits
+                showAudioStatus("Connecting to AI...", "fa-solid fa-satellite-dish fa-fade");
+
                 let lines = textToSpeak.split('\n').filter(line => line.trim().length > 0);
                 if (lines.length > 8) {
                     lines = lines.slice(0, 8);
                 }
                 const truncatedText = lines.join(' ');
 
-                // 3. Fetch Audio
+                // 2. Fetch Audio (Pass playbackId so it can abort if we navigated away)
                 const selectedVoice = (voiceName === "Puck") ? "Puck" : "Kore";
-                const audioData = await getGeminiTTSAudio(truncatedText, selectedVoice);
+                const audioData = await getGeminiTTSAudio(truncatedText, selectedVoice, myPlaybackId);
+
+                // 3. Crucial Check: Did the user click STOP or PLAY ANOTHER while we waited for AI?
+                if (myPlaybackId !== currentPlaybackId) {
+                    return; // Silently exit. Do not process audio. Do not update UI.
+                }
 
                 if (!audioData || !audioData.audio) {
                     throw new Error("Logic Error: No audio data received.");
                 }
 
+                showAudioStatus("Generating waveform...", "fa-solid fa-wave-square fa-fade");
+
                 // 4. Decode and Setup Audio
                 const blob = encodeWAV(audioData.audio, audioData.sampling_rate);
                 const url = URL.createObjectURL(blob);
                 
-                // Re-use unlocked audio element
+                // One final check before locking the audio element
+                if (myPlaybackId !== currentPlaybackId) return;
+                
                 currentAudio.src = url;
                 currentAudio.onended = () => {
                     stopTTS(); // Automatically clean up when audio finishes
+                    hideAudioStatus();
                 };
                 
                 // 5. Update UI to Playing state
                 isLoadingAudio = false;
                 isSpeaking = true;
                 
-                // FIX 3: Change to Pause Icon once ready
                 if (iconElement) {
                     iconElement.className = `fa-solid fa-pause ${isModal ? '' : 'text-xs'}`;
                 }
@@ -1092,10 +1136,12 @@
                     btnElement.classList.add('bg-cyan-500', 'text-white', 'audio-playing');
                 }
                 
+                showAudioStatus("Playing Audio", "fa-solid fa-volume-high fa-beat");
                 await currentAudio.play();
 
             } catch (e) {
-                if (ttsCancelled) return;
+                // If this request was cancelled, ignore the error
+                if (myPlaybackId !== currentPlaybackId) return;
                 
                 // Reset on error
                 isLoadingAudio = false;
@@ -1106,13 +1152,12 @@
                 
                 console.error("TTS Failure:", e.message);
 
-                // FIX 1: Proper UI Feedback based on status codes exposed from getGeminiTTSAudio
-                if (e.message.includes("504")) {
-                    btnElement.style.border = "2px solid orange"; 
-                } else if (e.message.includes("429")) {
-                    btnElement.style.border = "2px solid red";    
+                if (e.message.includes("429")) {
+                    showAudioStatus("Rate Limit Hit. Please wait.", "fa-solid fa-ban", true);
+                } else if (e.message.includes("504")) {
+                    showAudioStatus("AI Timeout. Try again.", "fa-solid fa-clock", true);
                 } else {
-                    btnElement.style.border = "2px solid white";  
+                    showAudioStatus("Failed to load audio.", "fa-solid fa-triangle-exclamation", true);
                 }
             }
         }
@@ -1166,25 +1211,26 @@
         }
 
         function stopTTS() {
+            // Instantly invalidate any AI requests running in the background
+            currentPlaybackId++; 
+            
             if (currentAudio) { 
                 currentAudio.pause(); 
-                // Resetting src removes iOS lock, so just reset time instead
                 currentAudio.currentTime = 0; 
             }
             isSpeaking = false; 
             isLoadingAudio = false;
             
+            hideAudioStatus();
+            
             // Reset Modal UI
             const modalBtn = document.getElementById('ttsButton');
             const modalIcon = document.getElementById('ttsIcon');
-            const progressContainer = document.getElementById('ttsProgressContainer');
             
             if(modalIcon) modalIcon.className = 'fa-solid fa-play';
             if(modalBtn) {
                 modalBtn.classList.remove('audio-playing', 'text-cyan-400');
-                modalBtn.style.border = "1px solid rgba(255, 255, 255, 0.1)"; 
             }
-            if(progressContainer) { progressContainer.classList.add('hidden'); progressContainer.classList.remove('flex'); }
 
             // Reset Card UI
             document.querySelectorAll('.card-play-btn').forEach(btn => {
@@ -1192,7 +1238,6 @@
                 if(i) i.className = 'fa-solid fa-play text-xs';
                 btn.classList.add('bg-white/10', 'text-cyan-400');
                 btn.classList.remove('bg-cyan-500', 'text-white', 'audio-playing');
-                btn.style.border = "none";
             });
             playingCardId = null;
         }

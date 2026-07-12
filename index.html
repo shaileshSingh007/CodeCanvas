@@ -497,6 +497,7 @@
             } catch (error) { return `Error: ${error.message}`; }
         }
 
+                // USING THE PROXY BACKEND FOR SECURITY (WITH VOICE PARAMETER)
         async function getGeminiTTSAudio(text, voiceName = "Kore") {
             const response = await fetch('/api/Gemini', {
                 method: 'POST',
@@ -504,9 +505,11 @@
                 body: JSON.stringify({ 
                     action: 'tts', 
                     text: text,
-                    voice: voiceName 
+                    voice: voiceName // <--- This is the new line sending the voice to Gemini.js
                 })
             });
+            
+
 
             if (!response.ok) throw new Error(`API error`);
             const result = await response.json();
@@ -1003,8 +1006,10 @@
                 if(!isCard) btnElem.classList.add('text-cyan-400');
                 if(!isCard) { progressContainer.classList.remove('hidden'); progressContainer.classList.add('flex'); }
 
-                const promptText = "Recite this poetic snippet emotionally:\n" + textToSpeak.replace(/\n/g, ' ');
+                                // Removed prefix instruction so it doesn't read the instruction aloud
+                const promptText = textToSpeak.replace(/\n/g, ' '); 
                 const audioData = await getGeminiTTSAudio(promptText, voiceName);
+
                 
                 if (ttsCancelled) return;
                 if(!isCard) { progressContainer.classList.add('hidden'); progressContainer.classList.remove('flex'); }

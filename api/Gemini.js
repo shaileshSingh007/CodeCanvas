@@ -43,7 +43,7 @@ export default async function handler(req, res) {
         } 
         
         // --- 2. POETRY TTS LOGIC ---
-              else if (action === 'tts') {
+        else if (action === 'tts') {
             const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
             
             // This mapping ensures that TTS only uses allowed voices
@@ -59,7 +59,8 @@ export default async function handler(req, res) {
                             prebuiltVoiceConfig: { voiceName: selectedVoice } 
                         } 
                     }
-                }
+                },
+                model: "gemini-2.5-flash-preview-tts" // Added strictly for compliant payload structure
             };
 
 
@@ -80,3 +81,4 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: error.message });
     }
 }
+

@@ -10,7 +10,7 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'GEMINI_API_KEY is not set in Vercel settings.' });
     }
 
-    const { action, prompt, text } = req.body;
+    const { action, prompt, text, voice } = req.body;
 
     try {
         // --- 1. HEROES CHAT LOGIC ---
@@ -43,15 +43,20 @@ export default async function handler(req, res) {
         } 
         
         // --- 2. POETRY TTS LOGIC ---
-        else if (action === 'tts') {
+      else if (action === 'tts') {
             const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+            
+            // This grabs the requested voice, or defaults to Kore if none is provided
+            const selectedVoice = voice || "Kore"; 
+
             const payload = {
                 contents: [{ parts: [{ text: text }] }],
                 generationConfig: {
                     responseModalities: ["AUDIO"],
-                    speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } }
+                    speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: selectedVoice } } }
                 }
             };
+
 
             const response = await fetch(endpoint, {
                 method: 'POST',

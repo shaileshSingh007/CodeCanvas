@@ -992,79 +992,116 @@
         function cancelTTS() { ttsCancelled = true; stopTTS(); }
 
         // General Audio Player
-        async function playTTSLogic(textToSpeak, voiceName, btnElement) {
-            // 1. Reset UI and cleanup
-            stopTTS();
+        async function playTTSLogic(textToSpeak, voiceName, btnElement, isModal = false) {
+            // 1. Setup loading state
+            isLoadingAudio = true;
             ttsCancelled = false;
             btnElement.style.border = "2px solid transparent"; // Clear previous status
             
+            // Swap to spinner icon
+            const iconElement = btnElement.querySelector('i');
+            if (iconElement) {
+                iconElement.className = `fa-solid fa-spinner fa-spin ${isModal ? '' : 'text-xs'}`;
+            }
+            
             try {
-                // 2. Add loading state to button
-                btnElement.classList.add('loading'); 
-
-                // 3. Truncate to strictly 8 lines to stay within Vercel time limits
+                // 2. Truncate to strictly 8 lines to stay within Vercel time limits
                 let lines = textToSpeak.split('\n').filter(line => line.trim().length > 0);
                 if (lines.length > 8) {
                     lines = lines.slice(0, 8);
                 }
                 const truncatedText = lines.join(' ');
 
-                // 4. Fetch Audio (using the refined 2-voice mapping)
-                // Ensure voiceName is "Kore" or "Puck"
+                // 3. Fetch Audio
                 const selectedVoice = (voiceName === "Puck") ? "Puck" : "Kore";
                 const audioData = await getGeminiTTSAudio(truncatedText, selectedVoice);
 
-                // FIX: audioData.audioContent was completely undefined. getGeminiTTSAudio decodes it into audioData.audio!
                 if (!audioData || !audioData.audio) {
                     throw new Error("Logic Error: No audio data received.");
                 }
 
-                // 5. Decode and Play (Must use the encodeWAV function instead of a raw blob)
+                // 4. Decode and Setup Audio
                 const blob = encodeWAV(audioData.audio, audioData.sampling_rate);
                 const url = URL.createObjectURL(blob);
                 
                 currentAudio = new Audio(url);
                 currentAudio.onended = () => {
-                    btnElement.classList.remove('loading');
+                    stopTTS(); // Automatically clean up when audio finishes
                 };
+                
+                // 5. Update UI to Playing state
+                isLoadingAudio = false;
+                isSpeaking = true;
+                
+                if (iconElement) {
+                    iconElement.className = `fa-solid fa-pause ${isModal ? '' : 'text-xs'}`;
+                }
+
+                if (isModal) {
+                    btnElement.classList.add('audio-playing', 'text-cyan-400');
+                } else {
+                    btnElement.classList.remove('bg-white/10', 'text-cyan-400');
+                    btnElement.classList.add('bg-cyan-500', 'text-white', 'audio-playing');
+                }
                 
                 await currentAudio.play();
 
             } catch (e) {
                 if (ttsCancelled) return;
                 
-                btnElement.classList.remove('loading');
+                // Reset on error
+                isLoadingAudio = false;
+                isSpeaking = false;
+                if (iconElement) {
+                    iconElement.className = `fa-solid fa-play ${isModal ? '' : 'text-xs'}`;
+                }
+                
                 console.error("TTS Failure:", e.message);
 
-                // 6. UI Feedback based on failure type
+                // UI Feedback based on failure type
                 if (e.message.includes("504")) {
-                    // Vercel Timeout (Too long or server busy)
                     btnElement.style.border = "2px solid orange"; 
                 } else if (e.message.includes("429")) {
-                    // API Exhausted (Rate limit)
                     btnElement.style.border = "2px solid red";    
                 } else {
-                    // General Logic Issue (Format mismatch, code error, etc)
                     btnElement.style.border = "2px solid white";  
                 }
             }
         }
 
         async function togglePoetryAudio() {
+            if (isLoadingAudio) return; // Prevent spam clicks while loading
+
             const btn = document.getElementById('ttsButton');
-            const icon = document.getElementById('ttsIcon');
             const poem = POEMS.find(p => p.id === currentPoemId);
             const voice = document.getElementById('ttsVoiceSelect').value;
             
             if(!poem) return;
+            
+            // If already playing modal audio, pause it
+            if (isSpeaking && playingCardId === null) {
+                stopTTS();
+                return;
+            }
+            
+            stopTTS(); // stop any other audio
             playingCardId = null; // We are in modal mode
-            await playTTSLogic(poem.text,voice, btn);
+
+            await playTTSLogic(poem.text, voice, btn, true);
         }
 
         async function playCardTTS(event, id) {
             event.stopPropagation();
             event.preventDefault();
-            if (isSpeaking && playingCardId === id) { stopTTS(); return; }
+            
+            if (isLoadingAudio) return; // Prevent spam clicks while loading
+
+            // If this card is already playing, pause it
+            if (isSpeaking && playingCardId === id) { 
+                stopTTS(); 
+                return; 
+            }
+            
             stopTTS(); // stop others
 
             const poem = POEMS.find(p => p.id === id);
@@ -1072,18 +1109,18 @@
 
             playingCardId = id;
             const btn = document.getElementById(`cardPlayBtn_${id}`);
-            const icon = btn.querySelector('i');
             
-            // Extract only 4 lines
+            // Extract only 4 lines for cards
             const lines = poem.text.split('\n').filter(l => l.trim() !== '');
             const textToSpeak = lines.slice(0, 4).join(' ');
 
-            await playTTSLogic(textToSpeak,"Kore",btn);
+            await playTTSLogic(textToSpeak, "Kore", btn, false);
         }
 
         function stopTTS() {
             if (currentAudio) { currentAudio.pause(); currentAudio.src = ""; }
-            isSpeaking = false; isLoadingAudio = false;
+            isSpeaking = false; 
+            isLoadingAudio = false;
             
             // Reset Modal UI
             const modalBtn = document.getElementById('ttsButton');
@@ -1091,7 +1128,10 @@
             const progressContainer = document.getElementById('ttsProgressContainer');
             
             if(modalIcon) modalIcon.className = 'fa-solid fa-play';
-            if(modalBtn) modalBtn.classList.remove('audio-playing', 'text-cyan-400');
+            if(modalBtn) {
+                modalBtn.classList.remove('audio-playing', 'text-cyan-400');
+                modalBtn.style.border = "1px solid rgba(255,255,255,0.1)"; 
+            }
             if(progressContainer) { progressContainer.classList.add('hidden'); progressContainer.classList.remove('flex'); }
 
             // Reset Card UI
@@ -1099,7 +1139,8 @@
                 const i = btn.querySelector('i');
                 if(i) i.className = 'fa-solid fa-play text-xs';
                 btn.classList.add('bg-white/10', 'text-cyan-400');
-                btn.classList.remove('bg-cyan-500', 'text-white');
+                btn.classList.remove('bg-cyan-500', 'text-white', 'audio-playing');
+                btn.style.border = "none";
             });
             playingCardId = null;
         }

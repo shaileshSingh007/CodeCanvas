@@ -495,7 +495,7 @@
             } catch (error) { return `Error: ${error.message}`; }
         }
 
-                // USING THE PROXY BACKEND FOR SECURITY (WITH VOICE PARAMETER)
+        // USING THE PROXY BACKEND FOR SECURITY (WITH VOICE PARAMETER)
         async function getGeminiTTSAudio(text, voiceName = "Kore") {
             const response = await fetch('/api/Gemini', {
                 method: 'POST',
@@ -507,11 +507,15 @@
                 })
             });
             
-
-
             if (!response.ok) throw new Error(`API error`);
             const result = await response.json();
-            const inlineData = result.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+            
+            // Add safe check in case the payload misses something
+            if (!result.candidates || !result.candidates[0].content || !result.candidates[0].content.parts[0].inlineData) {
+                throw new Error("Invalid format received from TTS generation");
+            }
+            
+            const inlineData = result.candidates[0].content.parts[0].inlineData;
             
             const match = inlineData.mimeType.match(/rate=(\d+)/);
             const sampleRate = match ? parseInt(match[1]) : 24000;
@@ -662,7 +666,7 @@
             { id: 1, title: "Aakhiri Umeed", author: "Shailesh Singh", text: "सुलगते आँसुओं में आज कुछ अगर धुँधला है।\nअदालत है मगर इंसाफ़ का असर धुँधला है।\nबहुत उम्मीद में निकला है घर से ख़्वाब का क़ैदी,\nगरजते आँधियों में हाँ मगर सफ़र धुँधला है।" },
             { id: 2, title: "Waqt ki Awaaz", author: "Shailesh Singh", text: "वक्त की शाखों पे बैठे परिंदे उड़ गए,\nकुछ ख्वाब जो देखे थे, वो पीछे मुड़ गए।\nतलाश थी जिन रास्तों पे मंजिलों की हमें,\nवो रास्ते ही आज जाने किधर मुड़ गए।" },
             { id: 3, title: "Khamoshi", author: "Shailesh Singh", text: "खामोशियों में भी एक शोर छुपा होता है,\nहर हँसते हुए चेहरे में एक चोर छुपा होता है।\nयूँ तो सब कह देते हैं हाल-ए-दिल अपना,\nपर असली दर्द तो बातों के उस ओर छुपा होता है।" },
-            { id: 4, title: "Zindagi ka Khel", author: "Shailesh Singh", text: "ज़िंदगी के इस खेल में मात खा गए,\nहम जिनके लिए जिए, वो ही हमें रुला गए।\nसोचा था बाँट लेंगे दर्द-ए-दिल उनसे,\nपर वो तो मुस्कुरा कर हमें ही आज़मा गए।" },
+            { id: 4, title: "Zindagi ka Khel", author: "Shailesh Singh", text: "ज़िंदगी के इस खेल में मात खा गए,\nहम जिनके लिए जिए, वो ही हमें रुला गए।\nसोचा था बाँट लेंगे दर्द-ए-दिल उनसे,\nपर वो तो मुस्कुरा कर broad करके ही आज़मा गए।" },
             { id: 5, title: "Raat ka Safar", author: "Dev", text: "रात के अंधेरे में एक तारा चमकता है,\nदूर आसमान में वो किसी का ख्वाब बुनता है।\nहम तो खो गए हैं इन गलियों की भीड़ में,\nपर वो तारा आज भी मेरा रास्ता चुनता है।" }
         ];
 
@@ -726,133 +730,133 @@
 
         // Share to Native Share API or Fallback Canvas Download with Word Wrap
         function sharePoemAsImage(id, event) {
-    event.preventDefault();
-    event.stopPropagation();
+            event.preventDefault();
+            event.stopPropagation();
 
-    const poem = POEMS.find(p => p.id === id);
-    if (!poem) return;
+            const poem = POEMS.find(p => p.id === id);
+            if (!poem) return;
 
-    const btn = event.currentTarget;
-    const originalIcon = btn.innerHTML;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sm"></i>';
+            const btn = event.currentTarget;
+            const originalIcon = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sm"></i>';
 
-    const canvas = document.getElementById('shareCanvas');
-    const ctx = canvas.getContext('2d');
+            const canvas = document.getElementById('shareCanvas');
+            const ctx = canvas.getContext('2d');
 
-    canvas.width = 1080;
-    canvas.height = 1080;
+            canvas.width = 1080;
+            canvas.height = 1080;
 
-    // Background
-    const gradient = ctx.createLinearGradient(0, 0, 1080, 1080);
-    gradient.addColorStop(0, '#0f0f19');
-    gradient.addColorStop(1, '#030308');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // Background
+            const gradient = ctx.createLinearGradient(0, 0, 1080, 1080);
+            gradient.addColorStop(0, '#0f0f19');
+            gradient.addColorStop(1, '#030308');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Decorative circles
-    ctx.beginPath();
-    ctx.arc(1080, 0, 400, 0, 2 * Math.PI);
-    ctx.fillStyle = 'rgba(168, 85, 247, 0.1)';
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(0, 1080, 300, 0, 2 * Math.PI);
-    ctx.fillStyle = 'rgba(6, 182, 212, 0.1)';
-    ctx.fill();
+            // Decorative circles
+            ctx.beginPath();
+            ctx.arc(1080, 0, 400, 0, 2 * Math.PI);
+            ctx.fillStyle = 'rgba(168, 85, 247, 0.1)';
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(0, 1080, 300, 0, 2 * Math.PI);
+            ctx.fillStyle = 'rgba(6, 182, 212, 0.1)';
+            ctx.fill();
 
-    // --- Prepare lines (trimmed, no empty lines) ---
-    const lines = poem.text.split('\n')
-        .map(l => l.trim())
-        .filter(l => l !== '');
-    const displayLines = lines;
+            // --- Prepare lines (trimmed, no empty lines) ---
+            const lines = poem.text.split('\n')
+                .map(l => l.trim())
+                .filter(l => l !== '');
+            const displayLines = lines;
 
-    // --- Dynamic scaling: fit width AND height ---
-    const leftX = 100;                // left margin
-    const maxWidth = 900;             // available width from leftX to right edge (1000)
-    const topY = 150;                // space for title + padding
-    const bottomY = 930;             // space for author + padding
-    const maxHeight = bottomY - topY;
+            // --- Dynamic scaling: fit width AND height ---
+            const leftX = 100;                // left margin
+            const maxWidth = 900;             // available width from leftX to right edge (1000)
+            const topY = 150;                // space for title + padding
+            const bottomY = 930;             // space for author + padding
+            const maxHeight = bottomY - topY;
 
-    let fontSize = 80;
-    const minFontSize = 18;
-    const lineHeightMultiplier = 1.6;
+            let fontSize = 80;
+            const minFontSize = 18;
+            const lineHeightMultiplier = 1.6;
 
-    const measure = (size) => {
-        ctx.font = `${size}px "Playfair Display", serif`;
-        let maxW = 0;
-        for (const line of displayLines) {
-            const w = ctx.measureText(line).width;
-            if (w > maxW) maxW = w;
-        }
-        const totalH = displayLines.length * size * lineHeightMultiplier;
-        return { maxW, totalH };
-    };
-
-    let { maxW, totalH } = measure(fontSize);
-    while ((maxW > maxWidth || totalH > maxHeight) && fontSize > minFontSize) {
-        fontSize -= 2;
-        const result = measure(fontSize);
-        maxW = result.maxW;
-        totalH = result.totalH;
-    }
-
-    // --- Draw the poem (LEFT‑ALIGNED at x=100) ---
-    ctx.fillStyle = '#f3f4f6';
-    ctx.textAlign = 'left';          // 👈 changed from 'center'
-    ctx.textBaseline = 'middle';
-
-    const lineHeight = fontSize * lineHeightMultiplier;
-    const startY = topY + (maxHeight - totalH) / 2 + lineHeight / 2;
-
-    displayLines.forEach((line, index) => {
-        const y = startY + index * lineHeight;
-        ctx.fillText(line, leftX, y); // 👈 drawn at x=100
-    });
-
-    // --- Author (centered, as you previously requested) ---
-    ctx.font = 'italic 30px "Outfit", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#06b6d4';
-    ctx.fillText('— ' + (poem.author || 'Shailesh Singh'), 540, 980);
-
-    // --- Title (left‑aligned at x=100) ---
-    ctx.font = 'bold 35px "Outfit", sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillStyle = '#a855f7';
-    ctx.fillText(poem.title, 100, 100);
-
-    // --- Generate and share ---
-    setTimeout(() => {
-        canvas.toBlob(async (blob) => {
-            if (!blob) {
-                btn.innerHTML = originalIcon;
-                return;
-            }
-
-            const fileName = `Shayar_${poem.title.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
-            const file = new File([blob], fileName, { type: 'image/png' });
-
-            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                try {
-                    await navigator.share({
-                        title: poem.title,
-                        text: `Beautiful poetry by ${poem.author}`,
-                        files: [file]
-                    });
-                } catch (err) {
-                    console.log('Share cancelled or failed:', err);
+            const measure = (size) => {
+                ctx.font = `${size}px "Playfair Display", serif`;
+                let maxW = 0;
+                for (const line of displayLines) {
+                    const w = ctx.measureText(line).width;
+                    if (w > maxW) maxW = w;
                 }
-            } else {
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.download = fileName;
-                link.href = url;
-                link.click();
-                URL.revokeObjectURL(url);
+                const totalH = displayLines.length * size * lineHeightMultiplier;
+                return { maxW, totalH };
+            };
+
+            let { maxW, totalH } = measure(fontSize);
+            while ((maxW > maxWidth || totalH > maxHeight) && fontSize > minFontSize) {
+                fontSize -= 2;
+                const result = measure(fontSize);
+                maxW = result.maxW;
+                totalH = result.totalH;
             }
-            btn.innerHTML = originalIcon;
-        }, 'image/png');
-    }, 100);
-}
+
+            // --- Draw the poem (LEFT‑ALIGNED at x=100) ---
+            ctx.fillStyle = '#f3f4f6';
+            ctx.textAlign = 'left';          // 👈 changed from 'center'
+            ctx.textBaseline = 'middle';
+
+            const lineHeight = fontSize * lineHeightMultiplier;
+            const startY = topY + (maxHeight - totalH) / 2 + lineHeight / 2;
+
+            displayLines.forEach((line, index) => {
+                const y = startY + index * lineHeight;
+                ctx.fillText(line, leftX, y); // 👈 drawn at x=100
+            });
+
+            // --- Author (centered) ---
+            ctx.font = 'italic 30px "Outfit", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#06b6d4';
+            ctx.fillText('— ' + (poem.author || 'Shailesh Singh'), 540, 980);
+
+            // --- Title (left‑aligned at x=100) ---
+            ctx.font = 'bold 35px "Outfit", sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#a855f7';
+            ctx.fillText(poem.title, 100, 100);
+
+            // --- Generate and share ---
+            setTimeout(() => {
+                canvas.toBlob(async (blob) => {
+                    if (!blob) {
+                        btn.innerHTML = originalIcon;
+                        return;
+                    }
+
+                    const fileName = `Shayar_${poem.title.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
+                    const file = new File([blob], fileName, { type: 'image/png' });
+
+                    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                        try {
+                            await navigator.share({
+                                title: poem.title,
+                                text: `Beautiful poetry by ${poem.author}`,
+                                files: [file]
+                            });
+                        } catch (err) {
+                            console.log('Share cancelled or failed:', err);
+                        }
+                    } else {
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.download = fileName;
+                        link.href = url;
+                        link.click();
+                        URL.revokeObjectURL(url);
+                    }
+                    btn.innerHTML = originalIcon;
+                }, 'image/png');
+            }, 100);
+        }
 
         // Add Poetry Modal Logic (EMAIL JS)
         function openAddPoetryModal() { document.getElementById('addPoetryModal').classList.remove('hidden'); document.getElementById('addPoetryModal').classList.add('flex'); }
@@ -988,7 +992,7 @@
         function cancelTTS() { ttsCancelled = true; stopTTS(); }
 
         // General Audio Player
-                async function playTTSLogic(textToSpeak, voiceName, btnElement) {
+        async function playTTSLogic(textToSpeak, voiceName, btnElement) {
             // 1. Reset UI and cleanup
             stopTTS();
             ttsCancelled = false;
@@ -1010,18 +1014,13 @@
                 const selectedVoice = (voiceName === "Puck") ? "Puck" : "Kore";
                 const audioData = await getGeminiTTSAudio(truncatedText, selectedVoice);
 
-                if (!audioData || !audioData.audioContent) {
-                    throw new Error("Logic Error: No audio content received.");
+                // FIX: audioData.audioContent was completely undefined. getGeminiTTSAudio decodes it into audioData.audio!
+                if (!audioData || !audioData.audio) {
+                    throw new Error("Logic Error: No audio data received.");
                 }
 
-                // 5. Decode and Play
-                const binaryData = atob(audioData.audioContent);
-                const bytes = new Uint8Array(binaryData.length);
-                for (let i = 0; i < binaryData.length; i++) {
-                    bytes[i] = binaryData.charCodeAt(i);
-                }
-
-                const blob = new Blob([bytes], { type: 'audio/wav' });
+                // 5. Decode and Play (Must use the encodeWAV function instead of a raw blob)
+                const blob = encodeWAV(audioData.audio, audioData.sampling_rate);
                 const url = URL.createObjectURL(blob);
                 
                 currentAudio = new Audio(url);
@@ -1050,7 +1049,6 @@
                 }
             }
         }
-
 
         async function togglePoetryAudio() {
             const btn = document.getElementById('ttsButton');
@@ -1106,7 +1104,6 @@
             playingCardId = null;
         }
         
-
         // Heroes Chat
         const HEROES_DATA = {
             einstein: { title: "Theoretical Physicist", icon: "fa-atom", color: "from-cyan-500 to-blue-600", greeting: "Greetings. I am Albert Einstein.", prompt: `You are Albert Einstein... (System Instruction Mock)` },

@@ -503,14 +503,17 @@
                 body: JSON.stringify({ 
                     action: 'tts', 
                     text: text,
-                    voice: voiceName // <--- This is the new line sending the voice to Gemini.js
+                    voice: voiceName 
                 })
             });
             
-            if (!response.ok) throw new Error(`API error`);
+            // Fix: Expose the actual HTTP status code for correct error handling logic (429, 504, etc)
+            if (!response.ok) {
+                throw new Error(`API error ${response.status}: ${response.statusText}`);
+            }
+
             const result = await response.json();
             
-            // Add safe check in case the payload misses something
             if (!result.candidates || !result.candidates[0].content || !result.candidates[0].content.parts[0].inlineData) {
                 throw new Error("Invalid format received from TTS generation");
             }
@@ -520,12 +523,18 @@
             const match = inlineData.mimeType.match(/rate=(\d+)/);
             const sampleRate = match ? parseInt(match[1]) : 24000;
             const binaryString = atob(inlineData.data);
+            
             const bytes = new Uint8Array(binaryString.length);
             for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
             
-            const int16Array = new Int16Array(bytes.buffer);
+            // Fix: Prevent RangeError if Base64 padding creates an odd number of bytes
+            const validLength = bytes.length - (bytes.length % 2);
+            const int16Array = new Int16Array(bytes.buffer, 0, validLength / 2);
             const float32Array = new Float32Array(int16Array.length);
-            for (let i = 0; i < int16Array.length; i++) float32Array[i] = int16Array[i] / 32768.0;
+            
+            for (let i = 0; i < int16Array.length; i++) {
+                float32Array[i] = int16Array[i] / 32768.0;
+            }
 
             return { audio: float32Array, sampling_rate: sampleRate };
         }
@@ -996,16 +1005,25 @@
             // 1. Setup loading state
             isLoadingAudio = true;
             ttsCancelled = false;
-            btnElement.style.border = "2px solid transparent"; // Clear previous status
+            btnElement.style.border = "1px solid rgba(255, 255, 255, 0.1)"; // Clear previous error status
             
-            // Swap to spinner icon
+            // Swap to spinner icon immediately
             const iconElement = btnElement.querySelector('i');
             if (iconElement) {
                 iconElement.className = `fa-solid fa-spinner fa-spin ${isModal ? '' : 'text-xs'}`;
             }
+
+            // FIX 2: Mobile Audio Unlock Strategy 
+            // Browsers block audio loaded asynchronously unless unlocked by a direct click.
+            if (!currentAudio) {
+                currentAudio = new Audio();
+            }
+            // Playing silent track in the exact same tick as the user click to unlock it
+            currentAudio.src = SILENT_WAV;
+            currentAudio.play().catch(e => console.log("Silence autoplay handled"));
             
             try {
-                // 2. Truncate to strictly 8 lines to stay within Vercel time limits
+                // 2. Truncate to strictly 8 lines to stay within limits
                 let lines = textToSpeak.split('\n').filter(line => line.trim().length > 0);
                 if (lines.length > 8) {
                     lines = lines.slice(0, 8);
@@ -1024,7 +1042,8 @@
                 const blob = encodeWAV(audioData.audio, audioData.sampling_rate);
                 const url = URL.createObjectURL(blob);
                 
-                currentAudio = new Audio(url);
+                // Re-use unlocked audio element
+                currentAudio.src = url;
                 currentAudio.onended = () => {
                     stopTTS(); // Automatically clean up when audio finishes
                 };
@@ -1033,6 +1052,7 @@
                 isLoadingAudio = false;
                 isSpeaking = true;
                 
+                // FIX 3: Change to Pause Icon once ready
                 if (iconElement) {
                     iconElement.className = `fa-solid fa-pause ${isModal ? '' : 'text-xs'}`;
                 }
@@ -1058,7 +1078,7 @@
                 
                 console.error("TTS Failure:", e.message);
 
-                // UI Feedback based on failure type
+                // FIX 1: Proper UI Feedback based on status codes exposed from getGeminiTTSAudio
                 if (e.message.includes("504")) {
                     btnElement.style.border = "2px solid orange"; 
                 } else if (e.message.includes("429")) {
@@ -1118,7 +1138,11 @@
         }
 
         function stopTTS() {
-            if (currentAudio) { currentAudio.pause(); currentAudio.src = ""; }
+            if (currentAudio) { 
+                currentAudio.pause(); 
+                // Resetting src removes iOS lock, so just reset time instead
+                currentAudio.currentTime = 0; 
+            }
             isSpeaking = false; 
             isLoadingAudio = false;
             
@@ -1130,7 +1154,7 @@
             if(modalIcon) modalIcon.className = 'fa-solid fa-play';
             if(modalBtn) {
                 modalBtn.classList.remove('audio-playing', 'text-cyan-400');
-                modalBtn.style.border = "1px solid rgba(255,255,255,0.1)"; 
+                modalBtn.style.border = "1px solid rgba(255, 255, 255, 0.1)"; 
             }
             if(progressContainer) { progressContainer.classList.add('hidden'); progressContainer.classList.remove('flex'); }
 

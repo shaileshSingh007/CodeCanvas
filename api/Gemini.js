@@ -43,17 +43,22 @@ export default async function handler(req, res) {
         } 
         
         // --- 2. POETRY TTS LOGIC ---
-      else if (action === 'tts') {
+              else if (action === 'tts') {
             const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
             
-            // This grabs the requested voice, or defaults to Kore if none is provided
-            const selectedVoice = voice || "Kore"; 
+            // This mapping ensures that TTS only uses allowed voices
+            // without interfering with any 'prompt' variable used for chat
+            const selectedVoice = (voice === "Puck") ? "Puck" : "Kore";
 
             const payload = {
                 contents: [{ parts: [{ text: text }] }],
                 generationConfig: {
                     responseModalities: ["AUDIO"],
-                    speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: selectedVoice } } }
+                    speechConfig: { 
+                        voiceConfig: { 
+                            prebuiltVoiceConfig: { voiceName: selectedVoice } 
+                        } 
+                    }
                 }
             };
 

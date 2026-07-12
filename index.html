@@ -528,78 +528,61 @@
         }
 
 
-        // USING THE PROXY BACKEND FOR SECURITY 
-        // Receives playbackId to instantly abort background tasks if user clicked something else
-        async function getGeminiTTSAudio(text, voiceName = "Kore", requestPlaybackId) {
-            const delays = [1000, 2000, 4000, 8000, 16000];
-            const maxRetries = 5;
+       // In index.html, replace the existing getGeminiTTSAudio function with this corrected version
+async function getGeminiTTSAudio(text, voiceName = "Kore", requestPlaybackId) {
+    const delays = [1000, 2000, 4000, 8000, 16000];
+    const maxRetries = 5;
 
-            const stylePrefix = voiceName === "Puck" 
-                ? "Say in a deep, expressive male voice: " 
-                : "Say in a gentle, expressive female voice: ";
-            const modifiedText = stylePrefix + text;
+    const stylePrefix = voiceName === "Puck" 
+        ? "Say in a deep, expressive male voice: " 
+        : "Say in a gentle, expressive female voice: ";
+    const modifiedText = stylePrefix + text;
 
-            for (let attempt = 0; attempt <= maxRetries; attempt++) {
-                
-                // If user pressed stop/play while we were looping or waiting, abort instantly
-                if (requestPlaybackId !== currentPlaybackId) throw new Error("Cancelled");
-                
-                try {
-                    const response = await fetch('/api/Gemini', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            action: 'tts', 
-                            text: modifiedText,
-                            voice: voiceName 
-                        })
-                    });
-                    
-                    if (!response.ok) {
-                        if (response.status === 429) {
-                            throw new Error("429"); // Throw to trigger retry block
-                        }
-                        throw new Error(`API error ${response.status}: ${response.statusText}`);
-                    }
-
-                    const result = await response.json();
-                    
-                    if (!result.candidates || !result.candidates[0].content || !result.candidates[0].content.parts[0].inlineData) {
-                        throw new Error("Invalid format received from TTS generation");
-                    }
-                    
-                    const inlineData = result.candidates[0].content.parts[0].inlineData;
-                    const match = inlineData.mimeType.match(/rate=(\d+)/);
-                    const sampleRate = match ? parseInt(match[1]) : 24000;
-                    const binaryString = atob(inlineData.data);
-                    
-                    const bytes = new Uint8Array(binaryString.length);
-                    for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
-                    
-                    const validLength = bytes.length - (bytes.length % 2);
-                    const int16Array = new Int16Array(bytes.buffer, 0, validLength / 2);
-                    const float32Array = new Float32Array(int16Array.length);
-                    
-                    for (let i = 0; i < int16Array.length; i++) {
-                        float32Array[i] = int16Array[i] / 32768.0;
-                    }
-
-                    return { audio: float32Array, sampling_rate: sampleRate };
-                    
-                } catch (error) {
-                    if (error.message === "Cancelled") throw error;
-                    
-                    // If it's a 429 Rate Limit and we have retries left, wait and loop again
-                    if (error.message.includes("429") && attempt < maxRetries) {
-                        showAudioStatus(`Retrying connection (${attempt + 1}/${maxRetries})...`, "fa-solid fa-rotate fa-spin");
-                        await new Promise(res => setTimeout(res, delays[attempt]));
-                        continue; 
-                    }
-                    
-                    throw new Error(error.message.includes("429") ? "429 - Rate Limit Hit" : error.message);
-                }
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        if (requestPlaybackId !== currentPlaybackId) throw new Error("Cancelled");
+        
+        try {
+            const response = await fetch('/api/Gemini', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    action: 'tts', 
+                    text: modifiedText,
+                    voice: voiceName 
+                })
+            });
+            
+            if (!response.ok) {
+                if (response.status === 429) throw new Error("429");
+                throw new Error(`API error ${response.status}: ${response.statusText}`);
             }
+
+            const result = await response.json();
+            
+            if (!result.candidates?.[0]?.content?.parts?.[0]?.inlineData) {
+                throw new Error("Invalid TTS response format");
+            }
+            
+            const inlineData = result.candidates[0].content.parts[0].inlineData;
+            const binaryString = atob(inlineData.data);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+            
+            // Return as a Blob with the correct MIME type (e.g., "audio/wav")
+            const mimeType = inlineData.mimeType.split(';')[0];
+            return { audioBlob: new Blob([bytes], { type: mimeType }) };
+            
+        } catch (error) {
+            if (error.message === "Cancelled") throw error;
+            if (error.message.includes("429") && attempt < maxRetries) {
+                showAudioStatus(`Retrying connection (${attempt + 1}/${maxRetries})...`, "fa-solid fa-rotate fa-spin");
+                await new Promise(res => setTimeout(res, delays[attempt]));
+                continue;
+            }
+            throw new Error(error.message.includes("429") ? "429 - Rate Limit Hit" : error.message);
         }
+    }
+}
 
         window.switchTab = switchTab;
         window.openGame = openGame;
@@ -1102,16 +1085,13 @@
                     return; // Silently exit. Do not process audio. Do not update UI.
                 }
 
-                if (!audioData || !audioData.audio) {
-                    throw new Error("Logic Error: No audio data received.");
-                }
+                if (!audioData || !audioData.audioBlob) {
+    throw new Error("No audio blob received.");
+}
 
-                showAudioStatus("Generating waveform...", "fa-solid fa-wave-square fa-fade");
+showAudioStatus("Generating waveform...", "fa-solid fa-wave-square fa-fade");
 
-                // 4. Decode and Setup Audio
-                const blob = encodeWAV(audioData.audio, audioData.sampling_rate);
-                const url = URL.createObjectURL(blob);
-                
+const url = URL.createObjectURL(audioData.audioBlob);
                 // One final check before locking the audio element
                 if (myPlaybackId !== currentPlaybackId) return;
                 

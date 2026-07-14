@@ -1141,13 +1141,13 @@
 
                 if(src === 'loading' || !src) {
                     this.waitingForIndex = index;
-                    showAudioStatus("Buffering next part...", "fa-solid fa-spinner fa-spin");
+                    showAudioStatus(index === 0 ? "Connecting to AI..." : "Synthesizing...", "fa-solid fa-spinner fa-spin");
                     updateUIBuffering(this.contextId);
                     return; 
                 }
 
                 if(src === 'error') {
-                    showAudioStatus("Network error on part. Skipping.", "fa-solid fa-triangle-exclamation", true);
+                    showAudioStatus("AI is overloaded. Skipping...", "fa-solid fa-triangle-exclamation", true);
                     this.playIndex(index + 1); 
                     return;
                 }
@@ -1177,8 +1177,8 @@
         function chunkText(text) {
             const lines = text.split('\n').map(l => l.trim()).filter(l => l !== '');
             const chunks = [];
-            for(let i=0; i<lines.length; i+=2) {
-                chunks.push(lines.slice(i, i+2).join('. '));
+            for(let i=0; i<lines.length; i+=6) {
+                chunks.push(lines.slice(i, i+6).join('. '));
             }
             return chunks;
         }
@@ -1307,9 +1307,9 @@
             const poem = POEMS.find(p => p.id === id);
             if(!poem) return;
             
-            // For cards, just play first 4 lines in chunks
+            // For cards, just play first 6 lines
             const lines = poem.text.split('\n').filter(l => l.trim() !== '');
-            const textToSpeak = lines.slice(0, 4).join('\n');
+            const textToSpeak = lines.slice(0, 6).join('\n');
             const chunks = chunkText(textToSpeak);
 
             activeUIContext = cid;

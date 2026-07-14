@@ -518,8 +518,8 @@
         // --- API INTEGRATION (Direct & Backend Fallback) ---
         const apiKey = ""; // API key is injected by the environment at runtime
 
-        async function fetchWithRetry(url, options, maxRetries = 2) {
-            const delays = [1000, 2000, 4000];
+        async function fetchWithRetry(url, options, maxRetries = 5) {
+            const delays = [1000, 2000, 4000, 8000, 16000];
             for (let i = 0; i <= maxRetries; i++) {
                 try {
                     const response = await fetch(url, options);
@@ -1052,6 +1052,7 @@
         let globalTTSPlayer = null;
         let activeUIContext = null; // 'modal', 'card', 'playall'
         let currentPoemId = null;
+        let globalTTSFetchLock = Promise.resolve(); // Queue to prevent rate limiting
         const SILENT_WAV = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
 
         class AudioQueuePlayer {
@@ -1099,20 +1100,32 @@
                 if(this.audioCache[index]) return; 
 
                 this.audioCache[index] = 'loading';
-                try {
-                    const audioData = await getGeminiTTSAudioDirect(this.chunks[index], this.voice, this.sessionId);
-                    if(this.sessionId === currentPlaybackId && this.isPlaying) {
-                        const blob = encodeWAV(audioData.audio, audioData.sampling_rate);
-                        this.audioCache[index] = URL.createObjectURL(blob);
-                        
-                        // If player was stalled waiting for this index, trigger it
-                        if(this.waitingForIndex === index) {
-                            this.playIndex(index);
+                
+                // Chain promises to serialize fetches and prevent API rate limits
+                globalTTSFetchLock = globalTTSFetchLock.then(async () => {
+                    if (!this.isPlaying || this.sessionId !== currentPlaybackId) return;
+                    
+                    try {
+                        const audioData = await getGeminiTTSAudioDirect(this.chunks[index], this.voice, this.sessionId);
+                        if(this.sessionId === currentPlaybackId && this.isPlaying) {
+                            const blob = encodeWAV(audioData.audio, audioData.sampling_rate);
+                            this.audioCache[index] = URL.createObjectURL(blob);
+                            
+                            // If player was stalled waiting for this index, trigger it
+                            if(this.waitingForIndex === index) {
+                                this.playIndex(index);
+                            }
+                        }
+                    } catch (e) {
+                        if(this.sessionId === currentPlaybackId) {
+                            this.audioCache[index] = 'error';
+                            // Wake up the player to skip this chunk if it was waiting
+                            if(this.waitingForIndex === index) {
+                                this.playIndex(index);
+                            }
                         }
                     }
-                } catch (e) {
-                    if(this.sessionId === currentPlaybackId) this.audioCache[index] = 'error';
-                }
+                }).catch(e => console.error("TTS Lock Error:", e));
             }
 
             async playIndex(index) {

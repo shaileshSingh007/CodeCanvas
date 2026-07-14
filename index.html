@@ -515,18 +515,24 @@
     <!-- ==================== SCRIPT ==================== -->
     <script type="module">
         
-        // --- API INTEGRATION (Direct Calls) ---
+        // --- API INTEGRATION (Direct & Backend Fallback) ---
         const apiKey = ""; // API key is injected by the environment at runtime
 
-        async function fetchWithRetry(url, options, maxRetries = 5) {
-            const delays = [1000, 2000, 4000, 8000, 16000];
+        async function fetchWithRetry(url, options, maxRetries = 2) {
+            const delays = [1000, 2000, 4000];
             for (let i = 0; i <= maxRetries; i++) {
                 try {
                     const response = await fetch(url, options);
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    if (!response.ok) {
+                        // Fail immediately on client errors like 400 API Key invalid (except 429 rate limit)
+                        if (response.status >= 400 && response.status < 500 && response.status !== 429) {
+                            throw new Error(`Client Error: ${response.status}`);
+                        }
+                        throw new Error(`HTTP ${response.status}`);
+                    }
                     return await response.json();
                 } catch (err) {
-                    if (i === maxRetries) throw err;
+                    if (i === maxRetries || err.message.includes("Client Error")) throw err;
                     await new Promise(r => setTimeout(r, delays[i]));
                 }
             }
@@ -534,13 +540,27 @@
 
         async function callGemini(contentsPayload) {
             try {
+                // Primary: Try fetching from the user's backend route first
+                try {
+                    const response = await fetch('/api/Gemini', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'chat', prompt: contentsPayload })
+                    });
+                    if (response.ok) {
+                        const result = await response.json();
+                        if (result.candidates && result.candidates.length > 0) return result.candidates[0].content.parts[0].text;
+                    }
+                } catch (e) {
+                    // Fallback to direct API if backend doesn't exist
+                }
+
+                // Fallback: Direct API Call
                 const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-                const payload = { contents: contentsPayload };
-                
                 const result = await fetchWithRetry(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({ contents: contentsPayload })
                 });
                 
                 if (!result.candidates || result.candidates.length === 0) return "Error blocked.";
@@ -552,28 +572,46 @@
 
         async function getGeminiTTSAudioDirect(text, voiceName, requestSessionId) {
             try {
-                const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+                let responseData = null;
+                let usedFallback = false;
                 const selectedVoice = (voiceName === "Puck") ? "Puck" : "Kore";
-                
-                const payload = {
-                    contents: [{ parts: [{ text: text }] }],
-                    generationConfig: {
-                        responseModalities: ["AUDIO"],
-                        speechConfig: { 
-                            voiceConfig: { prebuiltVoiceConfig: { voiceName: selectedVoice } } 
-                        }
-                    }
-                };
 
-                const result = await fetchWithRetry(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
+                // Primary: Try fetching from the user's backend route first
+                try {
+                    const response = await fetch('/api/Gemini', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'tts', text: text, voice: selectedVoice })
+                    });
+                    if (response.ok) {
+                        responseData = await response.json();
+                    } else {
+                        usedFallback = true;
+                    }
+                } catch (e) {
+                    usedFallback = true;
+                }
+
+                if (usedFallback) {
+                    // Fallback: Direct API Call
+                    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+                    const payload = {
+                        contents: [{ parts: [{ text: text }] }],
+                        generationConfig: {
+                            responseModalities: ["AUDIO"],
+                            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: selectedVoice } } }
+                        }
+                    };
+                    responseData = await fetchWithRetry(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                }
 
                 if (requestSessionId !== currentPlaybackId) throw new Error("Cancelled");
                 
-                const inlineData = result.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+                const inlineData = responseData?.candidates?.[0]?.content?.parts?.[0]?.inlineData;
                 if (!inlineData) throw new Error("Invalid format received from TTS");
                 
                 const match = inlineData.mimeType.match(/rate=(\d+)/);
@@ -1113,8 +1151,12 @@
                     this.playIndex(index + 1);
                 };
                 
-                try { await this.currentAudioObj.play(); } 
-                catch(e) { /* Autoplay block */ }
+                try { 
+                    await this.currentAudioObj.play(); 
+                } catch(e) { 
+                    showAudioStatus("Playback error. Advancing.", "fa-solid fa-triangle-exclamation", true);
+                    this.playIndex(index + 1); 
+                }
             }
         }
 

@@ -54,19 +54,28 @@
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
         .chat-scroll::-webkit-scrollbar { width: 6px; }
-        .chat-scroll::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); border-radius: 4px; }
+        .chat-scroll::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.1); border-radius: 4px; }
+        .dark .chat-scroll::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
         .chat-scroll::-webkit-scrollbar-thumb { background: rgba(168, 85, 247, 0.3); border-radius: 4px; }
 
-        .glass-panel { background: rgba(15, 15, 25, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
-        .chat-bubble-user { background: linear-gradient(135deg, #3b82f6 0%, #a855f7 100%); border-bottom-right-radius: 4px; }
-        .chat-bubble-hero { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255,255,255,0.05); border-bottom-left-radius: 4px; }
+        /* Adaptive Glass Panel for Light & Dark */
+        .glass-panel { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(0, 0, 0, 0.05); transition: background-color 0.3s, border-color 0.3s; }
+        .dark .glass-panel { background: rgba(15, 15, 25, 0.6); border: 1px solid rgba(255, 255, 255, 0.05); }
+        
+        .chat-bubble-user { background: linear-gradient(135deg, #3b82f6 0%, #a855f7 100%); border-bottom-right-radius: 4px; color: white; }
+        
+        .chat-bubble-hero { background: rgba(0, 0, 0, 0.05); border: 1px solid rgba(0,0,0,0.05); border-bottom-left-radius: 4px; transition: background-color 0.3s, border-color 0.3s; }
+        .dark .chat-bubble-hero { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255,255,255,0.05); }
         
         .sphere-container { position: relative; width: 280px; height: 280px; display: flex; align-items: center; justify-content: center; }
         .ring { position: absolute; border-radius: 50%; border: 1px solid rgba(6, 182, 212, 0.3); animation: rotate 10s linear infinite; }
         .ring:nth-child(1) { width: 100%; height: 100%; border-top-color: #a855f7; border-bottom-color: #3b82f6; animation-duration: 8s; }
         .ring:nth-child(2) { width: 85%; height: 85%; border-left-color: #06b6d4; border-right-color: #a855f7; animation-duration: 12s; animation-direction: reverse; }
         .ring:nth-child(3) { width: 70%; height: 70%; border-top-color: #3b82f6; border-left-color: #06b6d4; animation-duration: 6s; }
-        .grid-globe { position: absolute; width: 90%; height: 90%; border-radius: 50%; background: radial-gradient(circle, rgba(6,182,212,0.1) 0%, rgba(0,0,0,0) 70%); box-shadow: 0 0 40px rgba(59, 130, 246, 0.3), inset 0 0 20px rgba(168, 85, 247, 0.3); border: 1px dashed rgba(255,255,255,0.1); }
+        
+        .grid-globe { position: absolute; width: 90%; height: 90%; border-radius: 50%; background: radial-gradient(circle, rgba(6,182,212,0.1) 0%, rgba(0,0,0,0) 70%); box-shadow: 0 0 40px rgba(59, 130, 246, 0.1), inset 0 0 20px rgba(168, 85, 247, 0.1); border: 1px dashed rgba(0,0,0,0.1); }
+        .dark .grid-globe { box-shadow: 0 0 40px rgba(59, 130, 246, 0.3), inset 0 0 20px rgba(168, 85, 247, 0.3); border: 1px dashed rgba(255,255,255,0.1); }
+        
         @keyframes rotate { 100% { transform: rotate(360deg); } }
 
         .desktop-nav-item { position: relative; }
@@ -81,15 +90,15 @@
     </style>
 </head>
 
-<body class="bg-[#030308] text-white w-full h-[100dvh] flex flex-col overflow-hidden relative m-0 p-0">
+<body class="bg-gray-50 dark:bg-[#030308] text-gray-900 dark:text-white w-full h-[100dvh] flex flex-col overflow-hidden relative m-0 p-0 transition-colors duration-300">
 
-    <div class="fixed top-[-10%] left-[-10%] w-[50vw] h-[50vh] pointer-events-none z-[-1]" style="background: radial-gradient(circle, rgba(168,85,247,0.15) 0%, transparent 70%);"></div>
-    <div class="fixed bottom-[10%] right-[-10%] w-[40vw] h-[40vh] pointer-events-none z-[-1]" style="background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%);"></div>
+    <div class="fixed top-[-10%] left-[-10%] w-[50vw] h-[50vh] pointer-events-none z-[-1]" style="background: radial-gradient(circle, rgba(168,85,247,0.1) 0%, transparent 70%);"></div>
+    <div class="fixed bottom-[10%] right-[-10%] w-[40vw] h-[40vh] pointer-events-none z-[-1]" style="background: radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 70%);"></div>
 
     <!-- GLOBAL AUDIO STATUS TOAST -->
-    <div id="audioStatusToast" class="fixed top-6 left-1/2 -translate-x-1/2 bg-[#0a0a14]/90 backdrop-blur-md border border-white/10 shadow-lg shadow-purple-500/10 px-5 py-2.5 rounded-full z-[99999] flex items-center gap-3 transition-transform duration-300 translate-y-[-150%] pointer-events-none">
-        <i id="audioStatusIcon" class="fa-solid fa-spinner fa-spin text-cyan-400 text-sm"></i>
-        <span id="audioStatusText" class="text-xs font-mono text-gray-200 uppercase tracking-wider">Loading...</span>
+    <div id="audioStatusToast" class="fixed top-6 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-[#0a0a14]/90 backdrop-blur-md border border-gray-200 dark:border-white/10 shadow-lg shadow-purple-500/10 px-5 py-2.5 rounded-full z-[99999] flex items-center gap-3 transition-transform duration-300 translate-y-[-150%] pointer-events-none">
+        <i id="audioStatusIcon" class="fa-solid fa-spinner fa-spin text-cyan-500 dark:text-cyan-400 text-sm"></i>
+        <span id="audioStatusText" class="text-xs font-mono text-gray-800 dark:text-gray-200 uppercase tracking-wider">Loading...</span>
     </div>
 
     <!-- HEADERS -->
@@ -99,29 +108,39 @@
                 <i class="fa-solid fa-code text-white"></i>
             </div>
             <div>
-                <h1 class="font-bold text-xl tracking-wide">DREAM<span class="text-neonPurple">&</span>DEPLOY</h1>
-                <p class="text-[10px] text-gray-400 tracking-[0.2em]">CREATE. PLAY. INSPIRE.</p>
+                <h1 class="font-bold text-xl tracking-wide">DREAM<span class="text-purple-600 dark:text-neonPurple">&</span>DEPLOY</h1>
+                <p class="text-[10px] text-gray-500 dark:text-gray-400 tracking-[0.2em]">DISCOVER. PLAY. INSPIRE.</p>
             </div>
         </div>
         <nav class="flex items-center gap-6 lg:gap-8 font-medium text-sm">
-            <button onclick="switchTab('home')" class="desktop-nav-item active-tab nav-item text-white" data-tab="home">Home</button>
-            <button onclick="switchTab('games')" class="desktop-nav-item nav-item text-gray-400 hover:text-white" data-tab="games">Games</button>
-            <button onclick="switchTab('poetry')" class="desktop-nav-item nav-item text-gray-400 hover:text-white" data-tab="poetry">Poetry</button>
-            <button onclick="switchTab('heroes')" class="desktop-nav-item nav-item text-gray-400 hover:text-white" data-tab="heroes">Heroes Chat</button>
-            <button onclick="switchTab('about')" class="desktop-nav-item nav-item text-gray-400 hover:text-white" data-tab="about">About Me</button>
+            <button onclick="switchTab('home')" class="desktop-nav-item active-tab nav-item text-gray-900 dark:text-white" data-tab="home">Home</button>
+            <button onclick="switchTab('games')" class="desktop-nav-item nav-item text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" data-tab="games">Games</button>
+            <button onclick="switchTab('poetry')" class="desktop-nav-item nav-item text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" data-tab="poetry">Poetry</button>
+            <button onclick="switchTab('heroes')" class="desktop-nav-item nav-item text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" data-tab="heroes">Heroes Chat</button>
+            <button onclick="switchTab('about')" class="desktop-nav-item nav-item text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" data-tab="about">About Me</button>
+            
+            <!-- Dark/Light Theme Toggle -->
+            <button onclick="toggleTheme()" class="w-8 h-8 rounded-full bg-gray-200 dark:bg-white/10 flex items-center justify-center text-gray-700 dark:text-gray-300 hover:text-cyan-500 transition-colors ml-2">
+                <i class="fa-solid fa-moon dark:hidden"></i>
+                <i class="fa-solid fa-sun hidden dark:block"></i>
+            </button>
         </nav>
     </header>
 
-    <header class="flex md:hidden w-full items-center justify-between px-5 py-4 flex-none bg-[#030308]/90 z-50">
+    <header class="flex md:hidden w-full items-center justify-between px-5 py-4 flex-none bg-white/90 dark:bg-[#030308]/90 border-b border-gray-200 dark:border-white/5 z-50 transition-colors duration-300">
         <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('home')">
             <div class="w-8 h-8 rounded-md bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
                 <i class="fa-solid fa-code text-white text-sm"></i>
             </div>
             <div>
-                <h1 class="font-bold text-lg tracking-wide leading-none">LOGIC<span class="text-neonPurple">&</span>LYRICS</h1>
-                <p class="text-[8px] text-gray-400 tracking-[0.15em] mt-1">CREATE. PLAY. INSPIRE.</p>
+                <h1 class="font-bold text-lg tracking-wide leading-none">LOGIC<span class="text-purple-600 dark:text-neonPurple">&</span>LYRICS</h1>
+                <p class="text-[8px] text-gray-500 dark:text-gray-400 tracking-[0.15em] mt-1">DISCOVER. PLAY. INSPIRE.</p>
             </div>
         </div>
+        <button onclick="toggleTheme()" class="w-8 h-8 rounded-full bg-gray-200 dark:bg-white/10 flex items-center justify-center text-gray-700 dark:text-gray-300">
+            <i class="fa-solid fa-moon dark:hidden"></i>
+            <i class="fa-solid fa-sun hidden dark:block text-sm"></i>
+        </button>
     </header>
 
     <!-- MAIN CONTENT WRAPPER -->
@@ -130,16 +149,16 @@
         <!-- ==================== HOME SECTION ==================== -->
         <main id="home" class="tab-pane absolute inset-0 w-full h-full ios-scroll pb-[100px] md:pb-10 block">
             <div class="max-w-7xl mx-auto px-5 md:px-8">
-                <div class="flex flex-col lg:flex-row items-center justify-between gap-12 py-10 lg:py-20 border-b border-white/5">
+                <div class="flex flex-col lg:flex-row items-center justify-between gap-12 py-10 lg:py-20 border-b border-gray-200 dark:border-white/5 transition-colors">
                     <div class="w-full lg:w-1/2 text-left z-10">
                         <h2 class="text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] mb-6">
                             Where<br>
-                            <span class="bg-gradient-to-r from-purple-400 via-fuchsia-500 to-purple-600 bg-clip-text text-transparent">Imagination</span><br>
+                            <span class="bg-gradient-to-r from-purple-500 via-fuchsia-500 to-purple-600 bg-clip-text text-transparent">Imagination</span><br>
                             Meets<br>
-                            <span class="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Intelligence</span>
+                            <span class="bg-gradient-to-r from-cyan-500 to-blue-600 bg-clip-text text-transparent">Intelligence</span>
                         </h2>
                         <div class="w-16 h-1 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full mb-6"></div>
-                        <p class="text-gray-400 text-lg mb-10 max-w-md font-light leading-relaxed">
+                        <p class="text-gray-600 dark:text-gray-400 text-lg mb-10 max-w-md font-light leading-relaxed">
                             Interactive AI-generated games, thought-provoking poetry, and experiments where creativity and technology become one.
                         </p>
                     </div>
@@ -149,19 +168,19 @@
                             <div class="ring"></div>
                             <div class="ring"></div>
                             <div class="grid-globe flex items-center justify-center backdrop-blur-sm">
-                                <span class="text-6xl font-bold bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent tracking-tighter">AI</span>
+                                <span class="text-6xl font-bold bg-gradient-to-b from-gray-800 to-gray-400 dark:from-white dark:to-gray-400 bg-clip-text text-transparent tracking-tighter">AI</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Featured Games -->
-                <div class="py-12 border-b border-white/5 relative w-full overflow-hidden">
+                <div class="py-12 border-b border-gray-200 dark:border-white/5 transition-colors relative w-full overflow-hidden">
                     <div class="flex items-center justify-between mb-6">
                         <h3 class="text-xl font-bold flex items-center gap-3">
                             <i class="fa-solid fa-gamepad text-blue-500"></i> FEATURED GAMES
                         </h3>
-                        <button onclick="switchTab('games')" class="text-purple-400 text-sm hover:text-purple-300 font-medium flex items-center gap-1">
+                        <button onclick="switchTab('games')" class="text-purple-600 dark:text-purple-400 text-sm hover:opacity-80 font-medium flex items-center gap-1">
                             View All <i class="fa-solid fa-chevron-right text-xs"></i>
                         </button>
                     </div>
@@ -169,16 +188,15 @@
                 </div>
 
                 <!-- Featured Poems -->
-                <div class="py-12 border-b border-white/5 relative w-full overflow-hidden">
+                <div class="py-12 border-b border-gray-200 dark:border-white/5 transition-colors relative w-full overflow-hidden">
                     <div class="flex items-center justify-between mb-6">
                         <h3 class="text-xl font-bold flex items-center gap-3">
                             <i class="fa-solid fa-feather-pointed text-purple-500"></i> FEATURED POEMS
                         </h3>
-                        <button onclick="switchTab('poetry')" class="text-cyan-400 text-sm hover:text-cyan-300 font-medium flex items-center gap-1">
+                        <button onclick="switchTab('poetry')" class="text-cyan-600 dark:text-cyan-400 text-sm hover:opacity-80 font-medium flex items-center gap-1">
                             View All <i class="fa-solid fa-chevron-right text-xs"></i>
                         </button>
                     </div>
-                    
                     <div id="featuredPoemsContainer" class="flex overflow-x-auto gap-5 pb-6 no-scrollbar snap-x snap-mandatory ios-scroll">
                         <!-- Fetched Poems will inject here -->
                     </div>
@@ -187,10 +205,10 @@
                 <!-- Featured Heroes -->
                 <div class="py-12 relative w-full overflow-hidden">
                     <div class="text-center mb-10">
-                        <h3 class="text-2xl md:text-3xl font-bold font-serif mb-3 text-yellow-500">
-                            Conversations Across Time
+                        <h3 class="text-2xl md:text-3xl font-bold font-serif mb-3 text-yellow-600 dark:text-yellow-500">
+                            Heroes Chat: Echoes of Greatness
                         </h3>
-                        <p class="text-gray-400 max-w-xl mx-auto text-sm md:text-base">Step into the minds of history's greatest figures. Seek wisdom, debate ideas, and find inspiration from the echoes of greatness.</p>
+                        <p class="text-gray-600 dark:text-gray-400 max-w-xl mx-auto text-sm md:text-base">Step into the minds of history's greatest figures. Seek wisdom, debate ideas, and find inspiration from the echoes of greatness.</p>
                     </div>
                     
                     <div id="homeHeroesSection" class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -199,7 +217,7 @@
                 </div>
                 
                 <!-- Copyright Footer -->
-                <div class="text-center text-xs text-gray-600 mt-8 pb-6 border-t border-white/5 pt-6">
+                <div class="text-center text-xs text-gray-500 dark:text-gray-600 mt-8 pb-6 border-t border-gray-200 dark:border-white/5 transition-colors pt-6">
                     © 2026 Dev & Shayar. All Rights Reserved.
                 </div>
             </div>
@@ -213,27 +231,27 @@
                         <h2 class="text-3xl md:text-4xl font-bold mb-3 flex items-center justify-center md:justify-start gap-3">
                             <i class="fa-solid fa-gamepad text-blue-500"></i> The Grid
                         </h2>
-                        <p class="text-gray-400 max-w-2xl">Select an executable to load the AI-generated simulation environment.</p>
+                        <p class="text-gray-600 dark:text-gray-400 max-w-2xl">Select an executable to load the AI-generated simulation environment.</p>
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6" id="gameGrid"></div>
                 </div>
                 
-                <div class="text-center text-xs text-gray-600 mt-12 pb-6 border-t border-white/5 pt-6">
+                <div class="text-center text-xs text-gray-500 dark:text-gray-600 mt-12 pb-6 border-t border-gray-200 dark:border-white/5 transition-colors pt-6">
                     © 2026 Dev & Shayar. All Rights Reserved.
                 </div>
             </div>
         </main>
 
         <!-- ==================== POETRY SECTION ==================== -->
-        <main id="poetry" class="tab-pane hidden absolute inset-0 w-full h-full ios-scroll pb-[100px] md:pb-10">
-            <div class="max-w-7xl mx-auto px-5 md:px-8 py-6 flex flex-col min-h-full">
+        <main id="poetry" class="tab-pane hidden absolute inset-0 w-full h-full ios-scroll pb-[160px] md:pb-[120px]">
+            <div class="max-w-7xl mx-auto px-5 md:px-8 py-6 flex flex-col min-h-full relative">
                 <div class="flex-1">
                     <div class="flex flex-col md:flex-row text-center md:text-left mb-8 justify-between items-center gap-4">
                         <div>
                             <h2 class="text-3xl md:text-4xl font-bold mb-3 font-serif flex items-center justify-center md:justify-start gap-3">
                                 <i class="fa-solid fa-feather-pointed text-purple-500"></i> Shayar's Canvas
                             </h2>
-                            <p class="text-gray-400 max-w-2xl">Emotions written in the syntax of the soul. Click on any poem to read & listen.</p>
+                            <p class="text-gray-600 dark:text-gray-400 max-w-2xl">Emotions written in the syntax of the soul. Click on any poem to read & listen.</p>
                         </div>
                         <button onclick="openAddPoetryModal()" class="bg-gradient-to-r from-purple-500 to-cyan-500 text-white px-6 py-2.5 rounded-full font-medium shadow-lg hover:shadow-cyan-500/25 transition-all flex items-center gap-2">
                             <i class="fa-solid fa-plus"></i> Add Poetry
@@ -242,54 +260,75 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="poetryList"></div>
                 </div>
                 
-                <div class="text-center text-xs text-gray-600 mt-12 pb-6 border-t border-white/5 pt-6">
+                <div class="text-center text-xs text-gray-500 dark:text-gray-600 mt-12 pb-6 border-t border-gray-200 dark:border-white/5 transition-colors pt-6">
                     © 2026 Dev & Shayar. All Rights Reserved.
                 </div>
+            </div>
+            
+            <!-- Global Play All Footer Bar -->
+            <div id="playAllBar" class="fixed bottom-[85px] md:bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md bg-white dark:bg-[#0a0a14] border border-gray-200 dark:border-white/10 shadow-2xl rounded-full p-2.5 flex items-center justify-between z-40 transition-colors duration-300">
+                <div class="flex items-center gap-3 px-2">
+                    <div id="playAllStatusIcon" class="w-10 h-10 rounded-full bg-cyan-500/10 text-cyan-500 flex items-center justify-center flex-shrink-0">
+                        <i class="fa-solid fa-list-ul"></i>
+                    </div>
+                    <div class="flex flex-col overflow-hidden max-w-[180px] md:max-w-[220px]">
+                        <span class="text-sm font-bold text-gray-800 dark:text-gray-200 truncate" id="playAllTitle">Play All Poems</span>
+                        <span class="text-[10px] text-gray-500 dark:text-gray-400 truncate" id="playAllSubtitle">Listen to the entire collection</span>
+                    </div>
+                </div>
+                <button id="playAllBtn" onclick="togglePlayAll()" class="w-10 h-10 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg flex items-center justify-center flex-shrink-0 hover:scale-105 transition-transform">
+                    <i class="fa-solid fa-play ml-0.5"></i>
+                </button>
             </div>
         </main>
 
         <!-- ==================== HEROES CHAT SECTION ==================== -->
         <main id="heroes" class="tab-pane hidden absolute inset-0 w-full h-full flex-col pb-[85px] md:pb-10">
+            <!-- Header Section with clear transitionable background -->
             <div class="max-w-4xl mx-auto px-5 md:px-8 py-4 flex-none w-full">
-                <div class="text-center md:text-left">
-                    <h2 class="text-xl md:text-2xl font-bold flex items-center justify-center md:justify-start gap-2 font-serif">
-                        <i class="fa-solid fa-landmark-dome text-yellow-500 text-lg"></i> Echoes of Greatness
+                <div class="text-center md:text-left bg-white/60 dark:bg-white/5 backdrop-blur-md border border-gray-200 dark:border-white/10 rounded-2xl py-3 px-4 shadow-sm transition-colors duration-300">
+                    <h2 class="text-xl md:text-2xl font-bold flex items-center justify-center md:justify-start gap-2 font-serif text-yellow-600 dark:text-yellow-500">
+                        <i class="fa-solid fa-landmark-dome text-lg"></i> Echoes of Greatness
                     </h2>
                 </div>
             </div>
 
-            <!-- Absolute Box for Chat Interface -->
-            <div class="flex-1 relative max-w-4xl mx-auto w-full px-5 md:px-8">
-                <div class="absolute inset-x-5 md:inset-x-8 top-0 bottom-0 glass-panel rounded-3xl overflow-hidden flex flex-col border-t border-yellow-500/20 shadow-lg">
+            <!-- Flex Box for Chat Interface (No Absolute Positioning) -->
+            <div class="flex-1 max-w-4xl mx-auto w-full px-5 md:px-8 pb-5 flex flex-col min-h-0">
+                <div class="flex-1 glass-panel rounded-3xl overflow-hidden flex flex-col border-t border-yellow-500/20 shadow-lg transition-colors duration-300">
                     
-                    <div class="p-3 md:p-4 bg-black/40 border-b border-white/5 flex items-center justify-between flex-none">
+                    <div class="p-3 md:p-4 bg-gray-100/50 dark:bg-black/40 border-b border-gray-200 dark:border-white/5 flex items-center justify-between flex-none transition-colors">
                         <div class="flex items-center gap-3 md:gap-4">
-                            <div id="heroAvatarSmall" class="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-lg shadow-lg flex-none">
-                                <i class="fa-solid fa-atom text-white"></i>
+                            <div id="heroAvatarSmall" class="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-lg shadow-lg flex-none text-white">
+                                <i class="fa-solid fa-atom"></i>
                             </div>
                             <div class="flex flex-col">
-                                <select id="heroSelect" onchange="changeHero()" class="appearance-none bg-transparent border-none text-white font-bold font-serif text-base md:text-lg focus:outline-none focus:ring-0 cursor-pointer pr-5 py-0 m-0">
-                                    <option value="einstein" class="bg-gray-900">Albert Einstein</option>
-                                    <option value="gandhi" class="bg-gray-900">Mahatma Gandhi</option>
-                                    <option value="nehru" class="bg-gray-900">Jawaharlal Nehru</option>
-                                    <option value="ambedkar" class="bg-gray-900">B.R. Ambedkar</option>
-                                    <option value="newton" class="bg-gray-900">Isaac Newton</option>
-                                    <option value="lincoln" class="bg-gray-900">Abraham Lincoln</option>
+                                <select id="heroSelect" onchange="changeHero()" class="appearance-none bg-transparent border-none font-bold font-serif text-base md:text-lg focus:outline-none focus:ring-0 cursor-pointer pr-5 py-0 m-0 text-gray-900 dark:text-white">
+                                    <option value="einstein" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">Albert Einstein</option>
+                                    <option value="gandhi" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">Mahatma Gandhi</option>
+                                    <option value="nehru" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">Jawaharlal Nehru</option>
+                                    <option value="ambedkar" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">B.R. Ambedkar</option>
+                                    <option value="newton" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">Isaac Newton</option>
+                                    <option value="lincoln" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">Abraham Lincoln</option>
                                 </select>
-                                <p id="heroTitleDisplay" class="text-[10px] md:text-xs text-cyan-400 font-mono mt-0.5">Theoretical Physicist</p>
+                                <p id="heroTitleDisplay" class="text-[10px] md:text-xs text-cyan-600 dark:text-cyan-400 font-mono mt-0.5">Theoretical Physicist</p>
                             </div>
                         </div>
-                        <button onclick="clearChat()" class="text-[10px] text-gray-500 hover:text-red-400 uppercase font-bold">Clear</button>
+                        <button onclick="clearChat()" class="text-[10px] text-gray-500 hover:text-red-500 uppercase font-bold px-2 py-1 bg-gray-200 dark:bg-white/5 rounded-full transition-colors">Clear</button>
                     </div>
 
                     <!-- Scrollable Chat Area -->
-                    <div id="chatBox" class="flex-1 ios-scroll p-4 md:p-5 flex flex-col gap-4 chat-scroll bg-black/20"></div>
+                    <div id="chatBox" class="flex-1 ios-scroll p-4 md:p-5 flex flex-col gap-4 chat-scroll bg-gray-50/50 dark:bg-black/20 transition-colors duration-300 min-h-0"></div>
 
-                    <div class="p-3 md:p-4 bg-black/40 border-t border-white/5 flex-none">
-                        <form onsubmit="handleHeroChat(event)" class="relative w-full flex items-center">
-                            <input type="text" id="chatInput" placeholder="Ask your question..." class="w-full bg-[#0a0a14] border border-white/10 rounded-full py-3 pl-5 pr-14 text-sm focus:outline-none focus:border-cyan-500 text-white" autocomplete="off" required>
-                            <button type="submit" id="chatSubmitBtn" class="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white">
-                                <i class="fa-solid fa-paper-plane text-sm"></i>
+                    <!-- Notice & Input -->
+                    <div class="bg-gray-100/80 dark:bg-black/40 border-t border-gray-200 dark:border-white/5 flex-none transition-colors">
+                        <div class="px-3 py-1.5 text-center text-[9px] text-gray-500 dark:text-gray-400 border-b border-gray-200/50 dark:border-white/5 transition-colors">
+                            AI responses may sometimes be inaccurate or controversial. Use with discretion.
+                        </div>
+                        <form onsubmit="handleHeroChat(event)" class="relative w-full flex items-center p-3 md:p-4">
+                            <input type="text" id="chatInput" placeholder="Ask your question..." class="w-full bg-white dark:bg-[#0a0a14] border border-gray-300 dark:border-white/10 rounded-full py-3 pl-5 pr-14 text-sm focus:outline-none focus:border-cyan-500 text-gray-900 dark:text-white transition-colors" autocomplete="off" required>
+                            <button type="submit" id="chatSubmitBtn" class="absolute right-5 md:right-6 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white shadow-md hover:scale-105 transition-transform">
+                                <i class="fa-solid fa-paper-plane text-sm ml-[-2px]"></i>
                             </button>
                         </form>
                     </div>
@@ -304,38 +343,38 @@
                     <div class="glass-panel rounded-3xl overflow-hidden flex flex-col md:flex-row relative">
                         <div class="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 blur-[80px] rounded-full"></div>
                         
-                        <div class="w-full md:w-2/5 p-10 flex flex-col justify-center items-center relative border-b md:border-b-0 md:border-r border-white/10 bg-black/40">
-                            <div class="w-32 h-32 md:w-48 md:h-48 rounded-full bg-gradient-to-br from-cyan-400 to-purple-600 p-[2px] mb-6 shadow-[0_0_30px_rgba(6,182,212,0.3)]">
-                                <div class="w-full h-full bg-[#0a0a14] rounded-full flex items-center justify-center overflow-hidden">
-                                    <i class="fa-solid fa-user-astronaut text-6xl text-white/70"></i>
+                        <div class="w-full md:w-2/5 p-10 flex flex-col justify-center items-center relative border-b md:border-b-0 md:border-r border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-black/40 transition-colors">
+                            <div class="w-32 h-32 md:w-48 md:h-48 rounded-full bg-gradient-to-br from-cyan-400 to-purple-600 p-[2px] mb-6 shadow-[0_0_30px_rgba(6,182,212,0.2)] dark:shadow-[0_0_30px_rgba(6,182,212,0.3)]">
+                                <div class="w-full h-full bg-white dark:bg-[#0a0a14] rounded-full flex items-center justify-center overflow-hidden transition-colors">
+                                    <i class="fa-solid fa-user-astronaut text-6xl text-gray-300 dark:text-white/70"></i>
                                 </div>
                             </div>
-                            <h3 class="text-2xl font-bold tracking-wide">The Architect</h3>
-                            <p class="text-cyan-400 font-mono text-sm mt-1">&lt;coder /&gt; | ✍️ shayar</p>
+                            <h3 class="text-2xl font-bold tracking-wide text-gray-900 dark:text-white">The Architect</h3>
+                            <p class="text-cyan-600 dark:text-cyan-400 font-mono text-sm mt-1">&lt;coder /&gt; | ✍️ shayar</p>
 
                             <!-- Contact Buttons -->
                             <div class="flex gap-4 mt-6">
-                                <a href="https://instagram.com" target="_blank" class="w-10 h-10 rounded-full bg-white/5 hover:bg-gradient-to-tr hover:from-yellow-400 hover:via-pink-500 hover:to-purple-600 flex items-center justify-center transition-all">
+                                <a href="https://instagram.com" target="_blank" class="w-10 h-10 rounded-full bg-gray-200 dark:bg-white/5 hover:bg-gradient-to-tr hover:from-yellow-400 hover:via-pink-500 hover:to-purple-600 text-gray-700 dark:text-white flex items-center justify-center transition-all hover:text-white">
                                     <i class="fa-brands fa-instagram"></i>
                                 </a>
-                                <a href="https://facebook.com" target="_blank" class="w-10 h-10 rounded-full bg-white/5 hover:bg-blue-600 flex items-center justify-center transition-all">
+                                <a href="https://facebook.com" target="_blank" class="w-10 h-10 rounded-full bg-gray-200 dark:bg-white/5 hover:bg-blue-600 text-gray-700 dark:text-white flex items-center justify-center transition-all hover:text-white">
                                     <i class="fa-brands fa-facebook-f"></i>
                                 </a>
-                                <a href="mailto:yourmail@gmail.com" class="w-10 h-10 rounded-full bg-white/5 hover:bg-red-500 flex items-center justify-center transition-all">
+                                <a href="mailto:yourmail@gmail.com" class="w-10 h-10 rounded-full bg-gray-200 dark:bg-white/5 hover:bg-red-500 text-gray-700 dark:text-white flex items-center justify-center transition-all hover:text-white">
                                     <i class="fa-solid fa-envelope"></i>
                                 </a>
                             </div>
                         </div>
                         
                         <div class="w-full md:w-3/5 p-8 md:p-12 relative z-10">
-                            <h2 class="text-3xl md:text-4xl font-bold mb-6 font-serif leading-tight">
-                                Developer by <span class="text-cyan-400">Profession</span>,<br>
-                                Shayar by <span class="text-purple-400">Passion</span>.
+                            <h2 class="text-3xl md:text-4xl font-bold mb-6 font-serif leading-tight text-gray-900 dark:text-white">
+                                Developer by <span class="text-cyan-600 dark:text-cyan-400">Profession</span>,<br>
+                                Shayar by <span class="text-purple-600 dark:text-purple-400">Passion</span>.
                             </h2>
-                            <div class="space-y-4 text-gray-300 font-light">
+                            <div class="space-y-4 text-gray-600 dark:text-gray-300 font-light">
                                 <p>During the day, I build systems. I speak in the strict, unforgiving languages of logic and algorithms to solve complex problems.</p>
                                 <p>But when the screen dims, the keyboard becomes a canvas. I speak in rhythms and emotions. As a Shayar, I find the logic in human emotion and the art in everyday chaos.</p>
-                                <blockquote class="border-l-2 border-purple-500 pl-4 py-2 italic text-gray-400 my-6 font-serif">
+                                <blockquote class="border-l-2 border-purple-500 pl-4 py-2 italic text-gray-500 dark:text-gray-400 my-6 font-serif bg-gray-50 dark:bg-transparent">
                                     "Compiling code to build the future,<br>
                                     Composing words to heal the soul."
                                 </blockquote>
@@ -345,7 +384,7 @@
                     </div>
                 </div>
 
-                <div class="text-center text-xs text-gray-600 mt-12 pb-6 pt-6">
+                <div class="text-center text-xs text-gray-500 dark:text-gray-600 mt-12 pb-6 pt-6">
                     © 2026 Dev & Shayar. All Rights Reserved.
                 </div>
             </div>
@@ -353,24 +392,24 @@
     </div>
 
     <!-- ==================== MOBILE BOTTOM NAV (Fixed) ==================== -->
-    <nav class="md:hidden fixed bottom-0 left-0 w-full h-[75px] pb-[env(safe-area-inset-bottom)] flex items-center justify-around glass-panel border-t border-white/10 z-50">
-        <button onclick="switchTab('home')" class="nav-item active-tab flex flex-col items-center justify-center gap-1 w-16 h-full" data-tab="home">
+    <nav class="md:hidden fixed bottom-0 left-0 w-full h-[75px] pb-[env(safe-area-inset-bottom)] flex items-center justify-around bg-white/90 dark:bg-[#0a0a14]/90 backdrop-blur-md border-t border-gray-200 dark:border-white/10 z-50 transition-colors duration-300">
+        <button onclick="switchTab('home')" class="nav-item active-tab flex flex-col items-center justify-center gap-1 w-16 h-full text-gray-400" data-tab="home">
             <i class="fa-solid fa-house text-lg"></i>
             <span class="text-[9px] font-semibold tracking-wide">HOME</span>
         </button>
-        <button onclick="switchTab('games')" class="nav-item flex flex-col items-center justify-center gap-1 w-16 h-full" data-tab="games">
+        <button onclick="switchTab('games')" class="nav-item flex flex-col items-center justify-center gap-1 w-16 h-full text-gray-400" data-tab="games">
             <i class="fa-solid fa-gamepad text-lg"></i>
             <span class="text-[9px] font-semibold tracking-wide">GAMES</span>
         </button>
-        <button onclick="switchTab('poetry')" class="nav-item flex flex-col items-center justify-center gap-1 w-16 h-full" data-tab="poetry">
+        <button onclick="switchTab('poetry')" class="nav-item flex flex-col items-center justify-center gap-1 w-16 h-full text-gray-400" data-tab="poetry">
             <i class="fa-solid fa-feather text-lg"></i>
             <span class="text-[9px] font-semibold tracking-wide">POETRY</span>
         </button>
-        <button onclick="switchTab('heroes')" class="nav-item flex flex-col items-center justify-center gap-1 w-16 h-full" data-tab="heroes">
+        <button onclick="switchTab('heroes')" class="nav-item flex flex-col items-center justify-center gap-1 w-16 h-full text-gray-400" data-tab="heroes">
             <i class="fa-solid fa-landmark text-lg"></i>
-            <span class="text-[9px] font-semibold tracking-wide">HERO</span>
+            <span class="text-[9px] font-semibold tracking-wide">HEROES</span>
         </button>
-        <button onclick="switchTab('about')" class="nav-item flex flex-col items-center justify-center gap-1 w-16 h-full" data-tab="about">
+        <button onclick="switchTab('about')" class="nav-item flex flex-col items-center justify-center gap-1 w-16 h-full text-gray-400" data-tab="about">
             <i class="fa-regular fa-user text-lg"></i>
             <span class="text-[9px] font-semibold tracking-wide">ABOUT</span>
         </button>
@@ -380,54 +419,54 @@
 
     <!-- POETRY MODAL -->
     <div id="poetryModal" class="hidden fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 md:p-10">
-        <div class="glass-panel w-full max-w-2xl h-[85dvh] rounded-3xl border border-purple-500/30 flex flex-col relative bg-[#0a0a14]">
+        <div class="glass-panel w-full max-w-2xl h-[85dvh] rounded-3xl border border-purple-500/30 flex flex-col relative bg-white dark:bg-[#0a0a14] transition-colors">
             
-            <div class="flex-none p-5 md:p-6 border-b border-white/10 flex justify-between items-start z-20">
-                <h2 id="modalPoemTitle" class="text-2xl md:text-3xl font-serif text-purple-400 mt-1">Poem Title</h2>
+            <div class="flex-none p-5 md:p-6 border-b border-gray-200 dark:border-white/10 flex justify-between items-start z-20">
+                <h2 id="modalPoemTitle" class="text-2xl md:text-3xl font-serif text-purple-600 dark:text-purple-400 mt-1">Poem Title</h2>
                 <div class="flex items-center gap-2 md:gap-3">
-                    <select id="ttsVoiceSelect" class="bg-white/5 border border-white/10 rounded-full text-xs text-gray-300 px-3 py-2 outline-none cursor-pointer">
+                    <select id="ttsVoiceSelect" class="bg-gray-100 dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-full text-xs text-gray-700 dark:text-gray-300 px-3 py-2 outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                         <option value="Kore">Neutral (Kore)</option>
                         <option value="Puck">Male (Puck)</option>
                     </select>
-                    <button id="ttsButton" onclick="togglePoetryAudio()" class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-300 hover:text-white transition-colors">
-                        <i class="fa-solid fa-play" id="ttsIcon"></i>
+                    <button id="ttsButton" onclick="togglePoetryAudio()" class="w-10 h-10 rounded-full bg-gray-100 dark:bg-white/5 border border-gray-300 dark:border-white/10 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-cyan-500 dark:hover:text-white transition-colors">
+                        <i class="fa-solid fa-play ml-0.5" id="ttsIcon"></i>
                     </button>
-                    <button onclick="closePoetryModal()" class="w-10 h-10 rounded-full bg-white/5 border border-white/10 text-gray-400 flex items-center justify-center hover:text-white transition-colors">
+                    <button onclick="closePoetryModal()" class="w-10 h-10 rounded-full bg-gray-100 dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-500 dark:text-gray-400 flex items-center justify-center hover:text-red-500 dark:hover:text-white transition-colors">
                         <i class="fa-solid fa-xmark text-lg"></i>
                     </button>
                 </div>
             </div>
 
             <div class="flex-1 ios-scroll p-6 md:p-8 relative">
-                <div id="modalPoemText" class="font-serif text-xl md:text-2xl leading-[2] text-gray-300"></div>
-                <div class="mt-8 text-cyan-500/50 font-serif italic" id="modalPoemAuthor">— The Dev Shayar</div>
+                <div id="modalPoemText" class="font-serif text-xl md:text-2xl leading-[2] text-gray-800 dark:text-gray-300"></div>
+                <div class="mt-8 text-cyan-600/70 dark:text-cyan-500/50 font-serif italic" id="modalPoemAuthor">— The Dev Shayar</div>
             </div>
         </div>
     </div>
 
     <!-- ADD POETRY MODAL -->
     <div id="addPoetryModal" class="hidden fixed inset-0 z-[9999] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="glass-panel w-full max-w-lg rounded-2xl border border-cyan-500/30 flex flex-col bg-[#0a0a14] relative">
-            <div class="p-5 border-b border-white/10 flex justify-between items-center">
-                <h2 class="text-xl font-bold text-cyan-400 font-serif">Add Your Poetry</h2>
-                <button onclick="closeAddPoetryModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+        <div class="glass-panel w-full max-w-lg rounded-2xl border border-cyan-500/30 flex flex-col bg-white dark:bg-[#0a0a14] relative transition-colors">
+            <div class="p-5 border-b border-gray-200 dark:border-white/10 flex justify-between items-center">
+                <h2 class="text-xl font-bold text-cyan-600 dark:text-cyan-400 font-serif">Add Your Poetry</h2>
+                <button onclick="closeAddPoetryModal()" class="text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-white"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <form id="addPoetryForm" onsubmit="submitPoetry(event)" class="p-5 flex flex-col gap-4">
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1">Poetry Title</label>
-                    <input type="text" id="addPoemTitle" name="poem_title" required class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-sm text-white outline-none focus:border-cyan-500">
+                    <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Poetry Title</label>
+                    <input type="text" id="addPoemTitle" name="poem_title" required class="w-full bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white outline-none focus:border-cyan-500">
                 </div>
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1">Writer Name</label>
-                    <input type="text" id="addPoemAuthor" name="writer_name" required class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-sm text-white outline-none focus:border-cyan-500">
+                    <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Writer Name</label>
+                    <input type="text" id="addPoemAuthor" name="writer_name" required class="w-full bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white outline-none focus:border-cyan-500">
                 </div>
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1">Poetry Lines</label>
-                    <textarea id="addPoemText" name="poetry_lines" required rows="5" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-sm text-white outline-none focus:border-cyan-500 resize-none"></textarea>
+                    <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Poetry Lines</label>
+                    <textarea id="addPoemText" name="poetry_lines" required rows="5" class="w-full bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white outline-none focus:border-cyan-500 resize-none"></textarea>
                 </div>
                 <div class="flex items-start gap-2 mt-2">
                     <input type="checkbox" id="addPoemOriginal" required class="mt-1 accent-cyan-500">
-                    <label for="addPoemOriginal" class="text-xs text-gray-400 leading-tight cursor-pointer">
+                    <label for="addPoemOriginal" class="text-xs text-gray-600 dark:text-gray-400 leading-tight cursor-pointer">
                         I confirm this poetry is purely original, fully mine, and not copied from anywhere. By submitting, I agree to share this with the Admin.
                     </label>
                 </div>
@@ -437,13 +476,13 @@
             </form>
             
             <!-- Success Overlay -->
-            <div id="addPoemSuccess" class="hidden absolute inset-0 bg-[#0a0a14] rounded-2xl flex-col items-center justify-center p-6 text-center z-10">
-                <div class="w-16 h-16 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center text-3xl mb-4">
+            <div id="addPoemSuccess" class="hidden absolute inset-0 bg-white dark:bg-[#0a0a14] rounded-2xl flex-col items-center justify-center p-6 text-center z-10">
+                <div class="w-16 h-16 rounded-full bg-green-500/20 text-green-500 dark:text-green-400 flex items-center justify-center text-3xl mb-4">
                     <i class="fa-solid fa-check"></i>
                 </div>
-                <h3 class="text-xl font-bold text-white mb-2">Poetry Submitted!</h3>
-                <p class="text-sm text-gray-400">Your lines have been submitted successfully. They will now undergo copyright ownership and plagiarism review. Once the review is complete and the submission meets our guidelines, it will be published in our poetry collection</p>
-                <button onclick="closeAddPoetryModal()" class="mt-6 px-6 py-2 bg-white/10 rounded-full text-sm hover:bg-white/20 transition-colors">Close</button>
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Poetry Submitted!</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Your lines have been submitted successfully. They will now undergo copyright ownership and plagiarism review. Once the review is complete, it will be published in our poetry collection.</p>
+                <button onclick="closeAddPoetryModal()" class="mt-6 px-6 py-2 bg-gray-200 dark:bg-white/10 rounded-full text-sm text-gray-800 dark:text-white hover:bg-gray-300 dark:hover:bg-white/20 transition-colors">Close</button>
             </div>
         </div>
     </div>
@@ -462,11 +501,11 @@
             <div id="gameLoader" class="absolute flex flex-col items-center justify-center gap-4 z-10">
                 <div class="w-10 h-10 border-2 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin"></div>
             </div>
-<iframe
-    id="gameIframe"
-    src=""
-    class="absolute inset-0 m-auto w-[98%] h-[98%] border-none z-20 rounded-lg">
-</iframe>
+            <iframe
+                id="gameIframe"
+                src=""
+                class="absolute inset-0 m-auto w-[98%] h-[98%] border-none z-20 rounded-lg bg-black">
+            </iframe>
         </div>
     </div>
     
@@ -476,6 +515,89 @@
     <!-- ==================== SCRIPT ==================== -->
     <script type="module">
         
+        // --- API INTEGRATION (Direct Calls) ---
+        const apiKey = ""; // API key is injected by the environment at runtime
+
+        async function fetchWithRetry(url, options, maxRetries = 5) {
+            const delays = [1000, 2000, 4000, 8000, 16000];
+            for (let i = 0; i <= maxRetries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    return await response.json();
+                } catch (err) {
+                    if (i === maxRetries) throw err;
+                    await new Promise(r => setTimeout(r, delays[i]));
+                }
+            }
+        }
+
+        async function callGemini(contentsPayload) {
+            try {
+                const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+                const payload = { contents: contentsPayload };
+                
+                const result = await fetchWithRetry(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!result.candidates || result.candidates.length === 0) return "Error blocked.";
+                return result.candidates[0].content.parts[0].text;
+            } catch (error) { 
+                return `Error: API is currently overloaded. Please try again.`; 
+            }
+        }
+
+        async function getGeminiTTSAudioDirect(text, voiceName, requestSessionId) {
+            try {
+                const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+                const selectedVoice = (voiceName === "Puck") ? "Puck" : "Kore";
+                
+                const payload = {
+                    contents: [{ parts: [{ text: text }] }],
+                    generationConfig: {
+                        responseModalities: ["AUDIO"],
+                        speechConfig: { 
+                            voiceConfig: { prebuiltVoiceConfig: { voiceName: selectedVoice } } 
+                        }
+                    }
+                };
+
+                const result = await fetchWithRetry(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (requestSessionId !== currentPlaybackId) throw new Error("Cancelled");
+                
+                const inlineData = result.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+                if (!inlineData) throw new Error("Invalid format received from TTS");
+                
+                const match = inlineData.mimeType.match(/rate=(\d+)/);
+                const sampleRate = match ? parseInt(match[1]) : 24000;
+                const binaryString = atob(inlineData.data);
+                
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+                
+                const validLength = bytes.length - (bytes.length % 2);
+                const int16Array = new Int16Array(bytes.buffer, 0, validLength / 2);
+                const float32Array = new Float32Array(int16Array.length);
+                
+                for (let i = 0; i < int16Array.length; i++) {
+                    float32Array[i] = int16Array[i] / 32768.0;
+                }
+
+                return { audio: float32Array, sampling_rate: sampleRate };
+            } catch (error) {
+                if (error.message === "Cancelled") throw error;
+                throw new Error("Our AI is currently busy. Please try again in a moment.");
+            }
+        }
+
         // --- NEW STATUS TOAST SYSTEM ---
         function showAudioStatus(text, iconClass, isError = false) {
             const toast = document.getElementById('audioStatusToast');
@@ -487,23 +609,19 @@
             iconEl.className = iconClass;
             
             if(isError) {
-                iconEl.classList.add('text-red-400');
-                iconEl.classList.remove('text-cyan-400');
-                textEl.classList.add('text-red-400');
-                textEl.classList.remove('text-gray-200');
+                iconEl.classList.add('text-red-500');
+                iconEl.classList.remove('text-cyan-500', 'dark:text-cyan-400');
+                textEl.classList.add('text-red-500');
+                textEl.classList.remove('text-gray-800', 'dark:text-gray-200');
             } else {
-                iconEl.classList.add('text-cyan-400');
-                iconEl.classList.remove('text-red-400');
-                textEl.classList.add('text-gray-200');
-                textEl.classList.remove('text-red-400');
+                iconEl.classList.add('text-cyan-500', 'dark:text-cyan-400');
+                iconEl.classList.remove('text-red-500');
+                textEl.classList.add('text-gray-800', 'dark:text-gray-200');
+                textEl.classList.remove('text-red-500');
             }
 
             toast.style.transform = 'translate(-50%, 0)';
-            
-            // Auto hide if it's an error
-            if(isError) {
-                setTimeout(() => hideAudioStatus(), 4000);
-            }
+            if(isError) setTimeout(() => hideAudioStatus(), 4000);
         }
 
         function hideAudioStatus() {
@@ -511,89 +629,13 @@
             if(toast) toast.style.transform = 'translate(-50%, -150%)';
         }
 
-
-        async function callGemini(contentsPayload) {
-            try {
-                const response = await fetch('/api/Gemini', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'chat', prompt: contentsPayload })
-                });
-                
-                if (!response.ok) return `Error: ${response.status}`;
-                const result = await response.json();
-                if (!result.candidates || result.candidates.length === 0) return "Error blocked.";
-                return result.candidates[0].content.parts[0].text;
-            } catch (error) { return `Error: ${error.message}`; }
-        }
-
-
-        // USING THE PROXY BACKEND FOR SECURITY 
-        // Receives playbackId to instantly abort background tasks if user clicked something else
-        async function getGeminiTTSAudio(text, voiceName = "Kore", requestPlaybackId) {
-            const delays = [1000, 2000, 4000, 8000, 16000];
-            
-            for (let attempt = 0; attempt <= delays.length; attempt++) {
-                
-                // If user pressed stop/play while we were looping or waiting, abort instantly
-                if (requestPlaybackId !== currentPlaybackId) throw new Error("Cancelled");
-                
-                try {
-                    const response = await fetch('/api/Gemini', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            action: 'tts', 
-                            text: text, // Clean text without the confusing english prefix
-                            voice: voiceName 
-                        })
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}`);
-                    }
-
-                    const result = await response.json();
-                    
-                    const inlineData = result.candidates?.[0]?.content?.parts?.[0]?.inlineData;
-                    if (!inlineData) throw new Error("Invalid format received from TTS");
-                    
-                    const match = inlineData.mimeType.match(/rate=(\d+)/);
-                    const sampleRate = match ? parseInt(match[1]) : 24000;
-                    const binaryString = atob(inlineData.data);
-                    
-                    const bytes = new Uint8Array(binaryString.length);
-                    for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
-                    
-                    const validLength = bytes.length - (bytes.length % 2);
-                    const int16Array = new Int16Array(bytes.buffer, 0, validLength / 2);
-                    const float32Array = new Float32Array(int16Array.length);
-                    
-                    for (let i = 0; i < int16Array.length; i++) {
-                        float32Array[i] = int16Array[i] / 32768.0;
-                    }
-
-                    return { audio: float32Array, sampling_rate: sampleRate };
-                    
-                } catch (error) {
-                    if (error.message === "Cancelled") throw error;
-                    
-                    // Silent background retries
-                    if (attempt < delays.length) {
-                        await new Promise(res => setTimeout(res, delays[attempt]));
-                        continue; 
-                    }
-                    
-                    throw new Error("Our AI is currently busy. Please try again in a moment.");
-                }
-            }
-        }
-
+        // --- EXPORT GLOBALS ---
         window.switchTab = switchTab;
         window.openGame = openGame;
         window.closeGame = closeGame;
         window.togglePoetryAudio = togglePoetryAudio;
         window.playCardTTS = playCardTTS;
+        window.togglePlayAll = togglePlayAll;
         window.selectPoem = selectPoem;
         window.closePoetryModal = closePoetryModal;
         window.openAddPoetryModal = openAddPoetryModal;
@@ -605,6 +647,12 @@
         window.changeHeroDirectly = changeHeroDirectly;
         window.handleHeroChat = handleHeroChat;
         window.clearChat = clearChat;
+        window.toggleTheme = toggleTheme;
+
+        // Theme Handling
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+        }
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-pane').forEach(sec => {
@@ -628,15 +676,15 @@
             }
 
             document.querySelectorAll('.nav-item').forEach(link => {
-                link.classList.remove('active-tab', 'text-white');
-                link.classList.add('text-gray-400');
+                link.classList.remove('active-tab', 'text-gray-900', 'dark:text-white');
+                link.classList.add('text-gray-500', 'dark:text-gray-400');
                 if(link.getAttribute('data-tab') === tabId) {
-                    link.classList.add('active-tab', 'text-white');
-                    link.classList.remove('text-gray-400');
+                    link.classList.add('active-tab', 'text-gray-900', 'dark:text-white');
+                    link.classList.remove('text-gray-500', 'dark:text-gray-400');
                 }
             });
             
-            stopTTS(); // Stop audio when switching tabs
+            stopTTS(); 
         }
 
         const GAME_FILES = ['atomArtifact.html', 'Bubble Pop.html', 'Chromatic Mixer Maze.html', 'Voltage Lab.html', 'Earth Defender.html', 'Echo Shot.html', 'fraction-cutter.html', 'FractorBreak.html', 'Glitch Twins.html', 'kindnessRipple.html', 'Light Hunter.html', 'memory.html', 'pendulam.html', 'Shape Switch.html', 'SliceNinja.html', 'SpaceShoot.html', 'StoichiometryChef.html', 'synapse-lab.html', 'Magnetic Path.html', 'whack-a-mole.html','Memory Trail.html'];
@@ -644,11 +692,11 @@
         function getDisplayName(name) { return name.replace(/\.html$/i, '').replace(/[-_]/g, ' ').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()).trim(); }
         function getIconData(name) {
             const n = name.toLowerCase();
-            if (n.includes('space') || n.includes('gravity')) return { icon: 'fa-meteor', color: 'text-purple-400' };
-            if (n.includes('Voltage Lab') || n.includes('synapse') || n.includes('atom')) return { icon: 'fa-microchip', color: 'text-cyan-400' };
-            if (n.includes('Bubble') || n.includes('Chromatic')) return { icon: 'fa-soap', color: 'text-pink-400' };
-            if (n.includes('slice') || n.includes('ninja') || n.includes('hunter')) return { icon: 'fa-khanda', color: 'text-red-400' };
-            return { icon: 'fa-gamepad', color: 'text-blue-400' };
+            if (n.includes('space') || n.includes('gravity')) return { icon: 'fa-meteor', color: 'text-purple-500 dark:text-purple-400' };
+            if (n.includes('voltage') || n.includes('synapse') || n.includes('atom')) return { icon: 'fa-microchip', color: 'text-cyan-500 dark:text-cyan-400' };
+            if (n.includes('bubble') || n.includes('chromatic')) return { icon: 'fa-soap', color: 'text-pink-500 dark:text-pink-400' };
+            if (n.includes('slice') || n.includes('ninja') || n.includes('hunter')) return { icon: 'fa-khanda', color: 'text-red-500 dark:text-red-400' };
+            return { icon: 'fa-gamepad', color: 'text-blue-500 dark:text-blue-400' };
         }
 
         function renderGames() {
@@ -658,9 +706,9 @@
                 const title = getDisplayName(file);
                 const { icon, color } = getIconData(file);
                 return `
-                    <div class="glass-panel rounded-2xl p-5 flex flex-col items-center justify-center text-center cursor-pointer hover:-translate-y-1 transition-transform border border-white/5 hover:border-white/10" onclick="openGame('${file}', '${title}')">
-                        <div class="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center mb-3"><i class="fa-solid ${icon} text-xl ${color}"></i></div>
-                        <h3 class="font-semibold text-sm text-gray-200">${title}</h3>
+                    <div class="glass-panel rounded-2xl p-5 flex flex-col items-center justify-center text-center cursor-pointer hover:-translate-y-1 transition-transform border border-gray-200 dark:border-white/5 hover:border-cyan-500/30" onclick="openGame('${file}', '${title}')">
+                        <div class="w-14 h-14 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center mb-3"><i class="fa-solid ${icon} text-xl ${color}"></i></div>
+                        <h3 class="font-semibold text-sm text-gray-800 dark:text-gray-200">${title}</h3>
                     </div>`;
             }).join('');
         }
@@ -670,19 +718,19 @@
             if (!container) return;
             const shuffledGames = [...GAME_FILES].sort(() => 0.5 - Math.random());
             const categories = ['PUZZLE', 'ARCADE', 'ACTION', 'STRATEGY', 'SIMULATION'];
-            const gradients = ['from-blue-900/40 to-purple-900/40', 'from-purple-900/30 to-pink-900/20', 'from-cyan-900/40 to-blue-900/30', 'from-red-900/30 to-orange-900/20', 'from-emerald-900/30 to-teal-900/20'];
+            const gradients = ['from-blue-100/80 to-purple-100/80 dark:from-blue-900/40 dark:to-purple-900/40', 'from-purple-100/80 to-pink-100/80 dark:from-purple-900/30 dark:to-pink-900/20', 'from-cyan-100/80 to-blue-100/80 dark:from-cyan-900/40 dark:to-blue-900/30'];
 
             container.innerHTML = shuffledGames.slice(0, 5).map(file => {
                 const title = getDisplayName(file);
                 const cat = categories[Math.floor(Math.random() * categories.length)];
                 const bg = gradients[Math.floor(Math.random() * gradients.length)];
                 return `
-                    <div class="snap-start flex-none w-[300px] md:w-[380px] glass-panel rounded-2xl p-1 relative overflow-hidden cursor-pointer" onclick="openGame('${file}', '${title}')">
-                        <div class="absolute inset-0 bg-gradient-to-br ${bg} z-0"></div>
+                    <div class="snap-start flex-none w-[300px] md:w-[380px] glass-panel rounded-2xl p-1 relative overflow-hidden cursor-pointer shadow-sm dark:shadow-none" onclick="openGame('${file}', '${title}')">
+                        <div class="absolute inset-0 bg-gradient-to-br ${bg} z-0 opacity-50 dark:opacity-100"></div>
                         <div class="relative z-10 p-5 flex flex-col h-full justify-between">
                             <div>
-                                <span class="text-[10px] font-bold px-3 py-1 rounded-full border border-white/20 text-white bg-white/5">${cat}</span>
-                                <h4 class="text-2xl font-bold mt-12 mb-2 text-cyan-400">${title}</h4>
+                                <span class="text-[10px] font-bold px-3 py-1 rounded-full border border-gray-300 dark:border-white/20 text-gray-700 dark:text-white bg-white/50 dark:bg-white/5 shadow-sm">${cat}</span>
+                                <h4 class="text-2xl font-bold mt-12 mb-2 text-cyan-700 dark:text-cyan-400">${title}</h4>
                             </div>
                         </div>
                     </div>`;
@@ -698,6 +746,7 @@
             gameOverlay.classList.remove('hidden');
             gameOverlay.classList.add('flex');
             gameLoader.style.display = 'flex';
+            // Assuming Games folder exists locally or relative path handling
             gameIframe.src = `Games/${file}`;
         }
 
@@ -714,13 +763,8 @@
             gameIframe.src = '';
         }
 
-        // Poetry
+        // --- POETRY DATA & RENDER ---
         let POEMS = [];
-        let currentPoemId = 0, isSpeaking = false, isLoadingAudio = false, currentAudio = null, playingCardId = null;
-        let currentPlaybackId = 0; // The core fix for background audio bugs
-        const SILENT_WAV = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
-
-        // Mock Fallback Poetry Data if XML fails
         const MOCK_POEMS = [
             { id: 1, title: "Aakhiri Umeed", author: "Shailesh Singh", text: "सुलगते आँसुओं में आज कुछ अगर धुँधला है।\nअदालत है मगर इंसाफ़ का असर धुँधला है।\nबहुत उम्मीद में निकला है घर से ख़्वाब का क़ैदी,\nगरजते आँधियों में हाँ मगर सफ़र धुँधला है।" },
             { id: 2, title: "Waqt ki Awaaz", author: "Shailesh Singh", text: "वक्त की शाखों पे बैठे परिंदे उड़ गए,\nकुछ ख्वाब जो देखे थे, वो पीछे मुड़ गए।\nतलाश थी जिन रास्तों पे मंजिलों की हमें,\nवो रास्ते ही आज जाने किधर मुड़ गए।" },
@@ -739,12 +783,23 @@
                 
                 const poemNodes = xmlDoc.getElementsByTagName("poem");
                 if (poemNodes.length > 0) {
-                    POEMS = Array.from(poemNodes).map((node, index) => ({
-                        id: parseInt(node.getAttribute("id") || (index+1)),
-                        title: node.getElementsByTagName("title")[0]?.textContent || "Untitled",
-                        author: node.getElementsByTagName("author")[0]?.textContent || "Shailesh Singh",
-                        text: node.getElementsByTagName("text")[0]?.textContent || ""
-                    }));
+                    POEMS = Array.from(poemNodes).map((node, index) => {
+                        let authorName = "Shailesh Singh";
+                        if (node.getElementsByTagName("writer")[0]) {
+                            authorName = node.getElementsByTagName("writer")[0].textContent;
+                        } else if (node.getElementsByTagName("writter")[0]) {
+                            authorName = node.getElementsByTagName("writter")[0].textContent;
+                        } else if (node.getElementsByTagName("author")[0]) {
+                            authorName = node.getElementsByTagName("author")[0].textContent;
+                        }
+
+                        return {
+                            id: parseInt(node.getAttribute("id") || (index+1)),
+                            title: node.getElementsByTagName("title")[0]?.textContent || "Untitled",
+                            author: authorName,
+                            text: node.getElementsByTagName("text")[0]?.textContent || ""
+                        };
+                    });
                 } else { throw new Error("No poems found in XML"); }
             } catch (error) { 
                 console.warn("Falling back to mock poems.", error); 
@@ -754,7 +809,6 @@
             renderFeaturedPoems();
         }
 
-        // Local Storage for Likes
         function getLikes() {
             const likesStr = localStorage.getItem('poetryLikes');
             return likesStr ? JSON.parse(likesStr) : {};
@@ -787,169 +841,6 @@
             }
         }
 
-        // Share to Native Share API or Fallback Canvas Download with Word Wrap
-        function sharePoemAsImage(id, event) {
-            event.preventDefault();
-            event.stopPropagation();
-
-            const poem = POEMS.find(p => p.id === id);
-            if (!poem) return;
-
-            const btn = event.currentTarget;
-            const originalIcon = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sm"></i>';
-
-            const canvas = document.getElementById('shareCanvas');
-            const ctx = canvas.getContext('2d');
-
-            canvas.width = 1080;
-            canvas.height = 1080;
-
-            // Background
-            const gradient = ctx.createLinearGradient(0, 0, 1080, 1080);
-            gradient.addColorStop(0, '#0f0f19');
-            gradient.addColorStop(1, '#030308');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Decorative circles
-            ctx.beginPath();
-            ctx.arc(1080, 0, 400, 0, 2 * Math.PI);
-            ctx.fillStyle = 'rgba(168, 85, 247, 0.1)';
-            ctx.fill();
-            ctx.beginPath();
-            ctx.arc(0, 1080, 300, 0, 2 * Math.PI);
-            ctx.fillStyle = 'rgba(6, 182, 212, 0.1)';
-            ctx.fill();
-
-            // --- Prepare lines (trimmed, no empty lines) ---
-            const lines = poem.text.split('\n')
-                .map(l => l.trim())
-                .filter(l => l !== '');
-            const displayLines = lines;
-
-            // --- Dynamic scaling: fit width AND height ---
-            const leftX = 100;                // left margin
-            const maxWidth = 900;             // available width from leftX to right edge (1000)
-            const topY = 150;                // space for title + padding
-            const bottomY = 930;             // space for author + padding
-            const maxHeight = bottomY - topY;
-
-            let fontSize = 80;
-            const minFontSize = 18;
-            const lineHeightMultiplier = 1.6;
-
-            const measure = (size) => {
-                ctx.font = `${size}px "Playfair Display", serif`;
-                let maxW = 0;
-                for (const line of displayLines) {
-                    const w = ctx.measureText(line).width;
-                    if (w > maxW) maxW = w;
-                }
-                const totalH = displayLines.length * size * lineHeightMultiplier;
-                return { maxW, totalH };
-            };
-
-            let { maxW, totalH } = measure(fontSize);
-            while ((maxW > maxWidth || totalH > maxHeight) && fontSize > minFontSize) {
-                fontSize -= 2;
-                const result = measure(fontSize);
-                maxW = result.maxW;
-                totalH = result.totalH;
-            }
-
-            // --- Draw the poem (LEFT‑ALIGNED at x=100) ---
-            ctx.fillStyle = '#f3f4f6';
-            ctx.textAlign = 'left';          
-            ctx.textBaseline = 'middle';
-
-            const lineHeight = fontSize * lineHeightMultiplier;
-            const startY = topY + (maxHeight - totalH) / 2 + lineHeight / 2;
-
-            displayLines.forEach((line, index) => {
-                const y = startY + index * lineHeight;
-                ctx.fillText(line, leftX, y); 
-            });
-
-            // --- Author (centered) ---
-            ctx.font = 'italic 30px "Outfit", sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillStyle = '#06b6d4';
-            ctx.fillText('— ' + (poem.author || 'Shailesh Singh'), 540, 980);
-
-            // --- Title (left‑aligned at x=100) ---
-            ctx.font = 'bold 35px "Outfit", sans-serif';
-            ctx.textAlign = 'left';
-            ctx.fillStyle = '#a855f7';
-            ctx.fillText(poem.title, 100, 100);
-
-            // --- Generate and share ---
-            setTimeout(() => {
-                canvas.toBlob(async (blob) => {
-                    if (!blob) {
-                        btn.innerHTML = originalIcon;
-                        return;
-                    }
-
-                    const fileName = `Shayar_${poem.title.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
-                    const file = new File([blob], fileName, { type: 'image/png' });
-
-                    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                        try {
-                            await navigator.share({
-                                title: poem.title,
-                                text: `Beautiful poetry by ${poem.author}`,
-                                files: [file]
-                            });
-                        } catch (err) {
-                            console.log('Share cancelled or failed:', err);
-                        }
-                    } else {
-                        const url = URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.download = fileName;
-                        link.href = url;
-                        link.click();
-                        URL.revokeObjectURL(url);
-                    }
-                    btn.innerHTML = originalIcon;
-                }, 'image/png');
-            }, 100);
-        }
-
-        // Add Poetry Modal Logic (EMAIL JS)
-        function openAddPoetryModal() { document.getElementById('addPoetryModal').classList.remove('hidden'); document.getElementById('addPoetryModal').classList.add('flex'); }
-        function closeAddPoetryModal() { 
-            document.getElementById('addPoetryModal').classList.add('hidden'); document.getElementById('addPoetryModal').classList.remove('flex');
-            document.getElementById('addPoemSuccess').classList.add('hidden');
-            document.getElementById('addPoemSuccess').classList.remove('flex');
-            document.getElementById('addPoetryForm').reset();
-        }
-        function submitPoetry(e) {
-            e.preventDefault();
-            const btn = document.getElementById('addPoemSubmitBtn');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
-            btn.disabled = true;
-
-            // Using sendForm automatically binds to the HTML inputs via their 'name' attributes
-            emailjs.sendForm("service_k7g6k2g", "template_3op79fg", e.target)
-                .then((response) => {
-                    console.log('SUCCESS!', response.status, response.text);
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                    document.getElementById('addPoemSuccess').classList.remove('hidden');
-                    document.getElementById('addPoemSuccess').classList.add('flex');
-                    e.target.reset(); // clear form inputs on success
-                }, (error) => {
-                    console.error('FAILED...', error);
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                    alert("Submission failed. Please try again.");
-                });
-        }
-
-        // Rendering logic
         function renderFeaturedPoems() {
             const container = document.getElementById('featuredPoemsContainer');
             if (!container) return;
@@ -960,20 +851,20 @@
                 const previewText = lines.slice(0, 4).join('<br/>');
                 
                 return `
-                    <div class="snap-start flex-none w-[300px] md:w-[350px] glass-panel rounded-2xl p-5 relative overflow-hidden cursor-pointer group flex flex-col justify-between hover:border-purple-500/50 transition-colors" onclick="selectPoem(${poem.id})">
+                    <div class="snap-start flex-none w-[300px] md:w-[350px] glass-panel rounded-2xl p-5 relative overflow-hidden cursor-pointer group flex flex-col justify-between hover:border-purple-500/50 transition-colors shadow-sm dark:shadow-none" onclick="selectPoem(${poem.id})">
                         <div class="absolute right-0 bottom-0 opacity-10 transform translate-x-1/4 translate-y-1/4 group-hover:scale-110 transition-transform duration-500 z-0">
                             <i class="fa-solid fa-feather text-8xl text-purple-500"></i>
                         </div>
                         <div class="relative z-10">
                             <div class="flex justify-between items-start mb-4">
-                                <h4 class="text-xl font-bold text-gray-200 font-serif">${poem.title}</h4>
-                                <button onclick="playCardTTS(event, ${poem.id})" class="card-play-btn w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-cyan-400 hover:bg-cyan-500 hover:text-white transition-all z-20" id="cardPlayBtn_${poem.id}">
-                                    <i class="fa-solid fa-play text-xs"></i>
+                                <h4 class="text-xl font-bold text-gray-800 dark:text-gray-200 font-serif">${poem.title}</h4>
+                                <button onclick="playCardTTS(event, ${poem.id})" class="card-play-btn w-8 h-8 rounded-full bg-gray-200 dark:bg-white/10 flex items-center justify-center text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500 hover:text-white transition-all z-20" id="cardPlayBtn_${poem.id}">
+                                    <i class="fa-solid fa-play ml-0.5 text-xs"></i>
                                 </button>
                             </div>
-                            <p class="font-serif text-sm text-gray-300 leading-relaxed mb-4">${previewText}</p>
+                            <p class="font-serif text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-4">${previewText}</p>
                         </div>
-                        <p class="relative z-10 text-xs text-purple-400 font-medium tracking-wide">— ${poem.author}</p>
+                        <p class="relative z-10 text-xs text-purple-600 dark:text-purple-400 font-medium tracking-wide">— ${poem.author}</p>
                     </div>`;
             }).join('');
         }
@@ -988,22 +879,22 @@
                 const heartClass = isLiked ? 'fa-solid liked-heart' : 'fa-regular text-gray-400';
                 
                 return `
-                <div class="glass-panel rounded-2xl p-5 flex flex-col justify-between cursor-pointer border border-white/5 hover:border-cyan-500/30 transition-all h-full" onclick="selectPoem(${poem.id})">
+                <div class="glass-panel rounded-2xl p-5 flex flex-col justify-between cursor-pointer border border-gray-200 dark:border-white/5 hover:border-cyan-500/50 transition-all h-full shadow-sm dark:shadow-none" onclick="selectPoem(${poem.id})">
                     <div class="flex items-start gap-4 mb-4">
-                        <div class="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 flex-shrink-0">
+                        <div class="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400 flex-shrink-0">
                             <i class="fa-solid fa-feather-pointed"></i>
                         </div>
                         <div class="flex-1">
-                            <h4 class="font-serif text-lg font-semibold text-gray-200 leading-tight">${poem.title}</h4>
-                            <p class="text-xs text-cyan-500 mt-1">— ${poem.author}</p>
+                            <h4 class="font-serif text-lg font-semibold text-gray-800 dark:text-gray-200 leading-tight">${poem.title}</h4>
+                            <p class="text-xs text-cyan-600 dark:text-cyan-500 mt-1">— ${poem.author}</p>
                         </div>
                     </div>
                     
-                    <div class="flex justify-end gap-3 mt-auto border-t border-white/10 pt-3">
-                        <button onclick="toggleLike(${poem.id}, event)" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors relative z-20">
+                    <div class="flex justify-end gap-3 mt-auto border-t border-gray-200 dark:border-white/10 pt-3">
+                        <button onclick="toggleLike(${poem.id}, event)" class="w-8 h-8 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-white/10 transition-colors relative z-20">
                             <i class="${heartClass} fa-heart text-sm transition-transform duration-200"></i>
                         </button>
-                        <button onclick="sharePoemAsImage(${poem.id}, event)" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors text-blue-400 relative z-20">
+                        <button onclick="sharePoemAsImage(${poem.id}, event)" class="w-8 h-8 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-white/10 transition-colors text-blue-500 dark:text-blue-400 relative z-20">
                             <i class="fa-solid fa-share-nodes text-sm"></i>
                         </button>
                     </div>
@@ -1011,27 +902,232 @@
             }).join('');
         }
 
-        function selectPoem(id) {
-            currentPoemId = id; stopTTS();
-            const p = POEMS.find(poem => poem.id === id);
-            if(!p) return;
-            document.getElementById('modalPoemTitle').innerText = p.title;
-            document.getElementById('modalPoemText').innerHTML = p.text.replace(/\n/g, '<br/>');
-            document.getElementById('modalPoemAuthor').innerText = '— ' + (p.author || 'The Dev Shayar');
-            
-            const modal = document.getElementById('poetryModal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
+        // Share functionality
+        function sharePoemAsImage(id, event) {
+            event.preventDefault(); event.stopPropagation();
+            const poem = POEMS.find(p => p.id === id);
+            if (!poem) return;
+
+            const btn = event.currentTarget;
+            const originalIcon = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sm"></i>';
+
+            const canvas = document.getElementById('shareCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 1080; canvas.height = 1080;
+
+            const isDark = document.documentElement.classList.contains('dark');
+            const gradient = ctx.createLinearGradient(0, 0, 1080, 1080);
+            if(isDark) {
+                gradient.addColorStop(0, '#0f0f19'); gradient.addColorStop(1, '#030308');
+            } else {
+                gradient.addColorStop(0, '#f9fafb'); gradient.addColorStop(1, '#f3f4f6');
+            }
+            ctx.fillStyle = gradient; ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.beginPath(); ctx.arc(1080, 0, 400, 0, 2 * Math.PI);
+            ctx.fillStyle = 'rgba(168, 85, 247, 0.1)'; ctx.fill();
+            ctx.beginPath(); ctx.arc(0, 1080, 300, 0, 2 * Math.PI);
+            ctx.fillStyle = 'rgba(6, 182, 212, 0.1)'; ctx.fill();
+
+            const lines = poem.text.split('\n').map(l => l.trim()).filter(l => l !== '');
+            const leftX = 100, maxWidth = 900, topY = 150, bottomY = 930, maxHeight = bottomY - topY;
+            let fontSize = 80, minFontSize = 18, lineHeightMultiplier = 1.6;
+
+            const measure = (size) => {
+                ctx.font = `${size}px "Playfair Display", serif`;
+                let maxW = 0;
+                for (const line of lines) {
+                    const w = ctx.measureText(line).width;
+                    if (w > maxW) maxW = w;
+                }
+                const totalH = lines.length * size * lineHeightMultiplier;
+                return { maxW, totalH };
+            };
+
+            let { maxW, totalH } = measure(fontSize);
+            while ((maxW > maxWidth || totalH > maxHeight) && fontSize > minFontSize) {
+                fontSize -= 2; const result = measure(fontSize);
+                maxW = result.maxW; totalH = result.totalH;
+            }
+
+            ctx.fillStyle = isDark ? '#f3f4f6' : '#1f2937';
+            ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+
+            const lineHeight = fontSize * lineHeightMultiplier;
+            const startY = topY + (maxHeight - totalH) / 2 + lineHeight / 2;
+
+            lines.forEach((line, index) => { ctx.fillText(line, leftX, startY + index * lineHeight); });
+
+            ctx.font = 'italic 30px "Outfit", sans-serif'; ctx.textAlign = 'center';
+            ctx.fillStyle = isDark ? '#06b6d4' : '#0891b2';
+            ctx.fillText('— ' + (poem.author || 'Shailesh Singh'), 540, 980);
+
+            ctx.font = 'bold 35px "Outfit", sans-serif'; ctx.textAlign = 'left';
+            ctx.fillStyle = isDark ? '#a855f7' : '#9333ea';
+            ctx.fillText(poem.title, 100, 100);
+
+            setTimeout(() => {
+                canvas.toBlob(async (blob) => {
+                    if (!blob) { btn.innerHTML = originalIcon; return; }
+                    const file = new File([blob], `Shayar_${poem.title.replace(/[^a-zA-Z0-9]/g, '_')}.png`, { type: 'image/png' });
+                    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                        try { await navigator.share({ title: poem.title, files: [file] }); } catch (e) {}
+                    } else {
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.download = file.name; link.href = url; link.click(); URL.revokeObjectURL(url);
+                    }
+                    btn.innerHTML = originalIcon;
+                }, 'image/png');
+            }, 100);
         }
 
-        function closePoetryModal() {
-            stopTTS();
-            const modal = document.getElementById('poetryModal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
+        // Add Poetry Modal
+        function openAddPoetryModal() { document.getElementById('addPoetryModal').classList.remove('hidden'); document.getElementById('addPoetryModal').classList.add('flex'); }
+        function closeAddPoetryModal() { 
+            document.getElementById('addPoetryModal').classList.add('hidden'); document.getElementById('addPoetryModal').classList.remove('flex');
+            document.getElementById('addPoemSuccess').classList.add('hidden'); document.getElementById('addPoemSuccess').classList.remove('flex');
+            document.getElementById('addPoetryForm').reset();
+        }
+        function submitPoetry(e) {
+            e.preventDefault();
+            const btn = document.getElementById('addPoemSubmitBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...'; btn.disabled = true;
+
+            emailjs.sendForm("service_k7g6k2g", "template_3op79fg", e.target)
+                .then(() => {
+                    btn.innerHTML = originalText; btn.disabled = false;
+                    document.getElementById('addPoemSuccess').classList.remove('hidden');
+                    document.getElementById('addPoemSuccess').classList.add('flex');
+                    e.target.reset(); 
+                }, () => {
+                    btn.innerHTML = originalText; btn.disabled = false;
+                    alert("Submission failed. Please try again.");
+                });
         }
 
-        // TTS Helpers
+
+        // --- TTS CORE ENGINE (SPLITTING & SEQUENCING) ---
+        let currentPlaybackId = 0;
+        let globalTTSPlayer = null;
+        let activeUIContext = null; // 'modal', 'card', 'playall'
+        let currentPoemId = null;
+        const SILENT_WAV = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
+
+        class AudioQueuePlayer {
+            constructor(chunks, voice, contextId) {
+                this.chunks = chunks; // Array of string parts
+                this.voice = voice;
+                this.contextId = contextId; // Links to UI elements
+                this.currentIndex = 0;
+                this.audioCache = {};
+                this.sessionId = ++currentPlaybackId; 
+                this.isPlaying = false;
+                this.currentAudioObj = null;
+                this.waitingForIndex = -1;
+            }
+
+            async start() {
+                this.isPlaying = true;
+                
+                // Mobile unlock trick
+                this.currentAudioObj = new Audio(SILENT_WAV);
+                this.currentAudioObj.play().catch(()=>{});
+
+                this.prefetch(0);
+                this.prefetch(1); // Keep 1 step ahead
+                await this.playIndex(0);
+            }
+
+            stop() {
+                this.isPlaying = false;
+                if(this.currentAudioObj) {
+                    this.currentAudioObj.pause();
+                    this.currentAudioObj.src = "";
+                }
+                // Free all memory from cache instantly
+                Object.values(this.audioCache).forEach(src => {
+                    if (src && src.startsWith('blob:')) URL.revokeObjectURL(src);
+                });
+                this.audioCache = {};
+                currentPlaybackId++; // Invalidate pending fetches
+                updateUIStopped(this.contextId);
+            }
+
+            async prefetch(index) {
+                if(index >= this.chunks.length) return;
+                if(this.audioCache[index]) return; 
+
+                this.audioCache[index] = 'loading';
+                try {
+                    const audioData = await getGeminiTTSAudioDirect(this.chunks[index], this.voice, this.sessionId);
+                    if(this.sessionId === currentPlaybackId && this.isPlaying) {
+                        const blob = encodeWAV(audioData.audio, audioData.sampling_rate);
+                        this.audioCache[index] = URL.createObjectURL(blob);
+                        
+                        // If player was stalled waiting for this index, trigger it
+                        if(this.waitingForIndex === index) {
+                            this.playIndex(index);
+                        }
+                    }
+                } catch (e) {
+                    if(this.sessionId === currentPlaybackId) this.audioCache[index] = 'error';
+                }
+            }
+
+            async playIndex(index) {
+                if(!this.isPlaying || this.sessionId !== currentPlaybackId) return;
+                
+                if(index >= this.chunks.length) {
+                    this.stop();
+                    return;
+                }
+
+                this.currentIndex = index;
+                const src = this.audioCache[index];
+
+                if(src === 'loading' || !src) {
+                    this.waitingForIndex = index;
+                    showAudioStatus("Buffering next part...", "fa-solid fa-spinner fa-spin");
+                    updateUIBuffering(this.contextId);
+                    return; 
+                }
+
+                if(src === 'error') {
+                    showAudioStatus("Network error on part. Skipping.", "fa-solid fa-triangle-exclamation", true);
+                    this.playIndex(index + 1); 
+                    return;
+                }
+
+                this.waitingForIndex = -1;
+                showAudioStatus(`Playing audio...`, "fa-solid fa-volume-high fa-beat");
+                updateUIPlaying(this.contextId);
+
+                this.currentAudioObj.src = src;
+                this.currentAudioObj.onended = () => {
+                    URL.revokeObjectURL(src); // CLEAR INSTANTLY to handle storage issue
+                    this.audioCache[index] = null; 
+                    this.prefetch(index + 2); // Keep pipeline moving
+                    this.playIndex(index + 1);
+                };
+                
+                try { await this.currentAudioObj.play(); } 
+                catch(e) { /* Autoplay block */ }
+            }
+        }
+
+        // Helpers to break text into natural 2-3 line chunks
+        function chunkText(text) {
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l !== '');
+            const chunks = [];
+            for(let i=0; i<lines.length; i+=2) {
+                chunks.push(lines.slice(i, i+2).join('. '));
+            }
+            return chunks;
+        }
+
         function encodeWAV(samples, sampleRate) {
             const buffer = new ArrayBuffer(44 + samples.length * 2);
             const view = new DataView(buffer);
@@ -1049,186 +1145,186 @@
         }
 
 
-        // General Audio Player
-        async function playTTSLogic(textToSpeak, voiceName, btnElement, isModal = false) {
+        // --- UI LINKING FOR TTS ---
+        function stopTTS() {
+            if (globalTTSPlayer) globalTTSPlayer.stop();
+            globalTTSPlayer = null;
+            activeUIContext = null;
+            hideAudioStatus();
             
-            // 1. Generate unique ID for this specific button click.
-            // If the user clicks something else, this ID won't match, killing this request.
-            const myPlaybackId = ++currentPlaybackId; 
+            // Re-enable select
+            const select = document.getElementById('ttsVoiceSelect');
+            if(select) select.disabled = false;
+        }
 
-            isLoadingAudio = true;
-            
-            // Swap to spinner icon immediately
-            const iconElement = btnElement.querySelector('i');
-            if (iconElement) {
-                iconElement.className = `fa-solid fa-spinner fa-spin ${isModal ? '' : 'text-xs'}`;
-            }
-
-            // Mobile Audio Unlock Strategy 
-            if (!currentAudio) {
-                currentAudio = new Audio();
-            }
-            // Playing silent track in the exact same tick as the user click to unlock it
-            currentAudio.src = SILENT_WAV;
-            currentAudio.play().catch(e => console.log("Silence autoplay handled"));
-            
-            try {
-                showAudioStatus("Generating Voice...", "fa-solid fa-microphone-lines fa-fade");
-
-                // Strictly slice text
-                let lines = textToSpeak.split('\n').filter(line => line.trim().length > 0);
-                if (lines.length > 8) {
-                    lines = lines.slice(0, 8);
-                }
-                const truncatedText = lines.join(' ');
-
-                // 2. Fetch Audio (Pass playbackId so it can abort if we navigated away)
-                const audioData = await getGeminiTTSAudio(truncatedText, voiceName, myPlaybackId);
-
-                // 3. Crucial Check: Did the user click STOP or PLAY ANOTHER while we waited for AI?
-                if (myPlaybackId !== currentPlaybackId) return; // Silently exit
-
-                if (!audioData || !audioData.audio) {
-                    throw new Error("Logic Error: No audio data received.");
-                }
-
-                // 4. Decode and Setup Audio
-                const blob = encodeWAV(audioData.audio, audioData.sampling_rate);
-                const url = URL.createObjectURL(blob);
-                
-                // One final check before locking the audio element
-                if (myPlaybackId !== currentPlaybackId) return;
-                
-                currentAudio.src = url;
-                currentAudio.onended = () => {
-                    stopTTS(); // Automatically clean up when audio finishes
-                };
-                
-                // 5. Update UI to Playing state
-                isLoadingAudio = false;
-                isSpeaking = true;
-                
-                if (iconElement) {
-                    iconElement.className = `fa-solid fa-pause ${isModal ? '' : 'text-xs'}`;
-                }
-
-                if (isModal) {
-                    btnElement.classList.add('audio-playing', 'text-cyan-400');
-                } else {
-                    btnElement.classList.remove('bg-white/10', 'text-cyan-400');
-                    btnElement.classList.add('bg-cyan-500', 'text-white', 'audio-playing');
-                }
-                
-                showAudioStatus("Playing Audio", "fa-solid fa-volume-high fa-beat");
-                await currentAudio.play();
-                
-                // Hide toast after a moment of playing
-                setTimeout(() => { if(isSpeaking) hideAudioStatus() }, 2000);
-
-            } catch (e) {
-                // If this request was cancelled, ignore the error
-                if (myPlaybackId !== currentPlaybackId) return;
-                
-                // Reset on error
-                isLoadingAudio = false;
-                isSpeaking = false;
-                if (iconElement) {
-                    iconElement.className = `fa-solid fa-play ${isModal ? '' : 'text-xs'}`;
-                }
-                
-                console.error("TTS Failure:", e.message);
-                showAudioStatus(e.message, "fa-solid fa-circle-exclamation", true);
+        function updateUIBuffering(contextId) {
+            if (contextId === 'modal') {
+                const icon = document.getElementById('ttsIcon');
+                if(icon) icon.className = 'fa-solid fa-spinner fa-spin';
+            } else if (contextId.startsWith('card_')) {
+                const id = contextId.split('_')[1];
+                const btn = document.getElementById(`cardPlayBtn_${id}`);
+                if(btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i>';
+            } else if (contextId === 'playall') {
+                const btn = document.getElementById('playAllBtn');
+                if(btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
             }
         }
 
-        async function togglePoetryAudio() {
-            if (isLoadingAudio) return; // Prevent spam clicks while loading
+        function updateUIPlaying(contextId) {
+            if (contextId === 'modal') {
+                const btn = document.getElementById('ttsButton');
+                const icon = document.getElementById('ttsIcon');
+                if(icon) icon.className = 'fa-solid fa-pause ml-0';
+                if(btn) btn.classList.add('audio-playing', 'text-cyan-500');
+                const select = document.getElementById('ttsVoiceSelect');
+                if(select) select.disabled = true; // Disable select during play
+            } else if (contextId.startsWith('card_')) {
+                const id = contextId.split('_')[1];
+                const btn = document.getElementById(`cardPlayBtn_${id}`);
+                if(btn) {
+                    btn.innerHTML = '<i class="fa-solid fa-pause text-xs"></i>';
+                    btn.classList.add('bg-cyan-500', 'text-white', 'audio-playing');
+                    btn.classList.remove('bg-gray-200', 'dark:bg-white/10', 'text-cyan-600', 'dark:text-cyan-400');
+                }
+            } else if (contextId === 'playall') {
+                const btn = document.getElementById('playAllBtn');
+                if(btn) {
+                    btn.innerHTML = '<i class="fa-solid fa-pause ml-0"></i>';
+                    btn.classList.add('audio-playing');
+                }
+            }
+        }
 
-            const btn = document.getElementById('ttsButton');
-            const poem = POEMS.find(p => p.id === currentPoemId);
-            const voice = document.getElementById('ttsVoiceSelect').value;
-            
-            if(!poem) return;
-            
-            // If already playing modal audio, pause it
-            if (isSpeaking && playingCardId === null) {
+        function updateUIStopped(contextId) {
+            if (contextId === 'modal') {
+                const btn = document.getElementById('ttsButton');
+                const icon = document.getElementById('ttsIcon');
+                if(icon) icon.className = 'fa-solid fa-play ml-0.5';
+                if(btn) btn.classList.remove('audio-playing', 'text-cyan-500');
+                const select = document.getElementById('ttsVoiceSelect');
+                if(select) select.disabled = false; // Re-enable select
+            } else if (contextId.startsWith('card_')) {
+                const id = contextId.split('_')[1];
+                const btn = document.getElementById(`cardPlayBtn_${id}`);
+                if(btn) {
+                    btn.innerHTML = '<i class="fa-solid fa-play ml-0.5 text-xs"></i>';
+                    btn.classList.remove('bg-cyan-500', 'text-white', 'audio-playing');
+                    btn.classList.add('bg-gray-200', 'dark:bg-white/10', 'text-cyan-600', 'dark:text-cyan-400');
+                }
+            } else if (contextId === 'playall') {
+                const btn = document.getElementById('playAllBtn');
+                if(btn) {
+                    btn.innerHTML = '<i class="fa-solid fa-play ml-0.5"></i>';
+                    btn.classList.remove('audio-playing');
+                }
+                const subtitle = document.getElementById('playAllSubtitle');
+                if(subtitle) subtitle.innerText = "Listen to the entire collection";
+            }
+        }
+
+
+        // Triggers
+        function togglePoetryAudio() {
+            if (activeUIContext === 'modal') {
                 stopTTS();
                 return;
             }
+            stopTTS();
+            const poem = POEMS.find(p => p.id === currentPoemId);
+            if(!poem) return;
+            const voice = document.getElementById('ttsVoiceSelect').value;
+            const chunks = chunkText(poem.text);
             
-            stopTTS(); // stop any other audio
-            playingCardId = null; // We are in modal mode
-
-            await playTTSLogic(poem.text, voice, btn, true);
+            activeUIContext = 'modal';
+            globalTTSPlayer = new AudioQueuePlayer(chunks, voice, 'modal');
+            globalTTSPlayer.start();
         }
 
-        async function playCardTTS(event, id) {
-            event.stopPropagation();
-            event.preventDefault();
-            
-            if (isLoadingAudio) return; // Prevent spam clicks while loading
-
-            // If this card is already playing, pause it
-            if (isSpeaking && playingCardId === id) { 
+        function playCardTTS(event, id) {
+            event.stopPropagation(); event.preventDefault();
+            const cid = `card_${id}`;
+            if (activeUIContext === cid) { 
                 stopTTS(); 
                 return; 
             }
-            
-            stopTTS(); // stop others
-
+            stopTTS(); 
             const poem = POEMS.find(p => p.id === id);
             if(!poem) return;
-
-            playingCardId = id;
-            const btn = document.getElementById(`cardPlayBtn_${id}`);
             
-            // Extract only 4 lines for cards
+            // For cards, just play first 4 lines in chunks
             const lines = poem.text.split('\n').filter(l => l.trim() !== '');
-            const textToSpeak = lines.slice(0, 4).join(' ');
+            const textToSpeak = lines.slice(0, 4).join('\n');
+            const chunks = chunkText(textToSpeak);
 
-            await playTTSLogic(textToSpeak, "Kore", btn, false);
+            activeUIContext = cid;
+            globalTTSPlayer = new AudioQueuePlayer(chunks, "Kore", cid);
+            globalTTSPlayer.start();
         }
 
-        function stopTTS() {
-            // Instantly invalidate any AI requests running in the background
-            currentPlaybackId++; 
+        function selectPoem(id) {
+            currentPoemId = id; stopTTS();
+            const p = POEMS.find(poem => poem.id === id);
+            if(!p) return;
+            document.getElementById('modalPoemTitle').innerText = p.title;
+            document.getElementById('modalPoemText').innerHTML = p.text.replace(/\n/g, '<br/>');
+            document.getElementById('modalPoemAuthor').innerText = '— ' + (p.author || 'The Dev Shayar');
             
-            if (currentAudio) { 
-                currentAudio.pause(); 
-                currentAudio.currentTime = 0; 
-            }
-            isSpeaking = false; 
-            isLoadingAudio = false;
-            
-            hideAudioStatus();
-            
-            // Reset Modal UI
-            const modalBtn = document.getElementById('ttsButton');
-            const modalIcon = document.getElementById('ttsIcon');
-            
-            if(modalIcon) modalIcon.className = 'fa-solid fa-play';
-            if(modalBtn) {
-                modalBtn.classList.remove('audio-playing', 'text-cyan-400');
-            }
+            const modal = document.getElementById('poetryModal');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+        }
 
-            // Reset Card UI
-            document.querySelectorAll('.card-play-btn').forEach(btn => {
-                const i = btn.querySelector('i');
-                if(i) i.className = 'fa-solid fa-play text-xs';
-                btn.classList.add('bg-white/10', 'text-cyan-400');
-                btn.classList.remove('bg-cyan-500', 'text-white', 'audio-playing');
+        function closePoetryModal() {
+            stopTTS();
+            const modal = document.getElementById('poetryModal');
+            modal.classList.add('hidden'); modal.classList.remove('flex');
+        }
+
+        function togglePlayAll() {
+            if (activeUIContext === 'playall') {
+                stopTTS();
+                return;
+            }
+            stopTTS();
+            
+            if(POEMS.length === 0) return;
+            
+            // Build grand sequence
+            let globalChunks = [];
+            POEMS.forEach((poem, index) => {
+                globalChunks.push(`Now playing poetry: ${poem.title}, written by ${poem.author}.`);
+                globalChunks.push(...chunkText(poem.text));
+                if (index < POEMS.length - 1) {
+                    globalChunks.push("Next poetry...");
+                }
             });
-            playingCardId = null;
+
+            activeUIContext = 'playall';
+            globalTTSPlayer = new AudioQueuePlayer(globalChunks, "Kore", 'playall');
+            
+            // Intercept index play to update the title text
+            const ogPlayIndex = globalTTSPlayer.playIndex.bind(globalTTSPlayer);
+            globalTTSPlayer.playIndex = async (idx) => {
+                const chunkStr = globalChunks[idx];
+                if (chunkStr && chunkStr.includes("Now playing poetry:")) {
+                    const subtitle = document.getElementById('playAllSubtitle');
+                    if(subtitle) subtitle.innerText = chunkStr.replace("Now playing poetry: ", "");
+                }
+                await ogPlayIndex(idx);
+            };
+
+            globalTTSPlayer.start();
         }
-        
-        // Heroes Chat
+
+
+        // --- HEROES CHAT ---
         const HEROES_DATA = {
-            einstein: { title: "Theoretical Physicist", icon: "fa-atom", color: "from-cyan-500 to-blue-600", greeting: "Greetings. I am Albert Einstein.", prompt: `You are Albert Einstein... (System Instruction Mock)` },
-            gandhi: { title: "Father of the Nation", icon: "fa-peace", color: "from-orange-500 to-amber-600", greeting: "Namaste.", prompt: `You are Mahatma Gandhi...` },
-            nehru: { title: "First PM of India", icon: "fa-pen-nib", color: "from-blue-500 to-indigo-600", greeting: "Welcome.", prompt: `You are Jawaharlal Nehru...` },
-            ambedkar: { title: "Architect of Constitution", icon: "fa-book-open-reader", color: "from-blue-600 to-cyan-700", greeting: "Jai Bhim.", prompt: `You are Dr. B. R. Ambedkar...` },
-            newton: { title: "Physicist & Mathematician", icon: "fa-apple-whole", color: "from-red-500 to-orange-600", greeting: "Good day.", prompt: `You are Sir Isaac Newton...` },
-            lincoln: { title: "16th U.S. President", icon: "fa-hat-wizard", color: "from-gray-600 to-slate-800", greeting: "Greetings, friend.", prompt: `You are Abraham Lincoln...` }
+            einstein: { title: "Theoretical Physicist", icon: "fa-atom", color: "from-cyan-500 to-blue-600", greeting: "Greetings. I am Albert Einstein. What concept shall we explore?", prompt: `You are Albert Einstein. Respond strictly in 1 or 2 lines (max 20-30 words). Use simple, everyday conversational language. Avoid complex jargon. Be concise.` },
+            gandhi: { title: "Father of the Nation", icon: "fa-peace", color: "from-orange-500 to-amber-600", greeting: "Namaste. Truth and non-violence guide us. How can I help?", prompt: `You are Mahatma Gandhi. Respond strictly in 1 or 2 lines (max 20-30 words). Use simple, everyday conversational language. Be peaceful and concise.` },
+            nehru: { title: "First PM of India", icon: "fa-pen-nib", color: "from-blue-500 to-indigo-600", greeting: "Welcome. The future of India awaits our thoughts.", prompt: `You are Jawaharlal Nehru. Respond strictly in 1 or 2 lines (max 20-30 words). Use simple, everyday conversational language. Be concise.` },
+            ambedkar: { title: "Architect of Constitution", icon: "fa-book-open-reader", color: "from-blue-600 to-cyan-700", greeting: "Jai Bhim. Education and equality are paramount. Your question?", prompt: `You are Dr. B. R. Ambedkar. Respond strictly in 1 or 2 lines (max 20-30 words). Use simple, everyday conversational language. Be concise and direct.` },
+            newton: { title: "Physicist & Mathematician", icon: "fa-apple-whole", color: "from-red-500 to-orange-600", greeting: "Good day. Every action has a reaction. What is yours?", prompt: `You are Sir Isaac Newton. Respond strictly in 1 or 2 lines (max 20-30 words). Use simple, everyday conversational language. Be concise.` },
+            lincoln: { title: "16th U.S. President", icon: "fa-hat-wizard", color: "from-gray-600 to-slate-800", greeting: "Greetings, friend. A house divided cannot stand. What is on your mind?", prompt: `You are Abraham Lincoln. Respond strictly in 1 or 2 lines (max 20-30 words). Use simple, everyday conversational language. Be wise and concise.` }
         };
 
         function renderHomeHeroes() {
@@ -1238,16 +1334,15 @@
             const selectedHeroes = ['einstein', 'gandhi', 'ambedkar', 'lincoln'];
             section.innerHTML = selectedHeroes.map(key => {
                 const hero = HEROES_DATA[key];
-                // Convert key to display name by capitalizing
                 const name = key.charAt(0).toUpperCase() + key.slice(1);
                 
                 return `
-                <div class="glass-panel rounded-2xl p-4 flex flex-col items-center justify-center text-center cursor-pointer border border-white/5 hover:border-yellow-500/30 transition-all hover:-translate-y-1" onclick="changeHeroDirectly('${key}')">
+                <div class="glass-panel rounded-2xl p-4 flex flex-col items-center justify-center text-center cursor-pointer border border-gray-200 dark:border-white/5 hover:border-yellow-500/30 transition-all hover:-translate-y-1 shadow-sm dark:shadow-none" onclick="changeHeroDirectly('${key}')">
                     <div class="w-12 h-12 rounded-full bg-gradient-to-br ${hero.color} flex items-center justify-center text-white mb-3 shadow-lg">
                         <i class="fa-solid ${hero.icon}"></i>
                     </div>
-                    <h4 class="font-serif font-bold text-gray-200 text-sm md:text-base">${name}</h4>
-                    <p class="text-[10px] text-cyan-400 mt-1 uppercase tracking-wider">${hero.title}</p>
+                    <h4 class="font-serif font-bold text-gray-800 dark:text-gray-200 text-sm md:text-base">${name}</h4>
+                    <p class="text-[10px] text-cyan-600 dark:text-cyan-400 mt-1 uppercase tracking-wider">${hero.title}</p>
                 </div>`;
             }).join('');
         }
@@ -1275,8 +1370,8 @@
             if(titleDisplay) titleDisplay.innerText = hero.title;
             const avatar = document.getElementById('heroAvatarSmall');
             if(avatar) {
-                avatar.className = `w-10 h-10 rounded-full bg-gradient-to-br ${hero.color} flex items-center justify-center text-lg shadow-lg flex-none`;
-                avatar.innerHTML = `<i class="fa-solid ${hero.icon} text-white"></i>`;
+                avatar.className = `w-10 h-10 rounded-full bg-gradient-to-br ${hero.color} flex items-center justify-center text-lg shadow-lg flex-none text-white`;
+                avatar.innerHTML = `<i class="fa-solid ${hero.icon}"></i>`;
             }
             clearChat();
         }
@@ -1287,24 +1382,25 @@
             chatBox.innerHTML = '';
             const hero = HEROES_DATA[currentHero];
             appendMessage(hero.greeting, 'hero');
-            conversationHistory = [{ role: "user", parts: [{ text: hero.prompt }] }, { role: "model", parts: [{ text: "Understood." }] }];
+            conversationHistory = [{ role: "user", parts: [{ text: hero.prompt }] }, { role: "model", parts: [{ text: "Understood. I will strictly keep my answers to 1 or 2 lines in simple language." }] }];
         }
 
         function appendMessage(text, sender) {
             const chatBox = document.getElementById('chatBox');
             if(!chatBox) return;
             const msgDiv = document.createElement('div');
+            // Changed font from serif to sans for better readability as requested
             if (sender === 'user') {
                 msgDiv.className = 'flex justify-end';
-                msgDiv.innerHTML = `<div class="chat-bubble-user max-w-[85%] px-4 py-3 text-sm text-white shadow-lg">${text}</div>`;
+                msgDiv.innerHTML = `<div class="chat-bubble-user max-w-[85%] px-4 py-3 text-sm shadow-md font-sans leading-relaxed transition-colors duration-300">${text}</div>`;
             } else {
                 const hero = HEROES_DATA[currentHero];
                 msgDiv.className = 'flex justify-start items-end gap-2';
                 msgDiv.innerHTML = `
-                    <div class="w-8 h-8 rounded-full bg-gradient-to-br ${hero.color} flex-shrink-0 flex items-center justify-center shadow-md">
-                        <i class="fa-solid ${hero.icon} text-white text-[10px]"></i>
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-br ${hero.color} flex-shrink-0 flex items-center justify-center shadow-md text-white transition-colors duration-300">
+                        <i class="fa-solid ${hero.icon} text-[10px]"></i>
                     </div>
-                    <div class="chat-bubble-hero max-w-[85%] px-4 py-3 text-sm text-gray-200 font-serif">${text}</div>`;
+                    <div class="chat-bubble-hero max-w-[85%] px-4 py-3 text-sm text-gray-800 dark:text-gray-200 font-sans leading-relaxed transition-colors duration-300">${text}</div>`;
             }
             chatBox.appendChild(msgDiv);
             setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 10);
@@ -1326,7 +1422,7 @@
             const typingDiv = document.createElement('div');
             typingDiv.id = "typingIndicator";
             typingDiv.className = 'flex justify-start items-end gap-2 mt-2';
-            typingDiv.innerHTML = `<div class="w-8 h-8 rounded-full bg-gray-800 flex-shrink-0 flex items-center justify-center"><i class="fa-solid fa-ellipsis text-gray-400 animate-pulse"></i></div>`;
+            typingDiv.innerHTML = `<div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-800 flex-shrink-0 flex items-center justify-center"><i class="fa-solid fa-ellipsis text-gray-400 animate-pulse"></i></div>`;
             chatBox.appendChild(typingDiv);
             chatBox.scrollTop = chatBox.scrollHeight;
 
@@ -1340,7 +1436,7 @@
                 appendMessage(responseText, 'hero');
                 conversationHistory.push({ role: "model", parts: [{ text: responseText }] }); 
             } else {
-                appendMessage("I need a moment to gather my thoughts... (API unavailable).", 'hero');
+                appendMessage("I need a moment to gather my thoughts... (Network issue).", 'hero');
                 conversationHistory.pop(); 
             }
 
@@ -1349,13 +1445,9 @@
             inputField.focus();
         }
 
-        // Modal Click Outside Handlers
-        document.getElementById('poetryModal').addEventListener('click', function(e) {
-            if (e.target === this) closePoetryModal();
-        });
-        document.getElementById('addPoetryModal').addEventListener('click', function(e) {
-            if (e.target === this) closeAddPoetryModal();
-        });
+        // Modals click outside
+        document.getElementById('poetryModal').addEventListener('click', function(e) { if (e.target === this) closePoetryModal(); });
+        document.getElementById('addPoetryModal').addEventListener('click', function(e) { if (e.target === this) closeAddPoetryModal(); });
 
         // Init
         renderGames(); 

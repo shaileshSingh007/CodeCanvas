@@ -4,20 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Twik the AI</title>
-    
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-
     <style>
-        body { 
-            margin: 0; 
-            overflow: hidden; 
-            background-color: #0a0a0a; 
-            overscroll-behavior: none; 
-            touch-action: none;
-            -webkit-user-select: none;
-            user-select: none;
-        }
+        body { margin: 0; overflow: hidden; background-color: #0a0a0a; overscroll-behavior: none; touch-action: none; -webkit-user-select: none; user-select: none; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideDown { from { transform: translate(-50%, -20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
         .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
@@ -25,12 +14,9 @@
     </style>
 </head>
 <body class="text-neutral-100 font-sans antialiased">
-
     <!-- START SCREEN -->
     <div id="screen-start" class="min-h-screen flex flex-col items-center justify-center p-6">
-        <h1 class="text-6xl md:text-8xl font-black tracking-tighter mb-12 bg-gradient-to-r from-neutral-100 to-neutral-500 bg-clip-text text-transparent">
-            TWIK
-        </h1>
+        <h1 class="text-6xl md:text-8xl font-black tracking-tighter mb-12 bg-gradient-to-r from-neutral-100 to-neutral-500 bg-clip-text text-transparent">TWIK</h1>
         <button onclick="startGame()" class="bg-white text-neutral-950 px-10 py-4 rounded-full font-bold text-lg md:text-xl flex items-center gap-3 hover:scale-105 transition-transform active:scale-95">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
             Start Game
@@ -39,36 +25,21 @@
 
     <!-- PLAYING SCREEN -->
     <div id="screen-play" class="hidden relative w-full h-screen bg-white overflow-hidden text-neutral-900">
-        
         <canvas id="game-canvas" class="absolute inset-0 cursor-crosshair touch-none"></canvas>
-
         <div id="hud" class="hidden">
-            <div id="hud-category" class="absolute top-4 left-4 z-10 bg-white/70 backdrop-blur text-neutral-600 font-semibold text-xs uppercase tracking-wider px-3 py-1.5 rounded-full shadow-sm border border-neutral-200 pointer-events-none">
-                Category
-            </div>
-            <div id="hud-chances" class="absolute top-4 right-4 z-10 bg-white/70 backdrop-blur text-neutral-600 font-semibold text-xs uppercase tracking-wider px-3 py-1.5 rounded-full shadow-sm border border-neutral-200 pointer-events-none">
-                Chances: 5
-            </div>
+            <div id="hud-category" class="absolute top-4 left-4 z-10 bg-white/70 backdrop-blur text-neutral-600 font-semibold text-xs uppercase tracking-wider px-3 py-1.5 rounded-full shadow-sm border border-neutral-200 pointer-events-none">Category</div>
+            <div id="hud-chances" class="absolute top-4 right-4 z-10 bg-white/70 backdrop-blur text-neutral-600 font-semibold text-xs uppercase tracking-wider px-3 py-1.5 rounded-full shadow-sm border border-neutral-200 pointer-events-none">Chances: 5</div>
         </div>
-
         <div id="overlay-dim" class="hidden absolute inset-0 bg-white/50 backdrop-blur-sm z-20 pointer-events-none transition-all duration-500"></div>
-
         <div id="toast-category" class="hidden absolute top-20 left-1/2 -translate-x-1/2 z-30 animate-slide-down">
-            <div class="bg-neutral-900 text-white px-6 py-3 rounded-full shadow-2xl text-sm font-medium whitespace-nowrap">
-                Your category is <span id="toast-category-text" class="font-bold text-emerald-400"></span>
-            </div>
+            <div class="bg-neutral-900 text-white px-6 py-3 rounded-full shadow-2xl text-sm font-medium whitespace-nowrap">Your category is <span id="toast-category-text" class="font-bold text-emerald-400"></span></div>
         </div>
-
         <div id="toast-analyzing" class="hidden absolute top-20 left-1/2 -translate-x-1/2 z-30 animate-fade-in">
             <div class="bg-neutral-900 text-white px-6 py-3 rounded-full shadow-2xl text-sm font-medium flex items-center gap-3">
-                <span class="relative flex h-3 w-3">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
-                </span>
+                <span class="relative flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-white"></span></span>
                 Analyzing drawing...
             </div>
         </div>
-
         <div id="modal-question" class="hidden absolute top-24 left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-40 animate-slide-down">
             <div class="bg-white border border-neutral-200 shadow-2xl rounded-3xl p-6 text-center flex flex-col gap-6">
                 <p class="text-neutral-500 text-xs font-bold uppercase tracking-widest">Question</p>
@@ -79,7 +50,6 @@
                 </div>
             </div>
         </div>
-
         <div id="modal-guess" class="hidden absolute top-24 left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-40 animate-slide-down">
             <div class="bg-neutral-900 shadow-2xl rounded-3xl p-6 text-center flex flex-col gap-6 border border-neutral-800 text-white">
                 <p class="text-neutral-400 text-xs font-bold uppercase tracking-widest">My Guess</p>
@@ -90,16 +60,11 @@
                 </div>
             </div>
         </div>
-
         <div id="toolbar" class="absolute bottom-6 left-1/2 -translate-x-1/2 w-[98%] sm:w-[95%] max-w-lg z-10 transition-opacity duration-300">
             <div class="bg-white/90 backdrop-blur-md shadow-2xl border border-neutral-200 rounded-full p-1.5 sm:p-2 flex items-center justify-between">
                 <div class="flex items-center gap-1 sm:gap-2 pl-1 sm:pl-2">
-                    <button id="btn-pen" onclick="setTool('pen')" class="p-1.5 sm:p-2 rounded-full transition-colors flex-shrink-0 bg-neutral-900 text-white">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sm:w-[18px] sm:h-[18px]"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-                    </button>
-                    <button id="btn-eraser" onclick="setTool('eraser')" class="p-1.5 sm:p-2 rounded-full transition-colors flex-shrink-0 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sm:w-[18px] sm:h-[18px]"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"></path><path d="M22 21H7"></path><path d="m5 11 9 9"></path></svg>
-                    </button>
+                    <button id="btn-pen" onclick="setTool('pen')" class="p-1.5 sm:p-2 rounded-full transition-colors flex-shrink-0 bg-neutral-900 text-white"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sm:w-[18px] sm:h-[18px]"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></button>
+                    <button id="btn-eraser" onclick="setTool('eraser')" class="p-1.5 sm:p-2 rounded-full transition-colors flex-shrink-0 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sm:w-[18px] sm:h-[18px]"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"></path><path d="M22 21H7"></path><path d="m5 11 9 9"></path></svg></button>
                     <div class="w-[1px] h-5 sm:h-6 bg-neutral-200 mx-0.5 sm:mx-1 flex-shrink-0"></div>
                     <div id="color-picker" class="flex gap-1 sm:gap-1.5 transition-opacity">
                         <button onclick="setColor('#000000', this)" class="color-btn w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 transition-transform flex-shrink-0 scale-110 border-neutral-400 shadow-sm" style="background-color: #000000"></button>
@@ -122,69 +87,40 @@
     <div id="screen-win" class="hidden min-h-screen flex-col items-center justify-center p-6 text-center animate-fade-in">
         <h1 class="text-4xl md:text-6xl font-black text-emerald-400 mb-4">Congratulations!</h1>
         <p class="text-lg md:text-xl text-neutral-400 mb-12">You stumped the AI in 5 rounds.</p>
-        <button onclick="resetGame()" class="bg-white text-neutral-950 px-10 py-4 rounded-full font-bold text-lg hover:scale-105 transition-transform">
-            Play Again
-        </button>
+        <button onclick="resetGame()" class="bg-white text-neutral-950 px-10 py-4 rounded-full font-bold text-lg hover:scale-105 transition-transform">Play Again</button>
     </div>
 
     <!-- LOSE SCREEN -->
     <div id="screen-lose" class="hidden min-h-screen flex-col items-center justify-center p-6 text-center animate-fade-in">
         <h1 class="text-4xl md:text-6xl font-black text-rose-500 mb-4">Game Over</h1>
         <p class="text-lg md:text-xl text-neutral-400 mb-12">The AI guessed your drawing!</p>
-        <button onclick="resetGame()" class="bg-white text-neutral-950 px-10 py-4 rounded-full font-bold text-lg hover:scale-105 transition-transform">
-            Try Again
-        </button>
+        <button onclick="resetGame()" class="bg-white text-neutral-950 px-10 py-4 rounded-full font-bold text-lg hover:scale-105 transition-transform">Try Again</button>
     </div>
 
     <script>
+        // ==========================================
+        // REQUIRED CONFIGURATION
+        // ==========================================
+        
+        // 🚨 REPLACE THIS WITH YOUR REAL VERCEL WEBSITE URL! 🚨
+        // Keep the quotes. Example: "https://my-cool-website.vercel.app"
+        // Do NOT include a slash (/) at the end.
+        const YOUR_VERCEL_URL = "https://vercel.com/shaileshsingh007s-projects/code-canvas";
+
+        // ==========================================
+
         const CATEGORIES = ['Sports', 'Animals', 'Food', 'Vehicles', 'Electronics', 'Furniture', 'Clothing'];
         
         let state = {
-            category: '',
-            attempt: 1,
-            history: [],
-            currentQuestion: '',
-            currentGuess: '',
-            userAnswer: '',
-            hasDrawn: false,
-            activeTool: 'pen',
-            color: '#000000',
-            thickness: 4,
-            isDrawing: false,
-            overlayActive: false
+            category: '', attempt: 1, history: [], currentQuestion: '', currentGuess: '', userAnswer: '',
+            hasDrawn: false, activeTool: 'pen', color: '#000000', thickness: 4, isDrawing: false, overlayActive: false
         };
 
         const canvas = document.getElementById('game-canvas');
         const ctx = canvas.getContext('2d');
-        
-        const screens = {
-            start: document.getElementById('screen-start'),
-            play: document.getElementById('screen-play'),
-            win: document.getElementById('screen-win'),
-            lose: document.getElementById('screen-lose')
-        };
-        
-        const overlays = {
-            dim: document.getElementById('overlay-dim'),
-            toastCategory: document.getElementById('toast-category'),
-            toastAnalyzing: document.getElementById('toast-analyzing'),
-            modalQuestion: document.getElementById('modal-question'),
-            modalGuess: document.getElementById('modal-guess')
-        };
-        
-        const ui = {
-            hud: document.getElementById('hud'),
-            hudCategory: document.getElementById('hud-category'),
-            hudChances: document.getElementById('hud-chances'),
-            toastCatText: document.getElementById('toast-category-text'),
-            questionText: document.getElementById('question-text'),
-            guessText: document.getElementById('guess-text'),
-            toolbar: document.getElementById('toolbar'),
-            btnPen: document.getElementById('btn-pen'),
-            btnEraser: document.getElementById('btn-eraser'),
-            colorPicker: document.getElementById('color-picker'),
-            btnSubmit: document.getElementById('btn-submit')
-        };
+        const screens = { start: document.getElementById('screen-start'), play: document.getElementById('screen-play'), win: document.getElementById('screen-win'), lose: document.getElementById('screen-lose') };
+        const overlays = { dim: document.getElementById('overlay-dim'), toastCategory: document.getElementById('toast-category'), toastAnalyzing: document.getElementById('toast-analyzing'), modalQuestion: document.getElementById('modal-question'), modalGuess: document.getElementById('modal-guess') };
+        const ui = { hud: document.getElementById('hud'), hudCategory: document.getElementById('hud-category'), hudChances: document.getElementById('hud-chances'), toastCatText: document.getElementById('toast-category-text'), questionText: document.getElementById('question-text'), guessText: document.getElementById('guess-text'), toolbar: document.getElementById('toolbar'), btnPen: document.getElementById('btn-pen'), btnEraser: document.getElementById('btn-eraser'), colorPicker: document.getElementById('color-picker'), btnSubmit: document.getElementById('btn-submit') };
 
         function resizeCanvas() {
             if(screens.play.classList.contains('hidden')) return;
@@ -212,7 +148,6 @@
             ctx.lineJoin = 'round';
             ctx.strokeStyle = state.activeTool === 'eraser' ? '#FFFFFF' : state.color;
             ctx.lineWidth = state.activeTool === 'eraser' ? state.thickness * 3 : state.thickness;
-            
             state.isDrawing = true;
             if (!state.hasDrawn) {
                 state.hasDrawn = true;
@@ -228,24 +163,18 @@
             ctx.stroke();
         }
 
-        function handleDrawEnd() {
-            state.isDrawing = false;
-        }
+        function handleDrawEnd() { state.isDrawing = false; }
 
         canvas.addEventListener('mousedown', handleDrawStart);
         canvas.addEventListener('mousemove', handleDrawMove);
         window.addEventListener('mouseup', handleDrawEnd);
         canvas.addEventListener('mouseout', handleDrawEnd);
-        
         canvas.addEventListener('touchstart', handleDrawStart, { passive: false });
         canvas.addEventListener('touchmove', handleDrawMove, { passive: false });
         window.addEventListener('touchend', handleDrawEnd);
 
         function switchScreen(screenName) {
-            Object.values(screens).forEach(s => {
-                s.classList.add('hidden');
-                s.classList.remove('flex');
-            });
+            Object.values(screens).forEach(s => { s.classList.add('hidden'); s.classList.remove('flex'); });
             screens[screenName].classList.remove('hidden');
             if(screenName !== 'play') screens[screenName].classList.add('flex');
         }
@@ -254,16 +183,11 @@
             Object.values(overlays).forEach(o => o.classList.add('hidden'));
             state.overlayActive = false;
             ui.toolbar.classList.remove('opacity-0', 'pointer-events-none');
-            
             if (overlayName) {
                 state.overlayActive = true;
                 overlays[overlayName].classList.remove('hidden');
-                if (overlayName === 'modalQuestion' || overlayName === 'modalGuess') {
-                    overlays.dim.classList.remove('hidden');
-                }
-                if (overlayName !== 'toastCategory') {
-                    ui.toolbar.classList.add('opacity-0', 'pointer-events-none');
-                }
+                if (overlayName === 'modalQuestion' || overlayName === 'modalGuess') overlays.dim.classList.remove('hidden');
+                if (overlayName !== 'toastCategory') ui.toolbar.classList.add('opacity-0', 'pointer-events-none');
             }
         }
 
@@ -290,133 +214,81 @@
         }
 
         function setColor(hex, btnElement) {
-            state.color = hex;
-            setTool('pen');
-            document.querySelectorAll('.color-btn').forEach(btn => {
-                btn.className = "color-btn w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 transition-transform flex-shrink-0 border-transparent hover:scale-110";
-            });
+            state.color = hex; setTool('pen');
+            document.querySelectorAll('.color-btn').forEach(btn => { btn.className = "color-btn w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 transition-transform flex-shrink-0 border-transparent hover:scale-110"; });
             btnElement.className = "color-btn w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 transition-transform flex-shrink-0 scale-110 border-neutral-400 shadow-sm";
         }
 
-        function setThickness(val) {
-            state.thickness = parseInt(val);
-        }
+        function setThickness(val) { state.thickness = parseInt(val); }
 
         function startGame() {
             state.category = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
-            state.attempt = 1;
-            state.history = [];
-            state.hasDrawn = false;
-            
-            switchScreen('play');
-            resizeCanvas(); 
-            updateHUD();
-            updateSubmitButton();
+            state.attempt = 1; state.history = []; state.hasDrawn = false;
+            switchScreen('play'); resizeCanvas(); updateHUD(); updateSubmitButton();
             ui.hud.classList.add('hidden'); 
-            
             ui.toastCatText.innerText = state.category;
             showOverlay('toastCategory');
-            
-            setTimeout(() => {
-                showOverlay(null);
-                ui.hud.classList.remove('hidden'); 
-            }, 3000);
+            setTimeout(() => { showOverlay(null); ui.hud.classList.remove('hidden'); }, 3000);
         }
 
-        function resetGame() {
-            switchScreen('start');
-            showOverlay(null);
-        }
+        function resetGame() { switchScreen('start'); showOverlay(null); }
 
-        // SCALES DOWN IMAGE TO FIX VERCEL PAYLOAD LIMITS
         function getCompressedImage() {
-            const MAX_SIZE = 400; // Aggressively shrink to guarantee it passes Vercel limits
-            let width = canvas.width;
-            let height = canvas.height;
-
-            if (width > height) {
-                if (width > MAX_SIZE) {
-                    height *= MAX_SIZE / width;
-                    width = MAX_SIZE;
-                }
-            } else {
-                if (height > MAX_SIZE) {
-                    width *= MAX_SIZE / height;
-                    height = MAX_SIZE;
-                }
-            }
-
+            const MAX_SIZE = 400;
+            let width = canvas.width, height = canvas.height;
+            if (width > height) { if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; } } 
+            else { if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; } }
             const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = width;
-            tempCanvas.height = height;
+            tempCanvas.width = width; tempCanvas.height = height;
             const tCtx = tempCanvas.getContext('2d');
-            
-            tCtx.fillStyle = '#FFFFFF';
-            tCtx.fillRect(0, 0, width, height);
-            tCtx.drawImage(canvas, 0, 0, width, height);
-
+            tCtx.fillStyle = '#FFFFFF'; tCtx.fillRect(0, 0, width, height); tCtx.drawImage(canvas, 0, 0, width, height);
             return tempCanvas.toDataURL('image/jpeg', 0.5).split(',')[1];
         }
 
         async function fetchGemini(prompt, base64Image) {
-            const payload = { action: 'vision', prompt: prompt, image: base64Image };
+            // Remove trailing slashes if user added one by accident
+            const safeDomain = YOUR_VERCEL_URL.replace(/\/$/, "");
             
-            // FIX: Try Exact Casing first, then Fallback to lowercase automatically
-            // Using absolute paths starting with "/" completely ignores iframe boundaries!
-            const endpoints = ['/api/Gemini', '/api/gemini'];
+            // Hardcoded absolute endpoints
+            const endpoints = [`${safeDomain}/api/Gemini`, `${safeDomain}/api/gemini`];
+            const payload = { action: 'vision', prompt: prompt, image: base64Image };
 
             for (let url of endpoints) {
-                for (let i = 0; i < 2; i++) { // Try each url twice
+                for (let i = 0; i < 2; i++) {
                     try {
                         const response = await fetch(url, { 
-                            method: 'POST', 
-                            headers: { 'Content-Type': 'application/json' }, 
-                            body: JSON.stringify(payload) 
+                            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) 
                         });
                         
-                        if (response.status === 404) {
-                            break; // Stop retrying this specific URL. Break the inner loop and move to the fallback URL.
-                        }
-
-                        if (!response.ok) {
-                            const errorText = await response.text();
-                            console.error("API Error Response:", errorText);
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
+                        if (response.status === 404) break; 
+                        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                         
                         const data = await response.json();
-                        
                         let rawText = data.candidates[0].content.parts[0].text;
                         rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-                        
                         return JSON.parse(rawText);
 
                     } catch (error) {
-                        console.error(`Fetch attempt to ${url} failed:`, error);
-                        if (i === 1 && url === endpoints[1]) throw error; // If both URLs and all retries failed
+                        if (i === 1 && url === endpoints[1]) throw new Error("Could not find the API at " + endpoints[0] + " or " + endpoints[1]);
                         await new Promise(res => setTimeout(res, 1000));
                     }
                 }
             }
-            throw new Error("Could not find the API at /api/Gemini or /api/gemini. Please check Vercel deployment.");
         }
 
         async function handleSubmit() {
             if (!state.hasDrawn) return;
-            showOverlay('toastAnalyzing');
             
+            if (YOUR_VERCEL_URL.includes("YOUR-WEBSITE")) {
+                alert("CONFIGURATION ERROR:\nYou must open twik.html and edit the 'YOUR_VERCEL_URL' variable at the top of the script code with your real Vercel URL.");
+                return;
+            }
+            
+            showOverlay('toastAnalyzing');
             const base64Image = getCompressedImage();
-            const historyText = state.history.length > 0 
-                ? state.history.map(h => `Attempt ${h.attempt}: I asked "${h.question}", User said "${h.answer}". I guessed "${h.guess}" (Wrong).`).join('\n') 
-                : "No previous history.";
+            const historyText = state.history.length > 0 ? state.history.map(h => `Attempt ${h.attempt}: I asked "${h.question}", User said "${h.answer}". I guessed "${h.guess}" (Wrong).`).join('\n') : "No previous history.";
 
-            const prompt = `
-You are playing a drawing guessing game.
-Category: "${state.category}". Attempt: ${state.attempt}/5.
-History: ${historyText}
-
-Task: Analyze the drawing. Ask ONE Yes/No question to help you narrow down what the drawing is. DO NOT make a guess yet.
-Return ONLY a JSON object: { "question": "your yes/no question here" }`;
+            const prompt = `You are playing a drawing guessing game.\nCategory: "${state.category}". Attempt: ${state.attempt}/5.\nHistory: ${historyText}\nTask: Analyze the drawing. Ask ONE Yes/No question to help you narrow down what the drawing is. DO NOT make a guess yet.\nReturn ONLY a JSON object: { "question": "your yes/no question here" }`;
 
             try {
                 const res = await fetchGemini(prompt, base64Image);
@@ -424,7 +296,7 @@ Return ONLY a JSON object: { "question": "your yes/no question here" }`;
                 ui.questionText.innerText = `"${state.currentQuestion}"`;
                 showOverlay('modalQuestion');
             } catch (err) {
-                alert("Error Details: " + err.message + "\n\nPlease check your live Vercel link.");
+                alert(err.message);
                 showOverlay(null);
             }
         }
@@ -432,21 +304,10 @@ Return ONLY a JSON object: { "question": "your yes/no question here" }`;
         async function handleAnswer(answer) {
             state.userAnswer = answer;
             showOverlay('toastAnalyzing');
-            
             const base64Image = getCompressedImage();
-            const historyText = state.history.length > 0 
-                ? state.history.map(h => `Attempt ${h.attempt}: I asked "${h.question}", User said "${h.answer}". I guessed "${h.guess}" (Wrong).`).join('\n') 
-                : "No previous history.";
+            const historyText = state.history.length > 0 ? state.history.map(h => `Attempt ${h.attempt}: I asked "${h.question}", User said "${h.answer}". I guessed "${h.guess}" (Wrong).`).join('\n') : "No previous history.";
 
-            const prompt = `
-You are playing a drawing guessing game.
-Category: "${state.category}".
-History: ${historyText}
-
-CRITICAL CURRENT STATE: You just asked "${state.currentQuestion}" and the user answered "${state.userAnswer}".
-Task: Make your final specific guess of what the drawing is. 
-CRITICAL RULE: You MUST logically respect the user's answer. If they said 'No' to a trait, your guess MUST NOT have that trait. (e.g., If user says 'No' to 'Is it a weapon?', do not guess 'Bomb').
-Return ONLY a JSON object: { "guess": "your specific guess here" }`;
+            const prompt = `You are playing a drawing guessing game.\nCategory: "${state.category}".\nHistory: ${historyText}\nCRITICAL CURRENT STATE: You just asked "${state.currentQuestion}" and the user answered "${state.userAnswer}".\nTask: Make your final specific guess of what the drawing is.\nCRITICAL RULE: You MUST logically respect the user's answer. If they said 'No' to a trait, your guess MUST NOT have that trait.\nReturn ONLY a JSON object: { "guess": "your specific guess here" }`;
 
             try {
                 const res = await fetchGemini(prompt, base64Image);
@@ -455,29 +316,18 @@ Return ONLY a JSON object: { "guess": "your specific guess here" }`;
                 ui.guessText.innerText = `Is it ${prefix} ${state.currentGuess}?`;
                 showOverlay('modalGuess');
             } catch (err) {
-                alert("Error Details: " + err.message + "\n\nPlease check your live Vercel link.");
+                alert(err.message);
                 showOverlay(null);
             }
         }
 
         function handleGuessResult(userAnsweredYesToGuess) {
-            if (userAnsweredYesToGuess) {
-                switchScreen('lose');
-                showOverlay(null);
-            } else {
-                if (state.attempt >= 5) {
-                    switchScreen('win');
-                    showOverlay(null);
-                } else {
-                    state.history.push({ 
-                        attempt: state.attempt, 
-                        question: state.currentQuestion, 
-                        answer: state.userAnswer, 
-                        guess: state.currentGuess 
-                    });
-                    state.attempt++;
-                    updateHUD();
-                    showOverlay(null);
+            if (userAnsweredYesToGuess) { switchScreen('lose'); showOverlay(null); } 
+            else {
+                if (state.attempt >= 5) { switchScreen('win'); showOverlay(null); } 
+                else {
+                    state.history.push({ attempt: state.attempt, question: state.currentQuestion, answer: state.userAnswer, guess: state.currentGuess });
+                    state.attempt++; updateHUD(); showOverlay(null);
                 }
             }
         }

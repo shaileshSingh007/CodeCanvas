@@ -235,57 +235,40 @@
         }
 
         // ===============================================
-        // BULLETPROOF NETWORK FUNCTION
+        // CLEAN, DIRECT NETWORK CALL (Just like your Chatbot)
         // ===============================================
         async function fetchGemini(prompt, base64Image) {
-            
-            // Using a root-relative path guarantees it goes to the domain the iframe is hosted on.
-            // If the iframe is on code-canvas-sigma.vercel.app, this goes to code-canvas-sigma.vercel.app/api/Gemini
-            const endpoints = ['/api/Gemini', '/api/gemini'];
+            // Because your Chatbot works, this exact route will work!
+            const url = '/api/Gemini';
             const payload = { action: 'vision', prompt: prompt, image: base64Image };
 
-            let lastErrorMsg = "";
-
-            for (let url of endpoints) {
-                for (let i = 0; i < 2; i++) {
-                    try {
-                        const response = await fetch(url, { 
-                            method: 'POST', 
-                            headers: { 'Content-Type': 'application/json' }, 
-                            body: JSON.stringify(payload) 
-                        });
-                        
-                        if (response.status === 404) {
-                            lastErrorMsg = `404 Not Found at: ${url}`;
-                            break; 
-                        } 
-                        
-                        if (!response.ok) {
-                            const errText = await response.text();
-                            throw new Error(`HTTP ${response.status}: ${errText}`);
-                        }
-                        
-                        const data = await response.json();
-                        
-                        if (!data.candidates || !data.candidates[0].content) {
-                            throw new Error("Invalid response from Google API. Quota exceeded or error.");
-                        }
-
-                        let rawText = data.candidates[0].content.parts[0].text;
-                        rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-                        
-                        return JSON.parse(rawText);
-
-                    } catch (error) {
-                        lastErrorMsg = error.message;
-                        await new Promise(res => setTimeout(res, 1000));
-                    }
+            try {
+                const response = await fetch(url, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify(payload) 
+                });
+                
+                if (!response.ok) {
+                    const errText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errText}`);
                 }
-            }
-            
-            throw new Error(`Failed to connect.\n\nReason: ${lastErrorMsg}\n\nIf it says 404, your API is in the wrong folder on Vercel.`);
-        }
+                
+                const data = await response.json();
+                
+                if (!data.candidates || !data.candidates[0].content) {
+                    throw new Error("Invalid response from Google API. Quota exceeded or error.");
+                }
 
+                let rawText = data.candidates[0].content.parts[0].text;
+                rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+                
+                return JSON.parse(rawText);
+
+            } catch (error) {
+                throw new Error(`Failed to connect.\n\nReason: ${error.message}`);
+            }
+        }
         // ===============================================
 
         async function handleSubmit() {

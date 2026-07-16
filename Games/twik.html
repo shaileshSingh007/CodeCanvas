@@ -360,7 +360,9 @@
         }
 
         async function fetchGemini(prompt, base64Image) {
-            const url = '/api/Gemini';
+            // FIX: If testing locally, change this to your full Vercel domain!
+            // Example: const url = 'https://your-website.vercel.app/api/Gemini';
+            const url = '/api/Gemini'; 
             const payload = { action: 'vision', prompt: prompt, image: base64Image };
 
             for (let i = 0; i < 3; i++) {
@@ -372,6 +374,9 @@
                     });
                     
                     if (!response.ok) {
+                        if (response.status === 404) {
+                            throw new Error(`404 Not Found at: ${window.location.origin}${url}\n\nIf you are testing this locally on your computer, you must change the 'url' variable in the code to your full Vercel domain (e.g. https://your-site.vercel.app/api/Gemini).`);
+                        }
                         const errorText = await response.text();
                         console.error("API Error Response:", errorText);
                         throw new Error(`HTTP error! status: ${response.status}`);

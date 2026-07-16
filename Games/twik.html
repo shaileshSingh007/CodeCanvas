@@ -330,7 +330,7 @@
 
         // SCALES DOWN IMAGE TO FIX VERCEL PAYLOAD LIMITS
         function getCompressedImage() {
-            const MAX_SIZE = 800; // Safe size for quick uploading
+            const MAX_SIZE = 400; // Aggressively shrink to guarantee it passes Vercel limits
             let width = canvas.width;
             let height = canvas.height;
 
@@ -355,8 +355,8 @@
             tCtx.fillRect(0, 0, width, height);
             tCtx.drawImage(canvas, 0, 0, width, height);
 
-            // Use JPEG to make it even smaller
-            return tempCanvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+            // Use JPEG at 50% quality to make it tiny (around 15kb)
+            return tempCanvas.toDataURL('image/jpeg', 0.5).split(',')[1];
         }
 
         async function fetchGemini(prompt, base64Image) {
@@ -416,7 +416,7 @@ Return ONLY a JSON object: { "question": "your yes/no question here" }`;
                 ui.questionText.innerText = `"${state.currentQuestion}"`;
                 showOverlay('modalQuestion');
             } catch (err) {
-                alert("Error contacting AI. Please try again. Check console for details.");
+                alert("Error Details: " + err.message + "\n\nPlease check Vercel logs or browser console.");
                 showOverlay(null);
             }
         }
@@ -447,7 +447,7 @@ Return ONLY a JSON object: { "guess": "your specific guess here" }`;
                 ui.guessText.innerText = `Is it ${prefix} ${state.currentGuess}?`;
                 showOverlay('modalGuess');
             } catch (err) {
-                alert("Error contacting AI. Please try again. Check console for details.");
+                alert("Error Details: " + err.message + "\n\nPlease check Vercel logs or browser console.");
                 showOverlay(null);
             }
         }

@@ -9,7 +9,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
-        /* Prevent bounce scrolling on mobile */
         body { 
             margin: 0; 
             overflow: hidden; 
@@ -19,11 +18,8 @@
             -webkit-user-select: none;
             user-select: none;
         }
-        
-        /* Custom Animations */
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideDown { from { transform: translate(-50%, -20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
-        
         .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
         .animate-slide-down { animation: slideDown 0.4s ease-out forwards; }
     </style>
@@ -44,10 +40,8 @@
     <!-- PLAYING SCREEN -->
     <div id="screen-play" class="hidden relative w-full h-screen bg-white overflow-hidden text-neutral-900">
         
-        <!-- Canvas -->
         <canvas id="game-canvas" class="absolute inset-0 cursor-crosshair touch-none"></canvas>
 
-        <!-- Top HUD -->
         <div id="hud" class="hidden">
             <div id="hud-category" class="absolute top-4 left-4 z-10 bg-white/70 backdrop-blur text-neutral-600 font-semibold text-xs uppercase tracking-wider px-3 py-1.5 rounded-full shadow-sm border border-neutral-200 pointer-events-none">
                 Category
@@ -57,17 +51,14 @@
             </div>
         </div>
 
-        <!-- Overlays -->
         <div id="overlay-dim" class="hidden absolute inset-0 bg-white/50 backdrop-blur-sm z-20 pointer-events-none transition-all duration-500"></div>
 
-        <!-- 1. Category Toast -->
         <div id="toast-category" class="hidden absolute top-20 left-1/2 -translate-x-1/2 z-30 animate-slide-down">
             <div class="bg-neutral-900 text-white px-6 py-3 rounded-full shadow-2xl text-sm font-medium whitespace-nowrap">
                 Your category is <span id="toast-category-text" class="font-bold text-emerald-400"></span>
             </div>
         </div>
 
-        <!-- 2. Analyzing Toast -->
         <div id="toast-analyzing" class="hidden absolute top-20 left-1/2 -translate-x-1/2 z-30 animate-fade-in">
             <div class="bg-neutral-900 text-white px-6 py-3 rounded-full shadow-2xl text-sm font-medium flex items-center gap-3">
                 <span class="relative flex h-3 w-3">
@@ -78,7 +69,6 @@
             </div>
         </div>
 
-        <!-- 3. Question Modal -->
         <div id="modal-question" class="hidden absolute top-24 left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-40 animate-slide-down">
             <div class="bg-white border border-neutral-200 shadow-2xl rounded-3xl p-6 text-center flex flex-col gap-6">
                 <p class="text-neutral-500 text-xs font-bold uppercase tracking-widest">Question</p>
@@ -90,7 +80,6 @@
             </div>
         </div>
 
-        <!-- 4. Guess Modal -->
         <div id="modal-guess" class="hidden absolute top-24 left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-40 animate-slide-down">
             <div class="bg-neutral-900 shadow-2xl rounded-3xl p-6 text-center flex flex-col gap-6 border border-neutral-800 text-white">
                 <p class="text-neutral-400 text-xs font-bold uppercase tracking-widest">My Guess</p>
@@ -102,38 +91,25 @@
             </div>
         </div>
 
-        <!-- Bottom Toolbar -->
         <div id="toolbar" class="absolute bottom-6 left-1/2 -translate-x-1/2 w-[98%] sm:w-[95%] max-w-lg z-10 transition-opacity duration-300">
             <div class="bg-white/90 backdrop-blur-md shadow-2xl border border-neutral-200 rounded-full p-1.5 sm:p-2 flex items-center justify-between">
-                
                 <div class="flex items-center gap-1 sm:gap-2 pl-1 sm:pl-2">
-                    <!-- Pen Tool -->
                     <button id="btn-pen" onclick="setTool('pen')" class="p-1.5 sm:p-2 rounded-full transition-colors flex-shrink-0 bg-neutral-900 text-white">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sm:w-[18px] sm:h-[18px]"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
                     </button>
-                    
-                    <!-- Eraser Tool -->
                     <button id="btn-eraser" onclick="setTool('eraser')" class="p-1.5 sm:p-2 rounded-full transition-colors flex-shrink-0 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sm:w-[18px] sm:h-[18px]"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"></path><path d="M22 21H7"></path><path d="m5 11 9 9"></path></svg>
                     </button>
-
                     <div class="w-[1px] h-5 sm:h-6 bg-neutral-200 mx-0.5 sm:mx-1 flex-shrink-0"></div>
-
-                    <!-- Colors -->
                     <div id="color-picker" class="flex gap-1 sm:gap-1.5 transition-opacity">
                         <button onclick="setColor('#000000', this)" class="color-btn w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 transition-transform flex-shrink-0 scale-110 border-neutral-400 shadow-sm" style="background-color: #000000"></button>
                         <button onclick="setColor('#EF4444', this)" class="color-btn w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 transition-transform flex-shrink-0 border-transparent hover:scale-110" style="background-color: #EF4444"></button>
                         <button onclick="setColor('#3B82F6', this)" class="color-btn w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 transition-transform flex-shrink-0 border-transparent hover:scale-110" style="background-color: #3B82F6"></button>
                         <button onclick="setColor('#10B981', this)" class="color-btn w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 transition-transform flex-shrink-0 border-transparent hover:scale-110" style="background-color: #10B981"></button>
                     </div>
-
                     <div class="w-[1px] h-5 sm:h-6 bg-neutral-200 mx-0.5 sm:mx-1 flex-shrink-0"></div>
-
-                    <!-- Thickness Slider -->
                     <input id="slider-thickness" type="range" min="2" max="12" value="4" oninput="setThickness(this.value)" class="w-12 sm:w-16 h-1.5 bg-neutral-200 rounded-lg appearance-none cursor-pointer accent-neutral-900 flex-shrink-0" />
                 </div>
-
-                <!-- Submit Button -->
                 <button id="btn-submit" onclick="handleSubmit()" disabled class="flex items-center justify-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-full font-bold text-sm sm:text-base transition-all flex-shrink-0 ml-1 bg-neutral-200 text-neutral-400 cursor-not-allowed">
                     <span class="hidden min-[400px]:inline">Submit</span>
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sm:w-[16px] sm:h-[16px]"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
@@ -161,7 +137,6 @@
     </div>
 
     <script>
-        // --- GAME STATE ---
         const CATEGORIES = ['Sports', 'Animals', 'Food', 'Vehicles', 'Electronics', 'Furniture', 'Clothing'];
         
         let state = {
@@ -179,7 +154,6 @@
             overlayActive: false
         };
 
-        // --- DOM ELEMENTS ---
         const canvas = document.getElementById('game-canvas');
         const ctx = canvas.getContext('2d');
         
@@ -212,7 +186,6 @@
             btnSubmit: document.getElementById('btn-submit')
         };
 
-        // --- CANVAS LOGIC ---
         function resizeCanvas() {
             if(screens.play.classList.contains('hidden')) return;
             const currentData = ctx.getImageData(0, 0, canvas.width || 1, canvas.height || 1);
@@ -249,7 +222,7 @@
 
         function handleDrawMove(e) {
             if (!state.isDrawing || state.overlayActive) return;
-            if (e.cancelable) e.preventDefault(); // Prevent scroll on touch
+            if (e.cancelable) e.preventDefault(); 
             const { x, y } = getCoordinates(e);
             ctx.lineTo(x, y);
             ctx.stroke();
@@ -259,7 +232,6 @@
             state.isDrawing = false;
         }
 
-        // Attach Canvas Events
         canvas.addEventListener('mousedown', handleDrawStart);
         canvas.addEventListener('mousemove', handleDrawMove);
         window.addEventListener('mouseup', handleDrawEnd);
@@ -269,7 +241,6 @@
         canvas.addEventListener('touchmove', handleDrawMove, { passive: false });
         window.addEventListener('touchend', handleDrawEnd);
 
-        // --- UI UPDATES ---
         function switchScreen(screenName) {
             Object.values(screens).forEach(s => {
                 s.classList.add('hidden');
@@ -280,7 +251,6 @@
         }
 
         function showOverlay(overlayName) {
-            // Hide all overlays first
             Object.values(overlays).forEach(o => o.classList.add('hidden'));
             state.overlayActive = false;
             ui.toolbar.classList.remove('opacity-0', 'pointer-events-none');
@@ -288,13 +258,9 @@
             if (overlayName) {
                 state.overlayActive = true;
                 overlays[overlayName].classList.remove('hidden');
-                
-                // Dim background for modals
                 if (overlayName === 'modalQuestion' || overlayName === 'modalGuess') {
                     overlays.dim.classList.remove('hidden');
                 }
-                
-                // Hide toolbar when modal is up
                 if (overlayName !== 'toastCategory') {
                     ui.toolbar.classList.add('opacity-0', 'pointer-events-none');
                 }
@@ -316,24 +282,16 @@
             }
         }
 
-        // --- TOOLBAR ACTIONS ---
         function setTool(tool) {
             state.activeTool = tool;
-            
-            // Update Pen styling
             ui.btnPen.className = `p-1.5 sm:p-2 rounded-full transition-colors flex-shrink-0 ${tool === 'pen' ? 'bg-neutral-900 text-white' : 'text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100'}`;
-            // Update Eraser styling
             ui.btnEraser.className = `p-1.5 sm:p-2 rounded-full transition-colors flex-shrink-0 ${tool === 'eraser' ? 'bg-neutral-900 text-white' : 'text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100'}`;
-            
-            // Fade colors if eraser is active
             ui.colorPicker.className = `flex gap-1 sm:gap-1.5 transition-opacity ${tool === 'eraser' ? 'opacity-30 pointer-events-none' : 'opacity-100'}`;
         }
 
         function setColor(hex, btnElement) {
             state.color = hex;
             setTool('pen');
-            
-            // Update Color Button Rings
             document.querySelectorAll('.color-btn').forEach(btn => {
                 btn.className = "color-btn w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 transition-transform flex-shrink-0 border-transparent hover:scale-110";
             });
@@ -344,7 +302,6 @@
             state.thickness = parseInt(val);
         }
 
-        // --- GAME LOGIC ---
         function startGame() {
             state.category = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
             state.attempt = 1;
@@ -352,18 +309,17 @@
             state.hasDrawn = false;
             
             switchScreen('play');
-            resizeCanvas(); // Ensure canvas is sized correctly
+            resizeCanvas(); 
             updateHUD();
             updateSubmitButton();
-            ui.hud.classList.add('hidden'); // Hide HUD initially
+            ui.hud.classList.add('hidden'); 
             
-            // Show category toast
             ui.toastCatText.innerText = state.category;
             showOverlay('toastCategory');
             
             setTimeout(() => {
                 showOverlay(null);
-                ui.hud.classList.remove('hidden'); // Show HUD after toast
+                ui.hud.classList.remove('hidden'); 
             }, 3000);
         }
 
@@ -372,7 +328,37 @@
             showOverlay(null);
         }
 
-        // --- API CALLS ---
+        // SCALES DOWN IMAGE TO FIX VERCEL PAYLOAD LIMITS
+        function getCompressedImage() {
+            const MAX_SIZE = 800; // Safe size for quick uploading
+            let width = canvas.width;
+            let height = canvas.height;
+
+            if (width > height) {
+                if (width > MAX_SIZE) {
+                    height *= MAX_SIZE / width;
+                    width = MAX_SIZE;
+                }
+            } else {
+                if (height > MAX_SIZE) {
+                    width *= MAX_SIZE / height;
+                    height = MAX_SIZE;
+                }
+            }
+
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = width;
+            tempCanvas.height = height;
+            const tCtx = tempCanvas.getContext('2d');
+            
+            tCtx.fillStyle = '#FFFFFF';
+            tCtx.fillRect(0, 0, width, height);
+            tCtx.drawImage(canvas, 0, 0, width, height);
+
+            // Use JPEG to make it even smaller
+            return tempCanvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+        }
+
         async function fetchGemini(prompt, base64Image) {
             const url = '/api/gemini';
             const payload = { action: 'vision', prompt: prompt, image: base64Image };
@@ -384,10 +370,23 @@
                         headers: { 'Content-Type': 'application/json' }, 
                         body: JSON.stringify(payload) 
                     });
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error("API Error Response:", errorText);
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
                     const data = await response.json();
-                    return JSON.parse(data.candidates[0].content.parts[0].text);
+                    
+                    // FIX: Clean up Gemini's markdown formatting if it exists
+                    let rawText = data.candidates[0].content.parts[0].text;
+                    rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+                    
+                    return JSON.parse(rawText);
+
                 } catch (error) {
+                    console.error("Fetch attempt failed:", error);
                     if (i === 2) throw error;
                     await new Promise(res => setTimeout(res, 1000 * (i + 1)));
                 }
@@ -398,7 +397,7 @@
             if (!state.hasDrawn) return;
             showOverlay('toastAnalyzing');
             
-            const base64Image = canvas.toDataURL('image/png').split(',')[1];
+            const base64Image = getCompressedImage();
             const historyText = state.history.length > 0 
                 ? state.history.map(h => `Attempt ${h.attempt}: I asked "${h.question}", User said "${h.answer}". I guessed "${h.guess}" (Wrong).`).join('\n') 
                 : "No previous history.";
@@ -417,7 +416,7 @@ Return ONLY a JSON object: { "question": "your yes/no question here" }`;
                 ui.questionText.innerText = `"${state.currentQuestion}"`;
                 showOverlay('modalQuestion');
             } catch (err) {
-                alert("Error contacting AI. Please try again.");
+                alert("Error contacting AI. Please try again. Check console for details.");
                 showOverlay(null);
             }
         }
@@ -426,7 +425,7 @@ Return ONLY a JSON object: { "question": "your yes/no question here" }`;
             state.userAnswer = answer;
             showOverlay('toastAnalyzing');
             
-            const base64Image = canvas.toDataURL('image/png').split(',')[1];
+            const base64Image = getCompressedImage();
             const historyText = state.history.length > 0 
                 ? state.history.map(h => `Attempt ${h.attempt}: I asked "${h.question}", User said "${h.answer}". I guessed "${h.guess}" (Wrong).`).join('\n') 
                 : "No previous history.";
@@ -448,24 +447,20 @@ Return ONLY a JSON object: { "guess": "your specific guess here" }`;
                 ui.guessText.innerText = `Is it ${prefix} ${state.currentGuess}?`;
                 showOverlay('modalGuess');
             } catch (err) {
-                alert("Error contacting AI. Please try again.");
+                alert("Error contacting AI. Please try again. Check console for details.");
                 showOverlay(null);
             }
         }
 
         function handleGuessResult(userAnsweredYesToGuess) {
             if (userAnsweredYesToGuess) {
-                // AI guessed it right -> User Loses
                 switchScreen('lose');
                 showOverlay(null);
             } else {
-                // AI guessed wrong
                 if (state.attempt >= 5) {
-                    // AI failed 5 times -> User Wins
                     switchScreen('win');
                     showOverlay(null);
                 } else {
-                    // Next attempt
                     state.history.push({ 
                         attempt: state.attempt, 
                         question: state.currentQuestion, 
@@ -474,7 +469,7 @@ Return ONLY a JSON object: { "guess": "your specific guess here" }`;
                     });
                     state.attempt++;
                     updateHUD();
-                    showOverlay(null); // Back to drawing
+                    showOverlay(null);
                 }
             }
         }

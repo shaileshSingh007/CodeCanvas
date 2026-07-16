@@ -98,12 +98,6 @@
     </div>
 
     <script>
-        // ==========================================
-        // CORRECTED VERCEL URL
-        // ==========================================
-        const YOUR_VERCEL_URL = "https://code-canvas-sigma.vercel.app";
-        // ==========================================
-
         const CATEGORIES = ['Sports', 'Animals', 'Food', 'Vehicles', 'Electronics', 'Furniture', 'Clothing'];
         
         let state = {
@@ -244,8 +238,10 @@
         // BULLETPROOF NETWORK FUNCTION
         // ===============================================
         async function fetchGemini(prompt, base64Image) {
-            const safeDomain = YOUR_VERCEL_URL.replace(/\/$/, "");
-            const endpoints = [`${safeDomain}/api/Gemini`, `${safeDomain}/api/gemini`];
+            
+            // Using a root-relative path guarantees it goes to the domain the iframe is hosted on.
+            // If the iframe is on code-canvas-sigma.vercel.app, this goes to code-canvas-sigma.vercel.app/api/Gemini
+            const endpoints = ['/api/Gemini', '/api/gemini'];
             const payload = { action: 'vision', prompt: prompt, image: base64Image };
 
             let lastErrorMsg = "";
@@ -259,7 +255,6 @@
                             body: JSON.stringify(payload) 
                         });
                         
-                        // If it's a 404, record the error and break the inner loop to try the lowercase URL
                         if (response.status === 404) {
                             lastErrorMsg = `404 Not Found at: ${url}`;
                             break; 
@@ -272,7 +267,6 @@
                         
                         const data = await response.json();
                         
-                        // Safety check: Did Google send back an actual answer?
                         if (!data.candidates || !data.candidates[0].content) {
                             throw new Error("Invalid response from Google API. Quota exceeded or error.");
                         }
@@ -289,9 +283,7 @@
                 }
             }
             
-            // If the code reaches this line, EVERY single attempt failed.
-            // We forcefully throw an error so the game doesn't crash from "undefined".
-            throw new Error(`Failed to connect.\n\nReason: ${lastErrorMsg}\n\nPlease check Vercel.`);
+            throw new Error(`Failed to connect.\n\nReason: ${lastErrorMsg}\n\nIf it says 404, your API is in the wrong folder on Vercel.`);
         }
 
         // ===============================================
@@ -307,7 +299,6 @@
 
             try {
                 const res = await fetchGemini(prompt, base64Image);
-                // By doing this, we guarantee `res` is a real object!
                 state.currentQuestion = res.question;
                 ui.questionText.innerText = `"${state.currentQuestion}"`;
                 showOverlay('modalQuestion');

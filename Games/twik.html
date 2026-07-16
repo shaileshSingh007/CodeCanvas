@@ -240,43 +240,64 @@
             return tempCanvas.toDataURL('image/jpeg', 0.5).split(',')[1];
         }
 
+        // ===============================================
+        // BULLETPROOF NETWORK FUNCTION
+        // ===============================================
         async function fetchGemini(prompt, base64Image) {
             const safeDomain = YOUR_VERCEL_URL.replace(/\/$/, "");
-            
-            // Hardcoded absolute endpoints
             const endpoints = [`${safeDomain}/api/Gemini`, `${safeDomain}/api/gemini`];
             const payload = { action: 'vision', prompt: prompt, image: base64Image };
+
+            let lastErrorMsg = "";
 
             for (let url of endpoints) {
                 for (let i = 0; i < 2; i++) {
                     try {
                         const response = await fetch(url, { 
-                            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) 
+                            method: 'POST', 
+                            headers: { 'Content-Type': 'application/json' }, 
+                            body: JSON.stringify(payload) 
                         });
                         
-                        if (response.status === 404) break; 
-                        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                        // If it's a 404, record the error and break the inner loop to try the lowercase URL
+                        if (response.status === 404) {
+                            lastErrorMsg = `404 Not Found at: ${url}`;
+                            break; 
+                        } 
+                        
+                        if (!response.ok) {
+                            const errText = await response.text();
+                            throw new Error(`HTTP ${response.status}: ${errText}`);
+                        }
                         
                         const data = await response.json();
+                        
+                        // Safety check: Did Google send back an actual answer?
+                        if (!data.candidates || !data.candidates[0].content) {
+                            throw new Error("Invalid response from Google API. Quota exceeded or error.");
+                        }
+
                         let rawText = data.candidates[0].content.parts[0].text;
                         rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+                        
                         return JSON.parse(rawText);
 
                     } catch (error) {
-                        if (i === 1 && url === endpoints[1]) throw new Error("Could not find the API at " + endpoints[0] + " or " + endpoints[1]);
+                        lastErrorMsg = error.message;
                         await new Promise(res => setTimeout(res, 1000));
                     }
                 }
             }
+            
+            // If the code reaches this line, EVERY single attempt failed.
+            // We forcefully throw an error so the game doesn't crash from "undefined".
+            throw new Error(`Failed to connect.\n\nReason: ${lastErrorMsg}\n\nPlease check Vercel.`);
         }
+
+        // ===============================================
 
         async function handleSubmit() {
             if (!state.hasDrawn) return;
-            
-            if (YOUR_VERCEL_URL.includes("YOUR-WEBSITE")) {
-                alert("CONFIGURATION ERROR:\nYou must open twik.html and edit the 'YOUR_VERCEL_URL' variable at the top of the script code with your real Vercel URL.");
-                return;
-            }
             
             showOverlay('toastAnalyzing');
             const base64Image = getCompressedImage();
@@ -286,6 +307,7 @@
 
             try {
                 const res = await fetchGemini(prompt, base64Image);
+                // By doing this, we guarantee `res` is a real object!
                 state.currentQuestion = res.question;
                 ui.questionText.innerText = `"${state.currentQuestion}"`;
                 showOverlay('modalQuestion');

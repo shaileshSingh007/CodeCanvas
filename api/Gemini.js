@@ -1,12 +1,3 @@
-// Tell Vercel to allow larger payloads (images)
-export const config = {
-    api: {
-        bodyParser: {
-            sizeLimit: '10mb',
-        },
-    },
-};
-
 export default async function handler(req, res) {
     // Only allow POST requests
     if (req.method !== 'POST') {
@@ -54,10 +45,8 @@ export default async function handler(req, res) {
         else if (action === 'tts') {
             const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
             
-            // Map the requested voice (defaults to Kore if invalid)
             const selectedVoice = (voice === "Puck") ? "Puck" : "Kore";
 
-            // Clean, compliant payload without extra parameters that might break the endpoint
             const payload = {
                 contents: [{ parts: [{ text: text }] }],
                 generationConfig: {
@@ -89,7 +78,6 @@ export default async function handler(req, res) {
                     role: "user", 
                     parts: [
                         { text: prompt }, 
-                        // Using JPEG to save space
                         { inlineData: { mimeType: "image/jpeg", data: image } }
                     ] 
                 }],
@@ -113,3 +101,4 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: error.message });
     }
 }
+

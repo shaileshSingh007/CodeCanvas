@@ -99,14 +99,9 @@
 
     <script>
         // ==========================================
-        // REQUIRED CONFIGURATION
+        // CORRECTED VERCEL URL
         // ==========================================
-        
-        // 🚨 REPLACE THIS WITH YOUR REAL VERCEL WEBSITE URL! 🚨
-        // Keep the quotes. Example: "https://my-cool-website.vercel.app"
-        // Do NOT include a slash (/) at the end.
-        const YOUR_VERCEL_URL = "https://vercel.com/shaileshsingh007s-projects/code-canvas";
-
+        const YOUR_VERCEL_URL = "https://code-canvas-sigma.vercel.app";
         // ==========================================
 
         const CATEGORIES = ['Sports', 'Animals', 'Food', 'Vehicles', 'Electronics', 'Furniture', 'Clothing'];
@@ -246,7 +241,6 @@
         }
 
         async function fetchGemini(prompt, base64Image) {
-            // Remove trailing slashes if user added one by accident
             const safeDomain = YOUR_VERCEL_URL.replace(/\/$/, "");
             
             // Hardcoded absolute endpoints

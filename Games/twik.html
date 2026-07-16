@@ -359,10 +359,48 @@
             return tempCanvas.toDataURL('image/jpeg', 0.5).split(',')[1];
         }
 
+        <!-- ... existing code ... -->
+        // SCALES DOWN IMAGE TO FIX VERCEL PAYLOAD LIMITS
+        function getCompressedImage() {
+            const MAX_SIZE = 400; // Aggressively shrink to guarantee it passes Vercel limits
+            let width = canvas.width;
+            let height = canvas.height;
+
+            if (width > height) {
+                if (width > MAX_SIZE) {
+                    height *= MAX_SIZE / width;
+                    width = MAX_SIZE;
+                }
+            } else {
+                if (height > MAX_SIZE) {
+                    width *= MAX_SIZE / height;
+                    height = MAX_SIZE;
+                }
+            }
+
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = width;
+            tempCanvas.height = height;
+            const tCtx = tempCanvas.getContext('2d');
+            
+            tCtx.fillStyle = '#FFFFFF';
+            tCtx.fillRect(0, 0, width, height);
+            tCtx.drawImage(canvas, 0, 0, width, height);
+
+            return tempCanvas.toDataURL('image/jpeg', 0.5).split(',')[1];
+        }
+
         async function fetchGemini(prompt, base64Image) {
-            // FIX: If testing locally, change this to your full Vercel domain!
-            // Example: const url = 'https://your-website.vercel.app/api/Gemini';
-            const url = '/api/Gemini'; 
+            // FIX: Force an Absolute URL so the iframe doesn't mess up the path
+            const baseUrl = window.location.origin;
+            
+            // If you are testing locally (file://), this will catch it and warn you
+            if (baseUrl === 'null' || baseUrl.startsWith('file://')) {
+                alert("Local File Error: You cannot run this directly from a double-clicked HTML file because it needs a server to reach the API. Please test it on your live Vercel link.");
+                throw new Error("Local file system detected.");
+            }
+
+            const url = baseUrl + '/api/Gemini'; 
             const payload = { action: 'vision', prompt: prompt, image: base64Image };
 
             for (let i = 0; i < 3; i++) {
@@ -375,7 +413,7 @@
                     
                     if (!response.ok) {
                         if (response.status === 404) {
-                            throw new Error(`404 Not Found at: ${window.location.origin}${url}\n\nIf you are testing this locally on your computer, you must change the 'url' variable in the code to your full Vercel domain (e.g. https://your-site.vercel.app/api/Gemini).`);
+                            throw new Error(`404 Not Found at exactly: ${url}\n\nPlease verify your file is named Gemini.js and is in the 'api' folder at the very root of your repository.`);
                         }
                         const errorText = await response.text();
                         console.error("API Error Response:", errorText);

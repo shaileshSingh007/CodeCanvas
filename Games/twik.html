@@ -355,85 +355,50 @@
             tCtx.fillRect(0, 0, width, height);
             tCtx.drawImage(canvas, 0, 0, width, height);
 
-            // Use JPEG at 50% quality to make it tiny (around 15kb)
-            return tempCanvas.toDataURL('image/jpeg', 0.5).split(',')[1];
-        }
-
-        <!-- ... existing code ... -->
-        // SCALES DOWN IMAGE TO FIX VERCEL PAYLOAD LIMITS
-        function getCompressedImage() {
-            const MAX_SIZE = 400; // Aggressively shrink to guarantee it passes Vercel limits
-            let width = canvas.width;
-            let height = canvas.height;
-
-            if (width > height) {
-                if (width > MAX_SIZE) {
-                    height *= MAX_SIZE / width;
-                    width = MAX_SIZE;
-                }
-            } else {
-                if (height > MAX_SIZE) {
-                    width *= MAX_SIZE / height;
-                    height = MAX_SIZE;
-                }
-            }
-
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = width;
-            tempCanvas.height = height;
-            const tCtx = tempCanvas.getContext('2d');
-            
-            tCtx.fillStyle = '#FFFFFF';
-            tCtx.fillRect(0, 0, width, height);
-            tCtx.drawImage(canvas, 0, 0, width, height);
-
             return tempCanvas.toDataURL('image/jpeg', 0.5).split(',')[1];
         }
 
         async function fetchGemini(prompt, base64Image) {
-            // FIX: Force an Absolute URL so the iframe doesn't mess up the path
-            const baseUrl = window.location.origin;
-            
-            // If you are testing locally (file://), this will catch it and warn you
-            if (baseUrl === 'null' || baseUrl.startsWith('file://')) {
-                alert("Local File Error: You cannot run this directly from a double-clicked HTML file because it needs a server to reach the API. Please test it on your live Vercel link.");
-                throw new Error("Local file system detected.");
-            }
-
-            const url = baseUrl + '/api/Gemini'; 
             const payload = { action: 'vision', prompt: prompt, image: base64Image };
+            
+            // FIX: Try Exact Casing first, then Fallback to lowercase automatically
+            // Using absolute paths starting with "/" completely ignores iframe boundaries!
+            const endpoints = ['/api/Gemini', '/api/gemini'];
 
-            for (let i = 0; i < 3; i++) {
-                try {
-                    const response = await fetch(url, { 
-                        method: 'POST', 
-                        headers: { 'Content-Type': 'application/json' }, 
-                        body: JSON.stringify(payload) 
-                    });
-                    
-                    if (!response.ok) {
+            for (let url of endpoints) {
+                for (let i = 0; i < 2; i++) { // Try each url twice
+                    try {
+                        const response = await fetch(url, { 
+                            method: 'POST', 
+                            headers: { 'Content-Type': 'application/json' }, 
+                            body: JSON.stringify(payload) 
+                        });
+                        
                         if (response.status === 404) {
-                            throw new Error(`404 Not Found at exactly: ${url}\n\nPlease verify your file is named Gemini.js and is in the 'api' folder at the very root of your repository.`);
+                            break; // Stop retrying this specific URL. Break the inner loop and move to the fallback URL.
                         }
-                        const errorText = await response.text();
-                        console.error("API Error Response:", errorText);
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    
-                    const data = await response.json();
-                    
-                    // FIX: Clean up Gemini's markdown formatting if it exists
-                    let rawText = data.candidates[0].content.parts[0].text;
-                    rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-                    
-                    return JSON.parse(rawText);
 
-                } catch (error) {
-                    console.error("Fetch attempt failed:", error);
-                    if (i === 2) throw error;
-                    await new Promise(res => setTimeout(res, 1000 * (i + 1)));
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            console.error("API Error Response:", errorText);
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        
+                        const data = await response.json();
+                        
+                        let rawText = data.candidates[0].content.parts[0].text;
+                        rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+                        
+                        return JSON.parse(rawText);
+
+                    } catch (error) {
+                        console.error(`Fetch attempt to ${url} failed:`, error);
+                        if (i === 1 && url === endpoints[1]) throw error; // If both URLs and all retries failed
+                        await new Promise(res => setTimeout(res, 1000));
+                    }
                 }
             }
+            throw new Error("Could not find the API at /api/Gemini or /api/gemini. Please check Vercel deployment.");
         }
 
         async function handleSubmit() {
@@ -459,7 +424,7 @@ Return ONLY a JSON object: { "question": "your yes/no question here" }`;
                 ui.questionText.innerText = `"${state.currentQuestion}"`;
                 showOverlay('modalQuestion');
             } catch (err) {
-                alert("Error Details: " + err.message + "\n\nPlease check Vercel logs or browser console.");
+                alert("Error Details: " + err.message + "\n\nPlease check your live Vercel link.");
                 showOverlay(null);
             }
         }
@@ -490,7 +455,7 @@ Return ONLY a JSON object: { "guess": "your specific guess here" }`;
                 ui.guessText.innerText = `Is it ${prefix} ${state.currentGuess}?`;
                 showOverlay('modalGuess');
             } catch (err) {
-                alert("Error Details: " + err.message + "\n\nPlease check Vercel logs or browser console.");
+                alert("Error Details: " + err.message + "\n\nPlease check your live Vercel link.");
                 showOverlay(null);
             }
         }

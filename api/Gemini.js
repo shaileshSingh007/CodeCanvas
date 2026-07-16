@@ -1,3 +1,12 @@
+// Tell Vercel to allow larger payloads (images)
+export const config = {
+    api: {
+        bodyParser: {
+            sizeLimit: '10mb',
+        },
+    },
+};
+
 export default async function handler(req, res) {
     // Only allow POST requests
     if (req.method !== 'POST') {
@@ -80,7 +89,8 @@ export default async function handler(req, res) {
                     role: "user", 
                     parts: [
                         { text: prompt }, 
-                        { inlineData: { mimeType: "image/png", data: image } }
+                        // Using JPEG to save space
+                        { inlineData: { mimeType: "image/jpeg", data: image } }
                     ] 
                 }],
                 generationConfig: { responseMimeType: "application/json" }
@@ -103,5 +113,3 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: error.message });
     }
 }
-
-

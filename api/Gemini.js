@@ -71,8 +71,24 @@ export default async function handler(req, res) {
 
         // --- 3. TWIK THE AI VISION LOGIC ---
         else if (action === 'vision') {
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-            
+    // Fetch list of available models
+    const modelsRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+    const modelsData = await modelsRes.json();
+    
+    // Find a model that supports generateContent and can handle images
+    // (most "gemini-*" flash or pro models do)
+    const visionModel = modelsData.models.find(m =>
+        m.supportedGenerationMethods.includes("generateContent") &&
+        m.name.includes("gemini") &&
+        (m.name.includes("flash") || m.name.includes("pro")) // optional filter
+    );
+    
+    if (!visionModel) return res.status(500).json({ error: "No vision model available." });
+
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/${visionModel.name}:generateContent?key=${apiKey}`;
+    
+    
+}
             const payload = {
                 contents: [{ 
                     role: "user", 

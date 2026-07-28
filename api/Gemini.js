@@ -15,21 +15,8 @@ export default async function handler(req, res) {
     try {
         // --- 1. HEROES CHAT LOGIC ---
         if (action === 'chat') {
-            const modelsRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-            if (!modelsRes.ok) {
-                if (modelsRes.status === 429) return res.status(429).json({ error: 'Quota Exceeded' });
-                return res.status(modelsRes.status).json({ error: 'Failed to fetch models list.' });
-            }
-            const modelsData = await modelsRes.json();
-            
-            const validModelObj = modelsData.models.find(m => 
-                m.supportedGenerationMethods.includes("generateContent") && 
-                !m.name.includes("tts") && !m.name.includes("embedding") && m.name.includes("gemini")
-            );
-
-            if (!validModelObj) return res.status(500).json({ error: "No text models enabled." });
-
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/${validModelObj.name}:generateContent?key=${apiKey}`;
+            // Hardcoded to a stable, fast text model to prevent breaking
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
             
             const response = await fetch(endpoint, {
                 method: 'POST',
@@ -71,24 +58,9 @@ export default async function handler(req, res) {
 
         // --- 3. TWIK THE AI VISION LOGIC ---
         else if (action === 'vision') {
-    // Fetch list of available models
-    const modelsRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-    const modelsData = await modelsRes.json();
-    
-    // Find a model that supports generateContent and can handle images
-    // (most "gemini-*" flash or pro models do)
-    const visionModel = modelsData.models.find(m =>
-        m.supportedGenerationMethods.includes("generateContent") &&
-        m.name.includes("gemini") &&
-        (m.name.includes("flash") || m.name.includes("pro")) // optional filter
-    );
-    
-    if (!visionModel) return res.status(500).json({ error: "No vision model available." });
-
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/${visionModel.name}:generateContent?key=${apiKey}`;
-    
-    
-}
+            // Hardcoded to a stable vision-capable model
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            
             const payload = {
                 contents: [{ 
                     role: "user", 
@@ -117,4 +89,3 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: error.message });
     }
 }
-

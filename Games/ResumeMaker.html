@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimalist & Creative Resume Creator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        gray: {
+                            850: '#1f2937',
+                            900: '#111827',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- html2pdf for PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- FontAwesome for Resume Templates -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4B5563; }
+
+        /* A4 Canvas - Strict Dimensions */
+        .a4-canvas {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Step Transitions */
+        .form-step { display: none; animation: fadeIn 0.4s ease-in-out; }
+        .form-step.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Range Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px; width: 16px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            margin-top: -6px;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 4px;
+            cursor: pointer;
+            background: #374151;
+            border-radius: 2px;
+        }
+
+        #sig-canvas { touch-action: none; cursor: crosshair; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 font-sans antialiased min-h-screen">
+
+    <!-- Navbar -->
+    <nav class="border-b border-gray-800 bg-gray-900/80 backdrop-blur sticky top-0 z-40">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <i class="ph ph-file-text text-2xl text-blue-500"></i>
+                <h1 class="text-xl font-bold tracking-tight">ResumeCraft</h1>
+            </div>
+            <div class="flex gap-4 items-center">
+                <button onclick="clearLocalStorage()" class="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors">
+                    <i class="ph ph-trash"></i> Clear Data
+                </button>
+                <div class="text-xs text-gray-400 hidden sm:flex items-center gap-1 bg-gray-800 px-3 py-1.5 rounded-full border border-gray-700">
+                    <i class="ph ph-shield-check text-green-400"></i>
+                    Auto-saved
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-5xl mx-auto px-4 py-8" id="main-container">
+        
+        <!-- STEP 1: Form Wizard View -->
+        <div id="step-1-form" class="space-y-8 max-w-3xl mx-auto">
+            
+            <div class="text-center space-y-2 mb-8">
+                <h2 class="text-3xl font-bold tracking-tight">Create Your Resume</h2>
+                <p class="text-gray-400">Your progress is automatically saved in your browser.</p>
+            </div>
+
+            <!-- Progress Indicator -->
+            <div class="flex justify-between items-center mb-8 relative">
+                <div class="absolute left-0 top-1/2 transform -translate-y-1/2 w-full h-1 bg-gray-800 -z-10 rounded-full"></div>
+                <div class="absolute left-0 top-1/2 transform -translate-y-1/2 h-1 bg-blue-600 -z-10 rounded-full transition-all duration-300" id="progress-bar" style="width: 0%;"></div>
+                
+                <div class="step-indicator flex flex-col items-center gap-2" data-step="1"><div class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold border-4 border-gray-900" id="ind-1">1</div><span class="text-xs font-medium text-gray-300 hidden sm:block">Personal</span></div>
+                <div class="step-indicator flex flex-col items-center gap-2" data-step="2"><div class="w-10 h-10 rounded-full bg-gray-800 text-gray-400 flex items-center justify-center font-bold border-4 border-gray-900" id="ind-2">2</div><span class="text-xs font-medium text-gray-500 hidden sm:block">Summary</span></div>
+                <div class="step-indicator flex flex-col items-center gap-2" data-step="3"><div class="w-10 h-10 rounded-full bg-gray-800 text-gray-400 flex items-center justify-center font-bold border-4 border-gray-900" id="ind-3">3</div><span class="text-xs font-medium text-gray-500 hidden sm:block">Experience</span></div>
+                <div class="step-indicator flex flex-col items-center gap-2" data-step="4"><div class="w-10 h-10 rounded-full bg-gray-800 text-gray-400 flex items-center justify-center font-bold border-4 border-gray-900" id="ind-4">4</div><span class="text-xs font-medium text-gray-500 hidden sm:block">Education</span></div>
+                <div class="step-indicator flex flex-col items-center gap-2" data-step="5"><div class="w-10 h-10 rounded-full bg-gray-800 text-gray-400 flex items-center justify-center font-bold border-4 border-gray-900" id="ind-5">5</div><span class="text-xs font-medium text-gray-500 hidden sm:block">Skills</span></div>
+            </div>
+
+            <form id="resume-form">
+                
+                <!-- STEP 1: Personal Info -->
+                <div class="form-step active" id="form-step-1">
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-sm">
+                        <h3 class="text-lg font-semibold mb-4 flex items-center gap-2 border-b border-gray-700 pb-2"><i class="ph ph-user text-blue-400"></i> Personal Details</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-400 mb-1">Profile Picture (Optional)</label>
+                                <div class="flex items-center gap-4">
+                                    <input type="file" id="r-image" accept="image/*" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-1.5 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer text-gray-400">
+                                    <img id="img-preview" class="w-12 h-12 rounded-full object-cover hidden border border-gray-600" src="" alt="Preview">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-1">Full Name</label>
+                                <input type="text" id="r-name" required class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-colors" placeholder="John Doe">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-1">Professional Title</label>
+                                <input type="text" id="r-title" required class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-colors" placeholder="e.g. Full Stack Developer">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-1">Email</label>
+                                <input type="email" id="r-email" required class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-colors" placeholder="john@example.com">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-1">Phone Number</label>
+                                <input type="tel" id="r-phone" required class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-colors" placeholder="+1 (555) 123-4567">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-1">Location</label>
+                                <input type="text" id="r-location" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-colors" placeholder="City, Country">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-1">LinkedIn / GitHub (Optional)</label>
+                                <input type="text" id="r-link" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-colors" placeholder="github.com/johndoe">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-end pt-6">
+                        <button type="button" onclick="nextStep(2)" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-8 rounded-lg transition-colors shadow-lg shadow-blue-500/30 flex items-center gap-2">Next <i class="ph ph-arrow-right"></i></button>
+                    </div>
+                </div>
+
+                <!-- STEP 2: Summary -->
+                <div class="form-step" id="form-step-2">
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-sm">
+                        <h3 class="text-lg font-semibold mb-4 flex items-center gap-2 border-b border-gray-700 pb-2"><i class="ph ph-text-align-left text-blue-400"></i> Professional Summary</h3>
+                        <textarea id="r-summary" rows="5" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-colors" placeholder="A passionate developer with experience building web applications..."></textarea>
+                    </div>
+                    <div class="flex justify-between pt-6">
+                        <button type="button" onclick="prevStep(1)" class="bg-gray-700 hover:bg-gray-600 text-white font-medium py-2.5 px-6 rounded-lg transition-colors flex items-center gap-2"><i class="ph ph-arrow-left"></i> Back</button>
+                        <button type="button" onclick="nextStep(3)" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-8 rounded-lg transition-colors shadow-lg shadow-blue-500/30 flex items-center gap-2">Next <i class="ph ph-arrow-right"></i></button>
+                    </div>
+                </div>
+
+                <!-- STEP 3: Experience -->
+                <div class="form-step" id="form-step-3">
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-sm">
+                        <div class="flex justify-between items-center border-b border-gray-700 pb-2 mb-4">
+                            <h3 class="text-lg font-semibold flex items-center gap-2"><i class="ph ph-briefcase text-blue-400"></i> Work Experience</h3>
+                            <button type="button" onclick="addExperience()" class="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1"><i class="ph ph-plus"></i> Add Job</button>
+                        </div>
+                        <div id="experience-container" class="space-y-6"></div>
+                    </div>
+                    <div class="flex justify-between pt-6">
+                        <button type="button" onclick="prevStep(2)" class="bg-gray-700 hover:bg-gray-600 text-white font-medium py-2.5 px-6 rounded-lg transition-colors flex items-center gap-2"><i class="ph ph-arrow-left"></i> Back</button>
+                        <button type="button" onclick="nextStep(4)" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-8 rounded-lg transition-colors flex items-center gap-2">Next <i class="ph ph-arrow-right"></i></button>
+                    </div>
+                </div>
+
+                <!-- STEP 4: Education -->
+                <div class="form-step" id="form-step-4">
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-sm">
+                        <div class="flex justify-between items-center border-b border-gray-700 pb-2 mb-4">
+                            <h3 class="text-lg font-semibold flex items-center gap-2"><i class="ph ph-graduation-cap text-blue-400"></i> Education</h3>
+                            <button type="button" onclick="addEducation()" class="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1"><i class="ph ph-plus"></i> Add Degree</button>
+                        </div>
+                        <div id="education-container" class="space-y-6"></div>
+                    </div>
+                    <div class="flex justify-between pt-6">
+                        <button type="button" onclick="prevStep(3)" class="bg-gray-700 hover:bg-gray-600 text-white font-medium py-2.5 px-6 rounded-lg transition-colors flex items-center gap-2"><i class="ph ph-arrow-left"></i> Back</button>
+                        <button type="button" onclick="nextStep(5)" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-8 rounded-lg transition-colors flex items-center gap-2">Next <i class="ph ph-arrow-right"></i></button>
+                    </div>
+                </div>
+
+                <!-- STEP 5: Skills, Hobbies, Signature -->
+                <div class="form-step" id="form-step-5">
+                    
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-sm mb-6">
+                        <div class="flex justify-between items-center border-b border-gray-700 pb-2 mb-4">
+                            <h3 class="text-lg font-semibold flex items-center gap-2"><i class="ph ph-lightning text-blue-400"></i> Skills & Proficiency</h3>
+                            <button type="button" onclick="addSkill()" class="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1"><i class="ph ph-plus"></i> Add Skill</button>
+                        </div>
+                        <div id="skills-container" class="space-y-4"></div>
+                    </div>
+
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-sm mb-6">
+                        <h3 class="text-lg font-semibold mb-4 flex items-center gap-2 border-b border-gray-700 pb-2"><i class="ph ph-star text-blue-400"></i> Hobbies & Interests</h3>
+                        <label class="block text-sm font-medium text-gray-400 mb-1">Comma separated (e.g., Reading, Coding, Sketching, Music)</label>
+                        <textarea id="r-hobbies" rows="2" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-colors" placeholder="Reading, Coding, Sketching..."></textarea>
+                    </div>
+
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-sm mb-6">
+                        <h3 class="text-lg font-semibold mb-4 flex items-center gap-2 border-b border-gray-700 pb-2"><i class="ph ph-check-square text-blue-400"></i> Declaration</h3>
+                        <textarea id="r-declaration" rows="2" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-300" placeholder="I hereby declare that...">I hereby declare that all the information provided above is true and correct to the best of my knowledge.</textarea>
+                    </div>
+
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-sm">
+                        <h3 class="text-lg font-semibold mb-4 flex items-center gap-2 border-b border-gray-700 pb-2"><i class="ph ph-pen-nib text-blue-400"></i> Signature (Optional)</h3>
+                        <div class="flex gap-2 mb-4 bg-gray-900 p-1 rounded-lg w-fit border border-gray-700">
+                            <button type="button" id="tab-draw" onclick="switchSigMode('draw')" class="px-4 py-1.5 rounded bg-gray-700 text-white text-sm font-medium">Draw</button>
+                            <button type="button" id="tab-upload" onclick="switchSigMode('upload')" class="px-4 py-1.5 rounded text-gray-400 hover:text-white text-sm font-medium">Upload</button>
+                        </div>
+                        <div id="area-draw" class="space-y-3">
+                            <div class="border-2 border-dashed border-gray-600 rounded-lg p-2 bg-gray-900/50 w-full overflow-hidden flex justify-center">
+                                <canvas id="sig-canvas" height="150" class="bg-white rounded w-full max-w-[400px]"></canvas>
+                            </div>
+                            <button type="button" onclick="clearSignature()" class="text-sm text-red-400 hover:text-red-300 flex items-center gap-1"><i class="ph ph-eraser"></i> Clear Drawing</button>
+                        </div>
+                        <div id="area-upload" class="hidden space-y-3">
+                            <input type="file" id="r-sig-file" accept="image/*" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-1.5 text-sm text-gray-400 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:bg-blue-600 file:text-white">
+                            <img id="sig-preview" class="h-16 object-contain hidden border border-gray-600 bg-white rounded p-1" src="" alt="Signature Preview">
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between pt-6">
+                        <button type="button" onclick="prevStep(4)" class="bg-gray-700 hover:bg-gray-600 text-white font-medium py-2.5 px-6 rounded-lg transition-colors flex items-center gap-2"><i class="ph ph-arrow-left"></i> Back</button>
+                        <button type="button" onclick="submitForm()" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 px-8 rounded-lg transition-colors shadow-lg shadow-green-500/30 flex items-center gap-2">Choose Template <i class="ph ph-check-circle"></i></button>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+
+        <!-- STEP 2: Template Selection View -->
+        <div id="step-2-templates" class="hidden space-y-8 animate-fade-in max-w-6xl mx-auto">
+            <div class="flex items-center gap-4 mb-8">
+                <button type="button" onclick="backToWizard()" class="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-gray-300 transition-colors">
+                    <i class="ph ph-arrow-left"></i>
+                </button>
+                <div>
+                    <h2 class="text-3xl font-bold tracking-tight">Select a Template</h2>
+                    <p class="text-gray-400">Choose a design to preview and download your resume.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Clean 1 -->
+                <button onclick="previewTemplate(1)" class="group text-left bg-gray-800 rounded-xl border border-gray-700 overflow-hidden hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 transition-all">
+                    <div class="h-48 bg-white/5 p-4 flex flex-col justify-between">
+                        <div class="w-1/2 h-4 bg-gray-500 rounded mb-4"></div>
+                        <div class="space-y-2"><div class="w-full h-2 bg-gray-600 rounded"></div><div class="w-5/6 h-2 bg-gray-600 rounded"></div></div>
+                    </div>
+                    <div class="p-4 border-t border-gray-700 flex justify-between items-center"><span class="font-semibold text-gray-100">Simple Clean</span><i class="ph ph-eye text-gray-400 group-hover:text-blue-400"></i></div>
+                </button>
+
+                <!-- Modern 2 -->
+                <button onclick="previewTemplate(2)" class="group text-left bg-gray-800 rounded-xl border border-gray-700 overflow-hidden hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 transition-all">
+                    <div class="h-48 bg-white/5 flex">
+                        <div class="w-1/3 h-full bg-gray-700 p-2"><div class="w-full h-8 bg-gray-500 rounded-full mb-2"></div></div>
+                        <div class="w-2/3 p-3 space-y-2"><div class="w-full h-3 bg-gray-500 rounded mb-4"></div><div class="w-full h-2 bg-gray-600 rounded"></div></div>
+                    </div>
+                    <div class="p-4 border-t border-gray-700 flex justify-between items-center"><span class="font-semibold text-gray-100">Modern Sidebar</span><i class="ph ph-eye text-gray-400 group-hover:text-blue-400"></i></div>
+                </button>
+
+                <!-- Creative 3 (Yellow/Dark Theme) -->
+                <button onclick="previewTemplate(3)" class="group text-left bg-gray-800 rounded-xl border border-gray-700 overflow-hidden hover:border-yellow-500 hover:shadow-lg hover:shadow-yellow-500/20 transition-all">
+                    <div class="h-48 bg-white/5 flex flex-col relative">
+                        <div class="absolute left-0 top-0 bottom-0 w-1/3 bg-[#0A1128] border-r border-yellow-500/30 p-2 flex flex-col items-center">
+                            <div class="w-8 h-8 rounded-full border border-yellow-500 bg-gray-600 mb-2"></div>
+                            <div class="w-full h-1 bg-yellow-500 rounded mb-1"></div>
+                        </div>
+                        <div class="ml-[33%] p-3 space-y-3">
+                             <div class="w-3/4 h-3 bg-gray-700 rounded"></div>
+                             <div class="pl-2 border-l-2 border-yellow-500 space-y-1"><div class="w-full h-1 bg-gray-600 rounded"></div><div class="w-full h-1 bg-gray-600 rounded"></div></div>
+                        </div>
+                    </div>
+                    <div class="p-4 border-t border-gray-700 flex justify-between items-center"><span class="font-semibold text-gray-100">Creative Dark</span><i class="ph ph-eye text-gray-400 group-hover:text-yellow-400"></i></div>
+                </button>
+
+                <!-- Creative 4 (Full Stack Theme) -->
+                <button onclick="previewTemplate(4)" class="group text-left bg-gray-800 rounded-xl border border-gray-700 overflow-hidden hover:border-orange-500 hover:shadow-lg hover:shadow-orange-500/20 transition-all">
+                    <div class="h-48 bg-white/5 flex flex-col relative">
+                        <div class="absolute left-0 top-0 bottom-0 w-1/3 bg-[#0f172a] p-2 flex flex-col items-center">
+                            <div class="w-10 h-10 rounded-full border-2 border-orange-500 bg-gray-700 mb-2"></div>
+                        </div>
+                        <div class="ml-[33%] p-3 space-y-3">
+                             <div class="w-full h-4 bg-gray-800 rounded"></div>
+                             <div class="w-1/2 h-2 bg-orange-500 rounded-full"></div>
+                             <div class="pl-2 border-l border-gray-600 space-y-1 mt-2"><div class="w-full h-1 bg-gray-500 rounded"></div></div>
+                        </div>
+                    </div>
+                    <div class="p-4 border-t border-gray-700 flex justify-between items-center"><span class="font-semibold text-gray-100">Creative Accent</span><i class="ph ph-eye text-gray-400 group-hover:text-orange-400"></i></div>
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FULLSCREEN PREVIEW MODAL -->
+    <div id="preview-modal" class="hidden fixed inset-0 z-50 bg-gray-900/95 backdrop-blur overflow-hidden flex flex-col animate-fade-in">
+        <div class="h-16 border-b border-gray-800 bg-gray-900 flex items-center justify-between px-4 sm:px-6 shrink-0 shadow-lg relative z-10">
+            <div class="flex items-center gap-4">
+                <button onclick="closePreview()" class="text-gray-400 hover:text-white transition-colors flex items-center gap-2 bg-gray-800 px-3 py-1.5 rounded-lg"><i class="ph ph-x"></i> Edit</button>
+                <h3 class="font-semibold hidden sm:block">Resume Preview</h3>
+            </div>
+            <button id="download-btn" onclick="exportPDF()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors flex items-center gap-2 shadow-lg shadow-blue-500/20"><i class="ph ph-download-simple font-bold"></i> Export PDF</button>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-4 sm:p-8 flex justify-center items-start bg-gray-900 relative" id="pdf-scroll-area">
+            <div id="pdf-loading" class="hidden absolute inset-0 z-20 bg-gray-900/80 backdrop-blur-sm flex flex-col items-center justify-center">
+                <i class="ph ph-spinner-gap animate-spin text-4xl text-blue-500 mb-4"></i>
+                <p class="font-medium">Generating PDF...</p>
+            </div>
+            <div id="preview-wrapper" style="transform-origin: top center; transition: transform 0.2s;">
+                <div id="resume-render-target" class="a4-canvas"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // Data State
+        let currentResumeData = {};
+        let profileImageBase64 = null; 
+        let signatureBase64 = null;
+        let activeSigMode = 'draw';
+        
+        // Canvas Setup
+        const canvas = document.getElementById('sig-canvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width > 400 ? 400 : rect.width; 
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2.5;
+            
+            if(activeSigMode === 'draw' && signatureBase64 && signatureBase64.startsWith('data:image/png')) {
+                const img = new Image();
+                img.onload = () => ctx.drawImage(img, 0, 0);
+                img.src = signatureBase64;
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        // Preview Scaling
+        function adjustPreviewScale() {
+            const wrapper = document.getElementById('preview-wrapper');
+            const scrollArea = document.getElementById('pdf-scroll-area');
+            const a4Target = document.getElementById('resume-render-target');
+            if (!wrapper || !scrollArea || !a4Target) return;
+
+            const a4Width = 794; 
+            const availableWidth = scrollArea.clientWidth - 32;
+
+            if (availableWidth < a4Width) {
+                const scale = availableWidth / a4Width;
+                wrapper.style.transform = `scale(${scale})`;
+                const actualHeight = a4Target.offsetHeight || 1123;
+                wrapper.style.marginBottom = `-${actualHeight * (1 - scale)}px`;
+            } else {
+                wrapper.style.transform = 'scale(1)';
+                wrapper.style.marginBottom = '0';
+            }
+        }
+        window.addEventListener('resize', adjustPreviewScale);
+
+
+        // --- Wizard Logic ---
+        function updateProgress(step) {
+            const progress = (step - 1) / 4 * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+
+            document.querySelectorAll('.step-indicator').forEach(ind => {
+                const s = parseInt(ind.getAttribute('data-step'));
+                const icon = ind.querySelector('div');
+                const text = ind.querySelector('span');
+                
+                if (s < step) {
+                    icon.className = "w-10 h-10 rounded-full bg-green-500 text-white flex items-center justify-center font-bold border-4 border-gray-900";
+                    icon.innerHTML = "<i class='ph ph-check'></i>";
+                    text.className = "text-xs font-medium text-green-400 hidden sm:block";
+                } else if (s === step) {
+                    icon.className = "w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold border-4 border-gray-900";
+                    icon.innerHTML = s;
+                    text.className = "text-xs font-medium text-blue-400 hidden sm:block";
+                } else {
+                    icon.className = "w-10 h-10 rounded-full bg-gray-800 text-gray-400 flex items-center justify-center font-bold border-4 border-gray-900";
+                    icon.innerHTML = s;
+                    text.className = "text-xs font-medium text-gray-500 hidden sm:block";
+                }
+            });
+        }
+
+        function validateStep(stepIndex) {
+            const stepDiv = document.getElementById(`form-step-${stepIndex}`);
+            const inputs = stepDiv.querySelectorAll('input[required], textarea[required]');
+            for (let input of inputs) {
+                if (!input.checkValidity()) {
+                    input.reportValidity();
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function nextStep(targetStep) {
+            if (validateStep(targetStep - 1)) {
+                saveDataToLocal(); 
+                document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+                document.getElementById(`form-step-${targetStep}`).classList.add('active');
+                updateProgress(targetStep);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                if(targetStep === 5) resizeCanvas();
+            }
+        }
+
+        function prevStep(targetStep) {
+            saveDataToLocal(); 
+            document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+            document.getElementById(`form-step-${targetStep}`).classList.add('active');
+            updateProgress(targetStep);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+
+        // --- Signature Logic ---
+        function startDrawing(e) { isDrawing = true; draw(e); }
+        function stopDrawing() { isDrawing = false; ctx.beginPath(); saveSignature(); }
+        function draw(e) {
+            if (!isDrawing) return;
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            ctx.lineTo(clientX - rect.left, clientY - rect.top);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(clientX - rect.left, clientY - rect.top);
+            e.preventDefault();
+        }
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+        canvas.addEventListener('touchstart', startDrawing, {passive: false});
+        canvas.addEventListener('touchmove', draw, {passive: false});
+        canvas.addEventListener('touchend', stopDrawing);
+
+        function clearSignature() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            signatureBase64 = null;
+            saveDataToLocal();
+        }
+
+        function saveSignature() { signatureBase64 = canvas.toDataURL('image/png'); }
+
+        function switchSigMode(mode) {
+            activeSigMode = mode;
+            document.getElementById('tab-draw').className = mode === 'draw' ? "px-4 py-1.5 rounded bg-gray-700 text-white text-sm font-medium" : "px-4 py-1.5 rounded text-gray-400 hover:text-white text-sm font-medium";
+            document.getElementById('tab-upload').className = mode === 'upload' ? "px-4 py-1.5 rounded bg-gray-700 text-white text-sm font-medium" : "px-4 py-1.5 rounded text-gray-400 hover:text-white text-sm font-medium";
+            document.getElementById('area-draw').classList.toggle('hidden', mode !== 'draw');
+            document.getElementById('area-upload').classList.toggle('hidden', mode !== 'upload');
+            if(mode === 'draw') resizeCanvas();
+        }
+
+
+        // --- Dynamic Fields Logic ---
+        function generateId() { return Math.random().toString(36).substr(2, 9); }
+
+        function createInput(label, type, name, placeholder, value="") {
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = `<label class="block text-sm font-medium text-gray-400 mb-1">${label}</label>
+                                 <input type="${type}" name="${name}" placeholder="${placeholder}" value="${value}" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-colors">`;
+            return wrapper;
+        }
+
+        // EXPERIENCE
+        function addExperience(data = null) {
+            const expId = generateId();
+            const container = document.getElementById('experience-container');
+            const expBlock = document.createElement('div');
+            expBlock.className = 'exp-item relative p-4 bg-gray-900/50 rounded-lg border border-gray-700 space-y-4';
+            expBlock.innerHTML = `
+                <button type="button" onclick="this.parentElement.remove(); saveDataToLocal();" class="absolute top-2 right-2 text-gray-500 hover:text-red-400 p-1"><i class="ph ph-trash"></i></button>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    ${createInput('Job Title', 'text', 'exp-title', 'e.g. Software Engineer', data?.title || '').outerHTML}
+                    ${createInput('Company Name', 'text', 'exp-company', 'e.g. Google', data?.company || '').outerHTML}
+                    ${createInput('Start Date', 'text', 'exp-start', 'e.g. Mar 2022', data?.start || '').outerHTML}
+                    ${createInput('End Date (or Present)', 'text', 'exp-end', 'e.g. Present', data?.end || '').outerHTML}
+                </div>
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-gray-400 mb-2">Work Profile (Pointers)</label>
+                    <div id="bullets-${expId}" class="space-y-2 mb-2"></div>
+                    <div class="flex gap-2">
+                        <input type="text" id="input-${expId}" class="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="e.g. Developed responsive UI...">
+                        <button type="button" onclick="addBullet('${expId}')" class="bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded text-sm text-white transition-colors">Add</button>
+                    </div>
+                </div>
+            `;
+            container.prepend(expBlock);
+            
+            if(data && data.bullets) {
+                data.bullets.forEach(b => addBullet(expId, b));
+            } else {
+                addBullet(expId, ''); // Add one empty bullet by default
+            }
+        }
+
+        function addBullet(expId, value = '') {
+            const inputEl = document.getElementById(`input-${expId}`);
+            const val = value || (inputEl ? inputEl.value.trim() : '');
+            if(!val && !value && val !== '') return; // Allow empty on init, but prevent adding blank manually via button if needed, though we will allow it here.
+            
+            const container = document.getElementById(`bullets-${expId}`);
+            const bDiv = document.createElement('div');
+            bDiv.className = 'flex items-center gap-2 bullet-row';
+            bDiv.innerHTML = `
+                <div class="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></div>
+                <input type="text" class="bullet-val flex-1 bg-transparent border-b border-gray-700 focus:border-blue-500 outline-none text-sm px-1 py-1 text-gray-200" value="${val.replace(/"/g, '&quot;')}">
+                <button type="button" onclick="this.parentElement.remove(); saveDataToLocal();" class="text-gray-500 hover:text-red-400 p-1"><i class="ph ph-x"></i></button>
+            `;
+            container.appendChild(bDiv);
+            if(inputEl) inputEl.value = '';
+            saveDataToLocal();
+        }
+
+        // EDUCATION
+        function addEducation(data = null) {
+            const container = document.getElementById('education-container');
+            const eduBlock = document.createElement('div');
+            eduBlock.className = 'edu-item relative p-4 bg-gray-900/50 rounded-lg border border-gray-700 space-y-4';
+            eduBlock.innerHTML = `
+                <button type="button" onclick="this.parentElement.remove(); saveDataToLocal();" class="absolute top-2 right-2 text-gray-500 hover:text-red-400 p-1"><i class="ph ph-trash"></i></button>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    ${createInput('Degree / Course', 'text', 'edu-degree', 'e.g. B.Tech', data?.degree || '').outerHTML}
+                    ${createInput('Subject / Stream', 'text', 'edu-subject', 'e.g. Computer Science', data?.subject || '').outerHTML}
+                    ${createInput('College / School Name', 'text', 'edu-school', 'e.g. MIT', data?.school || '').outerHTML}
+                    ${createInput('Board / University', 'text', 'edu-board', 'e.g. State Board', data?.board || '').outerHTML}
+                    ${createInput('Year of Passing', 'text', 'edu-year', 'e.g. 2024', data?.year || '').outerHTML}
+                    ${createInput('Grade / Percentage', 'text', 'edu-grade', 'e.g. 8.5 CGPA or 92%', data?.grade || '').outerHTML}
+                </div>
+            `;
+            container.prepend(eduBlock);
+        }
+
+        // SKILLS
+        function addSkill(data = null) {
+            const container = document.getElementById('skills-container');
+            const skillBlock = document.createElement('div');
+            skillBlock.className = 'skill-item flex flex-row items-center gap-3 bg-gray-900/50 p-2 rounded-lg border border-gray-700';
+            const val = data?.level || '50';
+            skillBlock.innerHTML = `
+                <input type="text" name="skill-name" placeholder="Skill Name" value="${data?.name || ''}" class="flex-1 bg-transparent border-b border-gray-600 focus:border-blue-500 outline-none px-2 py-1 text-sm w-1/3 text-gray-200">
+                <input type="range" name="skill-level" min="0" max="100" value="${val}" class="flex-1 w-1/3" oninput="this.nextElementSibling.innerText = this.value + '%'">
+                <span class="text-xs text-blue-400 font-bold w-12 text-right shrink-0">${val}%</span>
+                <button type="button" onclick="this.parentElement.remove(); saveDataToLocal();" class="text-gray-500 hover:text-red-400 p-1 shrink-0"><i class="ph ph-trash"></i></button>
+            `;
+            container.prepend(skillBlock);
+        }
+
+        // File Uploads
+        document.getElementById('r-image').addEventListener('change', e => {
+            if (e.target.files[0]) {
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    profileImageBase64 = ev.target.result;
+                    document.getElementById('img-preview').src = profileImageBase64;
+                    document.getElementById('img-preview').classList.remove('hidden');
+                    saveDataToLocal();
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        });
+
+        document.getElementById('r-sig-file').addEventListener('change', e => {
+            if (e.target.files[0]) {
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    signatureBase64 = ev.target.result;
+                    document.getElementById('sig-preview').src = signatureBase64;
+                    document.getElementById('sig-preview').classList.remove('hidden');
+                    saveDataToLocal();
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        });
+
+        // --- Local Storage Integration ---
+        function saveDataToLocal() {
+            const data = {
+                personal: {
+                    name: document.getElementById('r-name').value,
+                    title: document.getElementById('r-title').value,
+                    email: document.getElementById('r-email').value,
+                    phone: document.getElementById('r-phone').value,
+                    location: document.getElementById('r-location').value,
+                    link: document.getElementById('r-link').value,
+                    image: profileImageBase64,
+                },
+                summary: document.getElementById('r-summary').value,
+                hobbies: document.getElementById('r-hobbies').value,
+                declaration: document.getElementById('r-declaration').value,
+                experience: [], education: [], skills: [],
+                sigMode: activeSigMode, signature: signatureBase64
+            };
+
+            document.querySelectorAll('.exp-item').forEach(item => {
+                const bullets = Array.from(item.querySelectorAll('.bullet-val')).map(i => i.value).filter(v => v);
+                data.experience.push({
+                    title: item.querySelector('[name="exp-title"]').value,
+                    company: item.querySelector('[name="exp-company"]').value,
+                    start: item.querySelector('[name="exp-start"]').value,
+                    end: item.querySelector('[name="exp-end"]').value,
+                    bullets: bullets
+                });
+            });
+
+            document.querySelectorAll('.edu-item').forEach(item => {
+                data.education.push({
+                    degree: item.querySelector('[name="edu-degree"]').value,
+                    subject: item.querySelector('[name="edu-subject"]').value,
+                    school: item.querySelector('[name="edu-school"]').value,
+                    board: item.querySelector('[name="edu-board"]').value,
+                    year: item.querySelector('[name="edu-year"]').value,
+                    grade: item.querySelector('[name="edu-grade"]').value,
+                });
+            });
+
+            document.querySelectorAll('.skill-item').forEach(item => {
+                const name = item.querySelector('[name="skill-name"]').value;
+                const level = item.querySelector('[name="skill-level"]').value;
+                if(name) data.skills.push({ name, level });
+            });
+
+            localStorage.setItem('resumeCraftData_v2', JSON.stringify(data));
+        }
+
+        function loadDataFromLocal() {
+            const saved = localStorage.getItem('resumeCraftData_v2');
+            if(saved) {
+                const data = JSON.parse(saved);
+                document.getElementById('r-name').value = data.personal?.name || '';
+                document.getElementById('r-title').value = data.personal?.title || '';
+                document.getElementById('r-email').value = data.personal?.email || '';
+                document.getElementById('r-phone').value = data.personal?.phone || '';
+                document.getElementById('r-location').value = data.personal?.location || '';
+                document.getElementById('r-link').value = data.personal?.link || '';
+                document.getElementById('r-summary').value = data.summary || '';
+                document.getElementById('r-hobbies').value = data.hobbies || '';
+                if(data.declaration) document.getElementById('r-declaration').value = data.declaration;
+                
+                if(data.personal?.image) {
+                    profileImageBase64 = data.personal.image;
+                    document.getElementById('img-preview').src = profileImageBase64;
+                    document.getElementById('img-preview').classList.remove('hidden');
+                }
+
+                if(data.sigMode) switchSigMode(data.sigMode);
+                if(data.signature) {
+                    signatureBase64 = data.signature;
+                    if(data.sigMode === 'upload') {
+                        document.getElementById('sig-preview').src = signatureBase64;
+                        document.getElementById('sig-preview').classList.remove('hidden');
+                    }
+                }
+
+                if(data.experience?.length) data.experience.forEach(exp => addExperience(exp)); else addExperience();
+                if(data.education?.length) data.education.forEach(edu => addEducation(edu)); else addEducation();
+                if(data.skills?.length) data.skills.forEach(sk => addSkill(sk)); else { addSkill(); addSkill(); }
+            } else {
+                addExperience(); addEducation(); addSkill(); addSkill(); resizeCanvas();
+            }
+        }
+
+        function clearLocalStorage() {
+            if(confirm("Clear all data?")) { localStorage.removeItem('resumeCraftData_v2'); location.reload(); }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDataFromLocal();
+            document.getElementById('resume-form').addEventListener('input', () => {
+                clearTimeout(window.saveTimeout);
+                window.saveTimeout = setTimeout(saveDataToLocal, 500);
+            });
+        });
+
+        // --- Template Generation ---
+        function submitForm() {
+            if (!validateStep(5)) return;
+            saveDataToLocal(); 
+            
+            const rawData = JSON.parse(localStorage.getItem('resumeCraftData_v2'));
+            currentResumeData = {
+                ...rawData,
+                hobbies: rawData.hobbies ? rawData.hobbies.split(',').map(s => s.trim()).filter(s => s) : []
+            };
+            if(activeSigMode === 'draw') { saveSignature(); currentResumeData.signature = signatureBase64; }
+
+            document.getElementById('step-1-form').classList.add('hidden');
+            document.getElementById('step-2-templates').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function backToWizard() {
+            document.getElementById('step-2-templates').classList.add('hidden');
+            document.getElementById('step-1-form').classList.remove('hidden');
+            resizeCanvas(); 
+        }
+
+        function previewTemplate(templateId) {
+            const target = document.getElementById('resume-render-target');
+            target.innerHTML = getTemplateHTML(templateId, currentResumeData);
+            document.getElementById('preview-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; 
+            setTimeout(adjustPreviewScale, 10);
+        }
+
+        function closePreview() {
+            document.getElementById('preview-modal').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        // --- Templates HTML Structure ---
+        const getHobbiesIcons = (hobbies, color) => {
+            if(!hobbies || hobbies.length === 0) return '';
+            const iconMap = { 'reading':'fa-book', 'coding':'fa-code', 'music':'fa-music', 'gaming':'fa-gamepad', 'sports':'fa-futbol-o', 'travel':'fa-plane', 'photography':'fa-camera', 'writing':'fa-pencil', 'sketching':'fa-paint-brush' };
+            return hobbies.map(h => {
+                const lower = h.toLowerCase();
+                let ic = 'fa-star';
+                for(let key in iconMap) if(lower.includes(key)) { ic = iconMap[key]; break; }
+                return `<div style="display:flex; flex-direction:column; align-items:center; gap:5px; margin-bottom:15px; width:65px; text-align:center;">
+                            <div style="width:36px; height:36px; border-radius:50%; border:1px solid ${color}; display:flex; align-items:center; justify-content:center;"><i class="fa ${ic}" style="color:${color};"></i></div>
+                            <span style="font-size:11px; font-weight:700; color:${color}; line-height:1.2;">${h}</span>
+                        </div>`;
+            }).join('');
+        };
+
+        function getTemplateHTML(id, data) {
+            const p = data.personal;
+            const hasSig = data.signature && data.signature.length > 2000;
+            const declText = data.declaration || 'I hereby declare that all the information provided above is true and correct to the best of my knowledge.';
+
+            const getSignatureBlock = (textColor, lineColor, isInverted = false) => `
+                <div style="margin-top: auto; padding-top: 2rem;">
+                    <p style="font-size: 0.9rem; color: ${textColor}; opacity: 0.85; margin-bottom: 2rem; font-style: italic; line-height: 1.5;">"${declText}"</p>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                        <div style="font-size: 0.9rem; color: ${textColor}; font-weight: 600;">
+                            Place: ${p.location ? p.location.split(',')[0] : '...........'}<br/><br/>
+                            Date: ...........
+                        </div>
+                        <div style="text-align: center; width: 220px;">
+                            ${hasSig ? `<img src="${data.signature}" style="max-height: 70px; max-width: 100%; object-fit: contain; margin: 0 auto 5px auto; display: block; filter: ${isInverted ? 'invert(1)' : 'none'};">` 
+                                     : `<div style="height: 50px; border-bottom: 1px dashed ${lineColor}; margin-bottom: 5px; opacity: 0.5;"></div>`}
+                            <div style="font-size: 1.05rem; font-weight: 800; color: ${textColor}; margin-top: 5px; text-transform: uppercase;">${p.name}</div>
+                            <div style="font-size: 0.8rem; color: ${textColor}; opacity: 0.7;">(Signature)</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            if (id === 1 || id === 2) {
+                // Shared classic implementations
+                const expHTML = data.experience.map(e => `
+                    <div style="margin-bottom: 1.75rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <h4 style="font-weight: 800; font-size: 1.15rem; color: #111827; margin: 0;">${e.title}</h4>
+                            <span style="font-size: 0.9rem; font-weight: 600; color: #4b5563; background: #f3f4f6; padding: 2px 8px; border-radius: 4px;">${e.start} ${e.end ? '- ' + e.end : ''}</span>
+                        </div>
+                        <div style="font-weight: 700; color: #2563eb; font-size: 1rem; margin: 0.25rem 0 0.75rem 0;">${e.company}</div>
+                        <ul style="margin:0; padding-left:1.2rem; font-size: 0.95rem; color: #374151; line-height: 1.6;">
+                            ${e.bullets.map(b => `<li style="margin-bottom: 4px;">${b}</li>`).join('')}
+                        </ul>
+                    </div>
+                `).join('');
+                
+                const eduHTML = data.education.map(e => `
+                    <div style="margin-bottom: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <h4 style="font-weight: 800; font-size: 1.05rem; color: #111827; margin: 0;">${e.degree} ${e.subject ? `in ${e.subject}` : ''}</h4>
+                            <span style="font-size: 0.9rem; font-weight: 600; color: #4b5563;">${e.year}</span>
+                        </div>
+                        <div style="color: #2563eb; font-size: 0.95rem; font-weight: 700; margin-top: 0.25rem;">${e.school}</div>
+                        <div style="color: #6b7280; font-size: 0.9rem; margin-top: 0.15rem; font-weight: 500;">${e.board} ${e.grade ? `| ${e.grade}` : ''}</div>
+                    </div>
+                `).join('');
+
+                const skillsHTML = data.skills.map(s => `
+                    <div style="margin-bottom: 0.75rem; width:48%; display:inline-block; padding-right:15px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.9rem; font-weight:700; color:#374151; margin-bottom:4px;">
+                            <span>${s.name}</span><span>${s.level}%</span>
+                        </div>
+                        <div style="width:100%; background:#e5e7eb; height:6px; border-radius:3px;">
+                            <div style="width:${s.level}%; background:#2563eb; height:100%; border-radius:3px;"></div>
+                        </div>
+                    </div>
+                `).join('');
+
+                if(id === 1) {
+                    // T1: Corporate Executive
+                    return `
+                    <div style="padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1f2937; background: #ffffff; min-height: 297mm; display: flex; flex-direction: column;">
+                        <header style="background: #1e3a8a; padding: 3rem 4rem; display: flex; align-items: center; gap: 2.5rem;">
+                            ${p.image ? `<img src="${p.image}" style="width: 120px; height: 120px; border-radius: 8px; object-fit: cover; border: 3px solid #ffffff; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">` : ''}
+                            <div style="flex: 1;">
+                                <h1 style="font-size: 3rem; font-weight: 900; margin: 0 0 0.25rem 0; color: #ffffff; letter-spacing: -0.02em;">${p.name.toUpperCase()}</h1>
+                                <h2 style="font-size: 1.25rem; font-weight: 600; color: #bfdbfe; margin: 0 0 1.25rem 0; letter-spacing: 1px;">${p.title}</h2>
+                                <div style="font-size: 0.9rem; color: #e0f2fe; display: flex; gap: 1.5rem; flex-wrap: wrap; font-weight: 500;">
+                                    ${p.email ? `<span style="display:flex; align-items:center; gap:6px;"><i class="fa fa-envelope" style="color:#60a5fa;"></i> ${p.email}</span>` : ''}
+                                    ${p.phone ? `<span style="display:flex; align-items:center; gap:6px;"><i class="fa fa-phone" style="color:#60a5fa;"></i> ${p.phone}</span>` : ''}
+                                    ${p.location ? `<span style="display:flex; align-items:center; gap:6px;"><i class="fa fa-map-marker" style="color:#60a5fa;"></i> ${p.location}</span>` : ''}
+                                    ${p.link ? `<span style="display:flex; align-items:center; gap:6px;"><i class="fa fa-link" style="color:#60a5fa;"></i> ${p.link}</span>` : ''}
+                                </div>
+                            </div>
+                        </header>
+                        <div style="flex-grow: 1; display: flex; flex-direction: column; padding: 3rem 4rem;">
+                            ${data.summary ? `
+                            <section style="margin-bottom: 2.5rem;">
+                                <h3 style="font-size: 1.25rem; font-weight: 800; color: #1e3a8a; text-transform: uppercase; border-bottom: 2px solid #e5e7eb; padding-bottom:0.5rem; margin-bottom: 1.25rem;">Professional Profile</h3>
+                                <p style="font-size: 1rem; line-height: 1.7; color: #374151; margin: 0;">${data.summary}</p>
+                            </section>` : ''}
+                            <section style="margin-bottom: 2.5rem;">
+                                <h3 style="font-size: 1.25rem; font-weight: 800; color: #1e3a8a; text-transform: uppercase; border-bottom: 2px solid #e5e7eb; padding-bottom:0.5rem; margin-bottom: 1.75rem;">Experience</h3>
+                                ${expHTML}
+                            </section>
+                            <section style="margin-bottom: 2.5rem;">
+                                <h3 style="font-size: 1.25rem; font-weight: 800; color: #1e3a8a; text-transform: uppercase; border-bottom: 2px solid #e5e7eb; padding-bottom:0.5rem; margin-bottom: 1.75rem;">Education</h3>
+                                ${eduHTML}
+                            </section>
+                            <section>
+                                <h3 style="font-size: 1.25rem; font-weight: 800; color: #1e3a8a; text-transform: uppercase; border-bottom: 2px solid #e5e7eb; padding-bottom:0.5rem; margin-bottom: 1.75rem;">Core Skills</h3>
+                                <div>${skillsHTML}</div>
+                            </section>
+                            ${getSignatureBlock('#1f2937', '#cbd5e1', false)}
+                        </div>
+                    </div>`;
+                } else {
+                    // T2: Professional Sidebar
+                    return `
+                    <div style="display: flex; min-height: 297mm; font-family: 'Helvetica Neue', Arial, sans-serif; background: #ffffff; height: 100%;">
+                        <div style="width: 33%; background: #1e293b; color: #f8fafc; padding: 3.5rem 2rem; display: flex; flex-direction: column;">
+                            ${p.image ? `<img src="${p.image}" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 4px solid #334155; margin: 0 auto 2rem auto; display: block; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">` : ''}
+                            
+                            <div style="margin-bottom: 3rem;">
+                                <h3 style="font-size: 1.1rem; font-weight: 800; color: #ffffff; text-transform: uppercase; border-bottom: 2px solid #3b82f6; padding-bottom: 0.5rem; margin-bottom: 1.25rem;">Contact Info</h3>
+                                ${p.email ? `<div style="font-size: 0.9rem; color:#cbd5e1; margin-bottom:12px; display:flex; gap:10px;"><i class="fa fa-envelope" style="color:#3b82f6; width:16px; margin-top:3px;"></i><span style="word-break:break-all;">${p.email}</span></div>` : ''}
+                                ${p.phone ? `<div style="font-size: 0.9rem; color:#cbd5e1; margin-bottom:12px; display:flex; gap:10px;"><i class="fa fa-phone" style="color:#3b82f6; width:16px; margin-top:3px;"></i><span>${p.phone}</span></div>` : ''}
+                                ${p.location ? `<div style="font-size: 0.9rem; color:#cbd5e1; margin-bottom:12px; display:flex; gap:10px;"><i class="fa fa-map-marker" style="color:#3b82f6; width:16px; margin-top:3px;"></i><span>${p.location}</span></div>` : ''}
+                                ${p.link ? `<div style="font-size: 0.9rem; color:#cbd5e1; margin-bottom:12px; display:flex; gap:10px;"><i class="fa fa-link" style="color:#3b82f6; width:16px; margin-top:3px;"></i><span style="word-break:break-all;">${p.link}</span></div>` : ''}
+                            </div>
+                            
+                            <div style="margin-bottom: 3rem;">
+                                <h3 style="font-size: 1.1rem; font-weight: 800; color: #ffffff; text-transform: uppercase; border-bottom: 2px solid #3b82f6; padding-bottom: 0.5rem; margin-bottom: 1.25rem;">Expertise</h3>
+                                ${data.skills.map(s => `
+                                    <div style="margin-bottom: 12px;">
+                                        <div style="display:flex; justify-content:space-between; font-size:0.85rem; font-weight:600; color:#e2e8f0; margin-bottom:4px;"><span>${s.name}</span></div>
+                                        <div style="width:100%; background:#334155; height:6px; border-radius:3px;"><div style="width:${s.level}%; background:#3b82f6; height:100%; border-radius:3px;"></div></div>
+                                    </div>
+                                `).join('')}
+                            </div>
+
+                            ${data.hobbies.length ? `
+                            <div>
+                                <h3 style="font-size: 1.1rem; font-weight: 800; color: #ffffff; text-transform: uppercase; border-bottom: 2px solid #3b82f6; padding-bottom: 0.5rem; margin-bottom: 1.25rem;">Interests</h3>
+                                <div style="display:flex; flex-wrap:wrap; gap:8px;">${data.hobbies.map(h => `<span style="background:#334155; color:#cbd5e1; font-size:0.8rem; font-weight:600; padding:4px 10px; border-radius:4px;">${h}</span>`).join('')}</div>
+                            </div>` : ''}
+                        </div>
+                        
+                        <div style="width: 67%; padding: 4rem 3rem; display: flex; flex-direction: column; background: #f8fafc;">
+                            <header style="margin-bottom: 3rem;">
+                                <h1 style="font-size: 3.5rem; font-weight: 900; color: #0f172a; line-height: 1; margin: 0 0 0.5rem 0; letter-spacing: -1px;">${p.name}</h1>
+                                <h2 style="font-size: 1.4rem; font-weight: 600; color: #3b82f6; margin: 0;">${p.title}</h2>
+                            </header>
+                            
+                            ${data.summary ? `
+                            <section style="margin-bottom: 3rem;">
+                                <h3 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; text-transform: uppercase; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem;"><div style="width: 36px; height: 36px; background: #e0f2fe; color: #2563eb; border-radius: 8px; display: flex; align-items: center; justify-content: center;"><i class="fa fa-user"></i></div> Profile</h3>
+                                <p style="font-size: 1rem; line-height: 1.7; color: #475569; margin: 0;">${data.summary}</p>
+                            </section>` : ''}
+                            
+                            <section style="margin-bottom: 3rem;">
+                                <h3 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; text-transform: uppercase; margin-bottom: 1.75rem; display: flex; align-items: center; gap: 0.75rem;"><div style="width: 36px; height: 36px; background: #e0f2fe; color: #2563eb; border-radius: 8px; display: flex; align-items: center; justify-content: center;"><i class="fa fa-briefcase"></i></div> Experience</h3>
+                                ${expHTML}
+                            </section>
+                            
+                            <section>
+                                <h3 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; text-transform: uppercase; margin-bottom: 1.75rem; display: flex; align-items: center; gap: 0.75rem;"><div style="width: 36px; height: 36px; background: #e0f2fe; color: #2563eb; border-radius: 8px; display: flex; align-items: center; justify-content: center;"><i class="fa fa-graduation-cap"></i></div> Education</h3>
+                                ${eduHTML}
+                            </section>
+                            
+                            ${getSignatureBlock('#0f172a', '#cbd5e1', false)}
+                        </div>
+                    </div>`;
+                }
+            }
+            
+            else if (id === 3) {
+                // T3: Creative Dark Sidebar (Yellow Accents)
+                const cExpHTML = data.experience.map(e => `
+                    <div style="position: relative; padding-left: 25px; margin-bottom: 1.5rem;">
+                        <div style="position: absolute; left: -12px; top: 2px; width: 24px; height: 24px; background: #fff; border: 4px solid #f59e0b; border-radius: 50%; z-index: 2; box-shadow: 0 0 0 4px #fff;"></div>
+                        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:0.25rem;">
+                            <h4 style="font-size: 1.1rem; font-weight: 800; color: #111827; margin:0;">${e.title}</h4>
+                            <span style="font-size: 0.8rem; font-weight: 600; color: #6b7280;">${e.start} ${e.end ? '- ' + e.end : ''}</span>
+                        </div>
+                        <div style="font-size: 0.95rem; font-weight: 700; color: #f59e0b; margin-bottom: 0.5rem;">${e.company}</div>
+                        <ul style="margin:0; padding-left:1.2rem; font-size: 0.9rem; color: #4b5563; line-height: 1.6; list-style-type: square;">
+                            ${e.bullets.map(b => `<li style="margin-bottom:4px;">${b}</li>`).join('')}
+                        </ul>
+                    </div>
+                `).join('');
+
+                const cEduHTML = data.education.map(e => `
+                    <div style="position: relative; padding-left: 25px; margin-bottom: 1.25rem;">
+                        <div style="position: absolute; left: -9px; top: 4px; width: 18px; height: 18px; background: #f59e0b; border-radius: 50%; z-index: 2; border:3px solid #fff;"></div>
+                        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:0.25rem;">
+                            <h4 style="font-size: 1rem; font-weight: 800; color: #111827; margin:0;">${e.degree} ${e.subject ? `in ${e.subject}` : ''}</h4>
+                            <span style="font-size: 0.8rem; font-weight: 600; color: #6b7280;">${e.year}</span>
+                        </div>
+                        <div style="font-size: 0.9rem; font-weight: 600; color: #4b5563;">${e.school}</div>
+                        <div style="font-size: 0.85rem; color: #6b7280; font-weight:500;">${e.board} ${e.grade ? `| ${e.grade}` : ''}</div>
+                    </div>
+                `).join('');
+
+                const cSigHTML = hasSig ? `<div style="text-align:right; margin-top:1.5rem;"><img src="${data.signature}" style="max-height:50px; display:inline-block;"><div style="font-family:'Brush Script MT', cursive; font-size:1.5rem; color:#111827;">${p.name}</div></div>` : '';
+
+                return `
+                <div style="display: flex; min-height: 297mm; font-family: 'Segoe UI', Arial, sans-serif; background: #ffffff;">
+                    <!-- Dark Sidebar -->
+                    <div style="width: 32%; background: #0A1128; color: #e2e8f0; padding: 3rem 2rem;">
+                        <div style="text-align: center; margin-bottom: 2.5rem;">
+                            ${p.image ? `<img src="${p.image}" style="width: 130px; height: 130px; border-radius: 50%; object-fit: cover; border: 3px dashed #f59e0b; padding:4px; margin: 0 auto 1.5rem auto; display: block;">` : `<div style="width: 80px; height: 80px; border-radius: 50%; border:3px dashed #f59e0b; margin: 0 auto 1.5rem auto; display: flex; align-items: center; justify-content: center;"><i class="fa fa-user" style="font-size: 32px; color: #f59e0b;"></i></div>`}
+                            <h1 style="font-size: 2.25rem; font-weight: 900; line-height: 1.1; margin: 0 0 0.5rem 0; color: #ffffff; text-transform:uppercase;">${p.name}</h1>
+                            <h2 style="font-size: 0.95rem; font-weight: 600; color: #f59e0b; margin: 0; letter-spacing: 1px;">&lt;/ ${p.title.toUpperCase()} &gt;</h2>
+                        </div>
+                        
+                        <div style="margin-bottom: 2.5rem;">
+                            <h3 style="font-size: 1.1rem; font-weight: 700; color: #fff; border-bottom: 1px solid #1e293b; padding-bottom: 0.5rem; margin-bottom: 1rem; display:flex; align-items:center; gap:8px;"><i class="fa fa-user" style="color:#f59e0b;"></i> CONTACT</h3>
+                            ${p.phone ? `<div style="font-size: 0.85rem; margin-bottom:12px; display:flex; gap:10px; align-items:center;"><div style="width:24px; height:24px; background:#f59e0b; border-radius:50%; display:flex; justify-content:center; align-items:center; color:#0A1128;"><i class="fa fa-phone"></i></div> ${p.phone}</div>` : ''}
+                            ${p.email ? `<div style="font-size: 0.85rem; margin-bottom:12px; display:flex; gap:10px; align-items:center;"><div style="width:24px; height:24px; background:#f59e0b; border-radius:50%; display:flex; justify-content:center; align-items:center; color:#0A1128;"><i class="fa fa-envelope"></i></div> <span style="word-break:break-all;">${p.email}</span></div>` : ''}
+                            ${p.location ? `<div style="font-size: 0.85rem; margin-bottom:12px; display:flex; gap:10px; align-items:center;"><div style="width:24px; height:24px; background:#f59e0b; border-radius:50%; display:flex; justify-content:center; align-items:center; color:#0A1128;"><i class="fa fa-map-marker"></i></div> ${p.location}</div>` : ''}
+                            ${p.link ? `<div style="font-size: 0.85rem; margin-bottom:12px; display:flex; gap:10px; align-items:center;"><div style="width:24px; height:24px; background:#f59e0b; border-radius:50%; display:flex; justify-content:center; align-items:center; color:#0A1128;"><i class="fa fa-link"></i></div> <span style="word-break:break-all;">${p.link}</span></div>` : ''}
+                        </div>
+
+                        <div style="margin-bottom: 2.5rem;">
+                            <h3 style="font-size: 1.1rem; font-weight: 700; color: #fff; border-bottom: 1px solid #1e293b; padding-bottom: 0.5rem; margin-bottom: 1rem; display:flex; align-items:center; gap:8px;"><i class="fa fa-cogs" style="color:#f59e0b;"></i> SKILLS</h3>
+                            ${data.skills.map(s => `
+                                <div style="margin-bottom: 12px;">
+                                    <div style="font-size:0.85rem; font-weight:600; color:#cbd5e1; margin-bottom:4px;">${s.name}</div>
+                                    <div style="width:100%; background:#1e293b; height:6px; border-radius:3px;"><div style="width:${s.level}%; background:#f59e0b; height:100%; border-radius:3px;"></div></div>
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        ${data.hobbies.length ? `
+                        <div>
+                            <h3 style="font-size: 1.1rem; font-weight: 700; color: #fff; border-bottom: 1px solid #1e293b; padding-bottom: 0.5rem; margin-bottom: 1rem; display:flex; align-items:center; gap:8px;"><i class="fa fa-heart" style="color:#f59e0b;"></i> HOBBIES</h3>
+                            <div style="display:flex; flex-wrap:wrap; gap:10px; justify-content: flex-start;">
+                                ${getHobbiesIcons(data.hobbies, '#f59e0b')}
+                            </div>
+                        </div>` : ''}
+                    </div>
+                    
+                    <!-- Main Content -->
+                    <div style="width: 68%; padding: 3.5rem 3rem; display: flex; flex-direction: column; position: relative;">
+                        ${data.summary ? `
+                        <section style="margin-bottom: 3rem; display:flex; gap:15px;">
+                            <div style="width:50px; flex-shrink:0;"><i class="fa fa-user" style="font-size:2rem; color:#111827;"></i></div>
+                            <div>
+                                <h3 style="font-size: 1.4rem; font-weight: 900; color: #111827; text-transform: uppercase; margin: 0 0 0.5rem 0; letter-spacing:1px;">About Me</h3>
+                                <div style="background:#f9fafb; padding:1.5rem; border-left:4px solid #f59e0b; border-radius:0 8px 8px 0; position:relative;">
+                                    <i class="fa fa-quote-right" style="position:absolute; right:15px; bottom:15px; font-size:2rem; color:#f59e0b; opacity:0.3;"></i>
+                                    <p style="font-size: 0.95rem; line-height: 1.7; color: #4b5563; margin: 0;">${data.summary}</p>
+                                </div>
+                            </div>
+                        </section>` : ''}
+                        
+                        <section style="margin-bottom: 3rem; display:flex; gap:15px;">
+                            <div style="width:50px; flex-shrink:0;"><i class="fa fa-briefcase" style="font-size:2rem; color:#111827;"></i></div>
+                            <div style="flex-grow:1;">
+                                <h3 style="font-size: 1.4rem; font-weight: 900; color: #111827; text-transform: uppercase; margin: 0 0 1.5rem 0; letter-spacing:1px;">Experience</h3>
+                                <div style="border-left: 2px solid #e5e7eb; padding-top: 10px; margin-left: 11px;">
+                                    ${cExpHTML}
+                                </div>
+                            </div>
+                        </section>
+
+                        <section style="display:flex; gap:15px; flex-grow:1;">
+                            <div style="width:50px; flex-shrink:0;"><i class="fa fa-graduation-cap" style="font-size:2rem; color:#111827;"></i></div>
+                            <div style="flex-grow:1;">
+                                <h3 style="font-size: 1.4rem; font-weight: 900; color: #111827; text-transform: uppercase; margin: 0 0 1.5rem 0; letter-spacing:1px;">Education</h3>
+                                <div style="border-left: 2px solid #e5e7eb; padding-top: 5px; margin-left: 8px;">
+                                    ${cEduHTML}
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Bottom Banner Style Element -->
+                        <div style="margin-top:auto; padding-top:2rem;">
+                            ${getSignatureBlock('#111827', '#cbd5e1', false)}
+                            <div style="background:#111827; color:#fff; padding:1.5rem; border-radius:8px; display:flex; justify-content:space-between; align-items:center; margin-top:1.5rem;">
+                                <div>
+                                    <div style="font-size:1.1rem; font-style:italic; margin-bottom:5px;">"I build with logic. I create with emotion."</div>
+                                    <div style="color:#f59e0b; font-weight:700; font-size:0.85rem; letter-spacing:1px;">LET'S BUILD SOMETHING AMAZING TOGETHER!</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            }
+            else {
+                // T4: Full Stack Creative Dark Theme
+                const fsExpHTML = data.experience.map(e => `
+                    <div style="position: relative; padding-left: 25px; margin-bottom: 2rem;">
+                        <div style="position: absolute; left: -7px; top: 5px; width: 14px; height: 14px; background: #fff; border: 3px solid #f97316; border-radius: 50%; z-index: 2;"></div>
+                        <div style="display:flex; justify-content:flex-start; align-items:baseline; gap:15px; margin-bottom:0.5rem;">
+                            <span style="font-size: 0.9rem; font-weight: 700; color: #f97316;">${e.start} - ${e.end || 'Present'}</span>
+                            <h4 style="font-size: 1.15rem; font-weight: 800; color: #111827; margin:0;">${e.title} | ${e.company}</h4>
+                        </div>
+                        <ul style="margin:0; padding-left:1rem; font-size: 0.9rem; color: #4b5563; line-height: 1.6; list-style-type: disc;">
+                            ${e.bullets.map(b => `<li style="margin-bottom:6px;">${b}</li>`).join('')}
+                        </ul>
+                    </div>
+                `).join('');
+
+                const fsEduHTML = data.education.map(e => `
+                    <div style="margin-bottom: 1.25rem;">
+                        <h4 style="font-size: 1rem; font-weight: 800; color: #111827; margin:0 0 0.25rem 0;">${e.degree} ${e.subject ? `in ${e.subject}` : ''}</h4>
+                        <div style="font-size: 0.9rem; font-weight: 600; color: #f97316; margin-bottom:0.15rem;">${e.school}</div>
+                        <div style="font-size: 0.85rem; color: #6b7280; font-weight:500;">${e.year} | ${e.grade ? e.grade : e.board}</div>
+                    </div>
+                `).join('');
+
+                const fsSigHTML = hasSig ? `<div style="position:absolute; right:3rem; top:3rem; text-align:right;"><img src="${data.signature}" style="max-height:80px; max-width:200px; display:inline-block; opacity:0.8;"></div>` : '';
+
+                return `
+                <div style="display: flex; min-height: 297mm; font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif; background: #ffffff;">
+                    <!-- Very Dark Sidebar -->
+                    <div style="width: 32%; background: #0f172a; color: #f8fafc; display:flex; flex-direction:column;">
+                        <div style="padding: 3rem 2rem; border-bottom: 1px solid #1e293b;">
+                            ${p.image ? `<img src="${p.image}" style="width: 140px; height: 140px; border-radius: 50%; object-fit: cover; border: 4px solid #f97316; margin: 0 auto 1.5rem auto; display: block;">` : `<div style="width: 100px; height: 100px; border-radius: 50%; border: 4px solid #f97316; margin: 0 auto 1.5rem auto; display: flex; align-items: center; justify-content: center;"><i class="fa fa-user" style="font-size: 40px; color: #f97316;"></i></div>`}
+                            <div style="font-size:1.5rem; font-family:'Brush Script MT', cursive; color:#f97316; text-align:center; transform:rotate(-5deg); margin-top:-10px;">Code. Create. Inspire.</div>
+                        </div>
+                        
+                        <div style="padding: 2rem;">
+                            <div style="margin-bottom: 2.5rem;">
+                                <h3 style="font-size: 1.1rem; font-weight: 700; color: #f97316; margin-bottom: 1rem; display:flex; align-items:center; gap:8px;"><i class="fa fa-address-book-o"></i> CONTACT</h3>
+                                ${p.phone ? `<div style="font-size: 0.9rem; margin-bottom:12px; display:flex; gap:10px; align-items:center;"><i class="fa fa-phone" style="color:#94a3b8; width:16px;"></i> ${p.phone}</div>` : ''}
+                                ${p.email ? `<div style="font-size: 0.9rem; margin-bottom:12px; display:flex; gap:10px; align-items:center;"><i class="fa fa-envelope" style="color:#94a3b8; width:16px;"></i> <span style="word-break:break-all;">${p.email}</span></div>` : ''}
+                                ${p.location ? `<div style="font-size: 0.9rem; margin-bottom:12px; display:flex; gap:10px; align-items:center;"><i class="fa fa-map-marker" style="color:#94a3b8; width:16px;"></i> ${p.location}</div>` : ''}
+                                ${p.link ? `<div style="font-size: 0.9rem; margin-bottom:12px; display:flex; gap:10px; align-items:center;"><i class="fa fa-globe" style="color:#94a3b8; width:16px;"></i> <span style="word-break:break-all;">${p.link}</span></div>` : ''}
+                            </div>
+
+                            <div style="margin-bottom: 2.5rem;">
+                                <h3 style="font-size: 1.1rem; font-weight: 700; color: #f97316; margin-bottom: 1rem; display:flex; align-items:center; gap:8px;"><i class="fa fa-lightbulb-o"></i> SKILLS</h3>
+                                ${data.skills.map(s => `
+                                    <div style="margin-bottom: 12px; display:flex; align-items:center; justify-content:space-between;">
+                                        <div style="font-size:0.85rem; font-weight:600; color:#e2e8f0; width:45%;">${s.name}</div>
+                                        <div style="width:50%; background:#1e293b; height:6px; border-radius:3px;"><div style="width:${s.level}%; background:#f97316; height:100%; border-radius:3px;"></div></div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        
+                        <!-- Decorative graphic at bottom left -->
+                        <div style="margin-top:auto; height: 120px; background: linear-gradient(to top right, #1e293b, transparent); border-top-right-radius:100px;"></div>
+                    </div>
+                    
+                    <!-- Main Content -->
+                    <div style="width: 68%; display: flex; flex-direction: column; position: relative;">
+                        <!-- Header Graphic block -->
+                        <div style="background:#f8fafc; padding: 4rem 3rem 2rem 3rem; border-bottom: 2px solid #e2e8f0; position:relative;">
+                            ${fsSigHTML}
+                            <h1 style="font-size: 3.5rem; font-weight: 900; line-height: 1; margin: 0 0 0.5rem 0; color: #0f172a; text-transform:uppercase;">${p.name.split(' ')[0]} <br/><span style="color:#f97316;">${p.name.split(' ').slice(1).join(' ')}</span></h1>
+                            <div style="display:inline-block; background:#0f172a; color:#fff; font-weight:700; padding:0.5rem 1.5rem; border-radius:20px; font-size:0.95rem; text-transform:uppercase; letter-spacing:1px; margin-top:1rem;">${p.title} <span style="color:#f97316; margin-left:8px;">●</span></div>
+                            
+                            ${data.summary ? `
+                            <div style="margin-top: 2rem; display:flex; gap:15px; align-items:flex-start;">
+                                <i class="fa fa-user-circle-o" style="font-size:2.5rem; color:#cbd5e1;"></i>
+                                <p style="font-size: 0.95rem; line-height: 1.6; color: #334155; margin: 0;">${data.summary}</p>
+                            </div>` : ''}
+                        </div>
+
+                        <div style="padding: 3rem; flex-grow:1; display:flex; flex-direction:column;">
+                            <section style="margin-bottom: 3rem;">
+                                <h3 style="font-size: 1.25rem; font-weight: 900; color: #0f172a; text-transform: uppercase; margin: 0 0 1.5rem 0; letter-spacing:1px; display:flex; align-items:center; gap:10px;"><i class="fa fa-briefcase"></i> EXPERIENCE</h3>
+                                <div style="border-left: 2px solid #cbd5e1; margin-left: 6px;">
+                                    ${fsExpHTML}
+                                </div>
+                            </section>
+
+                            <div style="display:flex; gap:3rem; flex-grow:1;">
+                                <section style="flex:1;">
+                                    <h3 style="font-size: 1.25rem; font-weight: 900; color: #0f172a; text-transform: uppercase; margin: 0 0 1.5rem 0; letter-spacing:1px; display:flex; align-items:center; gap:10px;"><i class="fa fa-graduation-cap"></i> EDUCATION</h3>
+                                    ${fsEduHTML}
+                                </section>
+                                
+                                ${data.hobbies.length ? `
+                                <section style="flex:1;">
+                                    <h3 style="font-size: 1.25rem; font-weight: 900; color: #0f172a; text-transform: uppercase; margin: 0 0 1.5rem 0; letter-spacing:1px; display:flex; align-items:center; gap:10px;"><i class="fa fa-heart-o"></i> INTERESTS</h3>
+                                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                                        ${getHobbiesIcons(data.hobbies, '#334155')}
+                                    </div>
+                                </section>` : ''}
+                            </div>
+                        </div>
+
+                        <!-- Footer Banner -->
+                        <div style="margin-top:auto; padding-top:2rem;">
+                            <div style="padding: 0 3rem;">
+                                ${getSignatureBlock('#0f172a', '#cbd5e1', false)}
+                            </div>
+                            <div style="background:#0f172a; color:#fff; padding:1.5rem 3rem; display:flex; justify-content:space-between; align-items:center; margin-top:2rem;">
+                                <div style="display:flex; gap:20px;">
+                                    <div style="display:flex; gap:10px; align-items:center;">
+                                        <i class="fa fa-code" style="font-size:1.5rem; color:#f97316;"></i>
+                                        <div>
+                                            <div style="font-weight:700; font-size:0.9rem;">Clean Code</div>
+                                            <div style="font-size:0.75rem; color:#94a3b8;">Writing scalable code</div>
+                                        </div>
+                                    </div>
+                                    <div style="display:flex; gap:10px; align-items:center;">
+                                        <i class="fa fa-bolt" style="font-size:1.5rem; color:#f97316;"></i>
+                                        <div>
+                                            <div style="font-weight:700; font-size:0.9rem;">Fast Learner</div>
+                                            <div style="font-size:0.75rem; color:#94a3b8;">Adapting to tech</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="font-family:'Brush Script MT', cursive; font-size:1.5rem; color:#f97316;">Let's build great things!</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            }
+        }
+
+        // --- PDF Export Logic ---
+        function exportPDF() {
+            const element = document.getElementById('resume-render-target');
+            const btn = document.getElementById('download-btn');
+            const loading = document.getElementById('pdf-loading');
+            const scrollArea = document.getElementById('pdf-scroll-area');
+            const name = currentResumeData.personal.name ? currentResumeData.personal.name.replace(/\s+/g, '_') : 'Resume';
+            
+            btn.disabled = true;
+            loading.classList.remove('hidden');
+
+            const originalScrollTop = scrollArea.scrollTop;
+            scrollArea.scrollTop = 0;
+
+            const wrapper = document.getElementById('preview-wrapper');
+            const oldTransform = wrapper.style.transform;
+            wrapper.style.transform = 'scale(1)';
+
+            const pxWidth = element.offsetWidth;
+            const pxHeight = element.offsetHeight;
+            const mmHeight = (pxHeight / pxWidth) * 210;
+
+            let pdfFormat = 'a4';
+            if (mmHeight > 297 && mmHeight <= 445.5) {
+                pdfFormat = [210, mmHeight + 1]; 
+            }
+
+            const opt = {
+                margin:       0,
+                filename:     `${name}_Resume.pdf`,
+                image:        { type: 'jpeg', quality: 1.0 }, 
+                html2canvas:  { 
+                    scale: 2, 
+                    useCORS: true, 
+                    logging: false,
+                    scrollY: 0,
+                    scrollX: 0,
+                    windowWidth: element.scrollWidth 
+                },
+                jsPDF:        { unit: 'mm', format: pdfFormat, orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                wrapper.style.transform = oldTransform;
+                scrollArea.scrollTop = originalScrollTop;
+                btn.disabled = false;
+                loading.classList.add('hidden');
+            }).catch(err => {
+                console.error("PDF generation failed", err);
+                wrapper.style.transform = oldTransform;
+                scrollArea.scrollTop = originalScrollTop;
+                btn.disabled = false;
+                loading.classList.add('hidden');
+                alert("An error occurred while generating the PDF.");
+            });
+        }
+    </script>
+</body>
+</html>

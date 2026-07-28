@@ -112,12 +112,13 @@
                 <p class="text-[10px] text-gray-500 dark:text-gray-400 tracking-[0.2em]">DISCOVER. PLAY. INSPIRE.</p>
             </div>
         </div>
-        <nav class="flex items-center gap-6 lg:gap-8 font-medium text-sm">
+        <nav class="flex items-center gap-5 lg:gap-7 font-medium text-sm">
             <button onclick="switchTab('home')" class="desktop-nav-item active-tab nav-item text-gray-900 dark:text-white" data-tab="home">Home</button>
             <button onclick="switchTab('games')" class="desktop-nav-item nav-item text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" data-tab="games">Games</button>
+            <button onclick="switchTab('tools')" class="desktop-nav-item nav-item text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" data-tab="tools">Tools</button>
             <button onclick="switchTab('poetry')" class="desktop-nav-item nav-item text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" data-tab="poetry">Poetry</button>
             <button onclick="switchTab('heroes')" class="desktop-nav-item nav-item text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" data-tab="heroes">Heroes Chat</button>
-            <button onclick="switchTab('about')" class="desktop-nav-item nav-item text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" data-tab="about">About Me</button>
+            <button onclick="switchTab('about')" class="desktop-nav-item nav-item text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" data-tab="about">About</button>
             
             <!-- Dark/Light Theme Toggle -->
             <button onclick="toggleTheme()" class="w-8 h-8 rounded-full bg-gray-200 dark:bg-white/10 flex items-center justify-center text-gray-700 dark:text-gray-300 hover:text-cyan-500 transition-colors ml-2">
@@ -227,13 +228,40 @@
         <main id="games" class="tab-pane hidden absolute inset-0 w-full h-full ios-scroll pb-[100px] md:pb-10">
             <div class="max-w-7xl mx-auto px-5 md:px-8 py-6 flex flex-col min-h-full">
                 <div class="flex-1">
-                    <div class="text-center md:text-left mb-8">
+                    <div class="text-center md:text-left mb-6">
                         <h2 class="text-3xl md:text-4xl font-bold mb-3 flex items-center justify-center md:justify-start gap-3">
                             <i class="fa-solid fa-gamepad text-blue-500"></i> The Grid
                         </h2>
                         <p class="text-gray-600 dark:text-gray-400 max-w-2xl">Select an executable to load the AI-generated simulation environment.</p>
                     </div>
+                    
+                    <!-- Games Tabs -->
+                    <div class="flex justify-center md:justify-start gap-3 mb-8 overflow-x-auto no-scrollbar pb-2">
+                        <button onclick="filterGames('all')" id="gameTab_all" class="game-tab active px-5 py-2 rounded-full text-sm font-semibold transition-all bg-gray-200 dark:bg-white/10 text-gray-900 dark:text-white whitespace-nowrap">All Games</button>
+                        <button onclick="filterGames('education')" id="gameTab_education" class="game-tab px-5 py-2 rounded-full text-sm font-semibold transition-all text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 whitespace-nowrap border border-transparent dark:border-white/5 border-gray-200">Educational</button>
+                        <button onclick="filterGames('entertainment')" id="gameTab_entertainment" class="game-tab px-5 py-2 rounded-full text-sm font-semibold transition-all text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 whitespace-nowrap border border-transparent dark:border-white/5 border-gray-200">Entertainment</button>
+                    </div>
+
                     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6" id="gameGrid"></div>
+                </div>
+                
+                <div class="text-center text-xs text-gray-500 dark:text-gray-600 mt-12 pb-6 border-t border-gray-200 dark:border-white/5 transition-colors pt-6">
+                    © 2026 Dev & Shayar. All Rights Reserved.
+                </div>
+            </div>
+        </main>
+
+        <!-- ==================== TOOLS SECTION ==================== -->
+        <main id="tools" class="tab-pane hidden absolute inset-0 w-full h-full ios-scroll pb-[100px] md:pb-10">
+            <div class="max-w-7xl mx-auto px-5 md:px-8 py-6 flex flex-col min-h-full">
+                <div class="flex-1">
+                    <div class="text-center md:text-left mb-8">
+                        <h2 class="text-3xl md:text-4xl font-bold mb-3 flex items-center justify-center md:justify-start gap-3">
+                            <i class="fa-solid fa-wrench text-orange-500"></i> AI Tools
+                        </h2>
+                        <p class="text-gray-600 dark:text-gray-400 max-w-2xl">A collection of utilities and experimental simulations.</p>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6" id="toolGrid"></div>
                 </div>
                 
                 <div class="text-center text-xs text-gray-500 dark:text-gray-600 mt-12 pb-6 border-t border-gray-200 dark:border-white/5 transition-colors pt-6">
@@ -392,26 +420,31 @@
     </div>
 
     <!-- ==================== MOBILE BOTTOM NAV (Fixed) ==================== -->
-    <nav class="md:hidden fixed bottom-0 left-0 w-full h-[75px] pb-[env(safe-area-inset-bottom)] flex items-center justify-around bg-white/90 dark:bg-[#0a0a14]/90 backdrop-blur-md border-t border-gray-200 dark:border-white/10 z-50 transition-colors duration-300">
-        <button onclick="switchTab('home')" class="nav-item active-tab flex flex-col items-center justify-center gap-1 w-16 h-full text-gray-400" data-tab="home">
-            <i class="fa-solid fa-house text-lg"></i>
-            <span class="text-[9px] font-semibold tracking-wide">HOME</span>
+    <nav class="md:hidden fixed bottom-0 left-0 w-full h-[75px] pb-[env(safe-area-inset-bottom)] flex items-center bg-white/90 dark:bg-[#0a0a14]/90 backdrop-blur-md border-t border-gray-200 dark:border-white/10 z-50 transition-colors duration-300">
+        <button onclick="switchTab('home')" class="nav-item active-tab flex-1 flex flex-col items-center justify-center gap-1 h-full text-gray-400" data-tab="home">
+            <i class="fa-solid fa-house text-sm md:text-lg"></i>
+            <span class="text-[8px] md:text-[9px] font-semibold tracking-wide">HOME</span>
         </button>
-        <button onclick="switchTab('games')" class="nav-item flex flex-col items-center justify-center gap-1 w-16 h-full text-gray-400" data-tab="games">
-            <i class="fa-solid fa-gamepad text-lg"></i>
-            <span class="text-[9px] font-semibold tracking-wide">GAMES</span>
+        <button onclick="switchTab('games')" class="nav-item flex-1 flex flex-col items-center justify-center gap-1 h-full text-gray-400" data-tab="games">
+            <i class="fa-solid fa-gamepad text-sm md:text-lg"></i>
+            <span class="text-[8px] md:text-[9px] font-semibold tracking-wide">GAMES</span>
         </button>
-        <button onclick="switchTab('poetry')" class="nav-item flex flex-col items-center justify-center gap-1 w-16 h-full text-gray-400" data-tab="poetry">
-            <i class="fa-solid fa-feather text-lg"></i>
-            <span class="text-[9px] font-semibold tracking-wide">POETRY</span>
+        <button onclick="switchTab('tools')" class="nav-item flex-1 flex flex-col items-center justify-center gap-1 h-full text-gray-400" data-tab="tools">
+            <i class="fa-solid fa-wrench text-sm md:text-lg"></i>
+            <span class="text-[8px] md:text-[9px] font-semibold tracking-wide">TOOLS</span>
         </button>
-        <button onclick="switchTab('heroes')" class="nav-item flex flex-col items-center justify-center gap-1 w-16 h-full text-gray-400" data-tab="heroes">
-            <i class="fa-solid fa-landmark text-lg"></i>
-            <span class="text-[9px] font-semibold tracking-wide">HEROES</span>
+        <button onclick="switchTab('poetry')" class="nav-item flex-1 flex flex-col items-center justify-center gap-1 h-full text-gray-400" data-tab="poetry">
+            <i class="fa-solid fa-feather text-sm md:text-lg"></i>
+            <span class="text-[8px] md:text-[9px] font-semibold tracking-wide">POETRY</span>
         </button>
-        <button onclick="switchTab('about')" class="nav-item flex flex-col items-center justify-center gap-1 w-16 h-full text-gray-400" data-tab="about">
-            <i class="fa-regular fa-user text-lg"></i>
-            <span class="text-[9px] font-semibold tracking-wide">ABOUT</span>
+        <button onclick="switchTab('heroes')" class="nav-item flex-1 flex flex-col items-center justify-center gap-1 h-full text-gray-400" data-tab="heroes">
+            <i class="fa-solid fa-landmark text-sm md:text-lg"></i>
+            <span class="text-[8px] md:text-[9px] font-semibold tracking-wide">HEROES</span>
+        </button>
+        <!-- ABOUT TAB RESTORED FOR MOBILE -->
+        <button onclick="switchTab('about')" class="nav-item flex-1 flex flex-col items-center justify-center gap-1 h-full text-gray-400" data-tab="about">
+            <i class="fa-regular fa-user text-sm md:text-lg"></i>
+            <span class="text-[8px] md:text-[9px] font-semibold tracking-wide">ABOUT</span>
         </button>
     </nav>
 
@@ -487,13 +520,13 @@
         </div>
     </div>
 
-    <!-- GAME OVERLAY -->
+    <!-- APP/GAME OVERLAY -->
     <div id="gameOverlay" class="hidden fixed inset-0 bg-[#030308] z-[9999] flex-col">
         <div class="h-14 bg-[#05050A] border-b border-white/10 flex justify-between items-center px-4 flex-none z-20">
             <div class="font-mono text-cyan-400 text-sm font-semibold tracking-wider flex items-center gap-2">
                 <i class="fa-solid fa-terminal text-xs"></i> <span id="activeGameTitle">Executing.exe</span>
             </div>
-            <button onclick="closeGame()" class="w-8 h-8 rounded-full bg-white/5 text-gray-400 hover:text-red-400 flex items-center justify-center">
+            <button onclick="closeApp()" class="w-8 h-8 rounded-full bg-white/5 text-gray-400 hover:text-red-400 flex items-center justify-center">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
@@ -516,7 +549,9 @@
     <script type="module">
         
         // --- API INTEGRATION (Direct & Backend Fallback) ---
-        const apiKey = ""; // API key is injected by the environment at runtime
+        // NOTE: If you host this outside of Canvas/Vercel (where it isn't automatically injected), 
+        // you MUST paste your real Gemini API key below, otherwise requests will fail with a 400 Client Error.
+        const apiKey = ""; 
 
         async function fetchWithRetry(url, options, maxRetries = 5) {
             const delays = [1000, 2000, 4000, 8000, 16000];
@@ -524,15 +559,18 @@
                 try {
                     const response = await fetch(url, options);
                     if (!response.ok) {
-                        // Fail immediately on client errors like 400 API Key invalid (except 429 rate limit)
+                        // Fail immediately on client errors (400 often means missing/invalid API key)
                         if (response.status >= 400 && response.status < 500 && response.status !== 429) {
+                            if (response.status === 400 && !apiKey && !url.includes('/api/')) {
+                                throw new Error(`API_KEY_MISSING`);
+                            }
                             throw new Error(`Client Error: ${response.status}`);
                         }
                         throw new Error(`HTTP ${response.status}`);
                     }
                     return await response.json();
                 } catch (err) {
-                    if (i === maxRetries || err.message.includes("Client Error")) throw err;
+                    if (i === maxRetries || err.message.includes("API_KEY_MISSING") || err.message.includes("Client Error")) throw err;
                     await new Promise(r => setTimeout(r, delays[i]));
                 }
             }
@@ -566,7 +604,10 @@
                 if (!result.candidates || result.candidates.length === 0) return "Error blocked.";
                 return result.candidates[0].content.parts[0].text;
             } catch (error) { 
-                return `Error: API is currently overloaded. Please try again.`; 
+                if (error.message.includes("API_KEY_MISSING")) {
+                    return `System Error: The GEMINI API KEY is missing. Please add your key to index.html or fix your Vercel /api/Gemini route.`;
+                }
+                return `Error: Network issue or AI is overloaded.`; 
             }
         }
 
@@ -600,7 +641,8 @@
                         generationConfig: {
                             responseModalities: ["AUDIO"],
                             speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: selectedVoice } } }
-                        }
+                        },
+                        model: "gemini-2.5-flash-preview-tts"
                     };
                     responseData = await fetchWithRetry(endpoint, {
                         method: 'POST',
@@ -632,7 +674,10 @@
                 return { audio: float32Array, sampling_rate: sampleRate };
             } catch (error) {
                 if (error.message === "Cancelled") throw error;
-                throw new Error("Our AI is currently busy. Please try again in a moment.");
+                if (error.message.includes("API_KEY_MISSING")) {
+                    throw new Error("API Key Missing! Add it to index.html.");
+                }
+                throw new Error("Our AI is overloaded or network failed.");
             }
         }
 
@@ -669,8 +714,9 @@
 
         // --- EXPORT GLOBALS ---
         window.switchTab = switchTab;
-        window.openGame = openGame;
-        window.closeGame = closeGame;
+        window.openApp = openApp;
+        window.closeApp = closeApp;
+        window.filterGames = filterGames;
         window.togglePoetryAudio = togglePoetryAudio;
         window.playCardTTS = playCardTTS;
         window.togglePlayAll = togglePlayAll;
@@ -725,9 +771,57 @@
             stopTTS(); 
         }
 
-        const GAME_FILES = ['GravityBlock.html','twik.html','atomArtifact.html', 'Bubble Pop.html', 'Chromatic Mixer Maze.html', 'Voltage Lab.html', 'Earth Defender.html', 'Echo Shot.html', 'fraction-cutter.html', 'FractorBreak.html', 'Glitch Twins.html', 'kindnessRipple.html', 'Light Hunter.html', 'memory.html', 'pendulam.html', 'Shape Switch.html', 'SliceNinja.html', 'SpaceShoot.html', 'StoichiometryChef.html', 'synapse-lab.html', 'Magnetic Path.html', 'whack-a-mole.html','Memory Trail.html'];
+        // --- DATA STRUCTURES (GAMES & TOOLS) ---
+        const GAMES_DATA = [
+            { file: 'GravityBlock.html', title: 'Gravity Block', category: 'entertainment' },
+            { file: 'twik.html', title: 'Twik', category: 'entertainment' },
+            { file: 'atomArtifact.html', title: 'Atom Artifact', category: 'education' },
+            { file: 'Bubble Pop.html', title: 'Bubble Pop', category: 'entertainment' },
+            { file: 'Chromatic Mixer Maze.html', title: 'Chromatic Mixer Maze', category: 'education' },
+            { file: 'Voltage Lab.html', title: 'Voltage Lab', category: 'education' },
+            { file: 'Earth Defender.html', title: 'Earth Defender', category: 'entertainment' },
+            { file: 'Echo Shot.html', title: 'Echo Shot', category: 'entertainment' },
+            { file: 'fraction-cutter.html', title: 'Fraction Cutter', category: 'education' },
+            { file: 'FractorBreak.html', title: 'Fractor Break', category: 'education' },
+            { file: 'Glitch Twins.html', title: 'Glitch Twins', category: 'entertainment' },
+            { file: 'kindnessRipple.html', title: 'Kindness Ripple', category: 'education' },
+            { file: 'Light Hunter.html', title: 'Light Hunter', category: 'entertainment' },
+            { file: 'memory.html', title: 'Memory Training', category: 'education' },
+            { file: 'pendulam.html', title: 'Pendulum', category: 'education' },
+            { file: 'Shape Switch.html', title: 'Shape Switch', category: 'entertainment' },
+            { file: 'SliceNinja.html', title: 'Slice Ninja', category: 'entertainment' },
+            { file: 'SpaceShoot.html', title: 'Space Shoot', category: 'entertainment' },
+            { file: 'StoichiometryChef.html', title: 'Stoichiometry Chef', category: 'education' },
+            { file: 'synapse-lab.html', title: 'Synapse Lab', category: 'education' },
+            { file: 'Magnetic Path.html', title: 'Magnetic Path', category: 'education' },
+            { file: 'whack-a-mole.html', title: 'Whack a Mole', category: 'entertainment' },
+            { file: 'Memory Trail.html', title: 'Memory Trail', category: 'education' }
+        ];
 
-        function getDisplayName(name) { return name.replace(/\.html$/i, '').replace(/[-_]/g, ' ').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()).trim(); }
+        const TOOLS_DATA = [
+            { file: 'fraction-cutter.html', title: 'Fraction Cutter Tool', icon: 'fa-scissors', color: 'text-orange-500' },
+            { file: 'pendulam.html', title: 'Physics Simulator', icon: 'fa-weight-hanging', color: 'text-indigo-500' },
+            { file: 'atomArtifact.html', title: 'Atomic Visualizer', icon: 'fa-atom', color: 'text-cyan-500' },
+            { file: 'memory.html', title: 'Brain Trainer Utility', icon: 'fa-brain', color: 'text-pink-500' }
+        ];
+
+        let currentGameFilter = 'all';
+
+        function filterGames(category) {
+            currentGameFilter = category;
+            
+            // Update UI Tab Styling
+            document.querySelectorAll('.game-tab').forEach(btn => {
+                btn.classList.remove('bg-gray-200', 'dark:bg-white/10', 'text-gray-900', 'dark:text-white', 'border-gray-200');
+                btn.classList.add('text-gray-500', 'dark:text-gray-400', 'border-transparent');
+            });
+            const activeBtn = document.getElementById('gameTab_' + category);
+            activeBtn.classList.remove('text-gray-500', 'dark:text-gray-400', 'border-transparent');
+            activeBtn.classList.add('bg-gray-200', 'dark:bg-white/10', 'text-gray-900', 'dark:text-white', 'border-gray-200');
+
+            renderGames();
+        }
+
         function getIconData(name) {
             const n = name.toLowerCase();
             if (n.includes('space') || n.includes('gravity')) return { icon: 'fa-meteor', color: 'text-purple-500 dark:text-purple-400' };
@@ -740,13 +834,29 @@
         function renderGames() {
             const grid = document.getElementById('gameGrid');
             if (!grid) return;
-            grid.innerHTML = GAME_FILES.map((file) => {
-                const title = getDisplayName(file);
-                const { icon, color } = getIconData(file);
+
+            const filteredGames = GAMES_DATA.filter(g => currentGameFilter === 'all' || g.category === currentGameFilter);
+
+            grid.innerHTML = filteredGames.map((game) => {
+                const { icon, color } = getIconData(game.title);
                 return `
-                    <div class="glass-panel rounded-2xl p-5 flex flex-col items-center justify-center text-center cursor-pointer hover:-translate-y-1 transition-transform border border-gray-200 dark:border-white/5 hover:border-cyan-500/30" onclick="openGame('${file}', '${title}')">
+                    <div class="glass-panel rounded-2xl p-5 flex flex-col items-center justify-center text-center cursor-pointer hover:-translate-y-1 transition-transform border border-gray-200 dark:border-white/5 hover:border-cyan-500/30" onclick="openApp('${game.file}', '${game.title}')">
                         <div class="w-14 h-14 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center mb-3"><i class="fa-solid ${icon} text-xl ${color}"></i></div>
-                        <h3 class="font-semibold text-sm text-gray-800 dark:text-gray-200">${title}</h3>
+                        <h3 class="font-semibold text-sm text-gray-800 dark:text-gray-200">${game.title}</h3>
+                        <span class="text-[9px] uppercase tracking-wider text-gray-500 mt-1">${game.category}</span>
+                    </div>`;
+            }).join('');
+        }
+
+        function renderTools() {
+            const grid = document.getElementById('toolGrid');
+            if (!grid) return;
+            
+            grid.innerHTML = TOOLS_DATA.map((tool) => {
+                return `
+                    <div class="glass-panel rounded-2xl p-5 flex flex-col items-center justify-center text-center cursor-pointer hover:-translate-y-1 transition-transform border border-gray-200 dark:border-white/5 hover:border-orange-500/30" onclick="openApp('${tool.file}', '${tool.title}')">
+                        <div class="w-14 h-14 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center mb-3"><i class="fa-solid ${tool.icon} text-xl ${tool.color}"></i></div>
+                        <h3 class="font-semibold text-sm text-gray-800 dark:text-gray-200">${tool.title}</h3>
                     </div>`;
             }).join('');
         }
@@ -754,21 +864,18 @@
         function renderFeaturedGames() {
             const container = document.getElementById('featuredGamesContainer');
             if (!container) return;
-            const shuffledGames = [...GAME_FILES].sort(() => 0.5 - Math.random());
-            const categories = ['PUZZLE', 'ARCADE', 'ACTION', 'STRATEGY', 'SIMULATION'];
+            const shuffledGames = [...GAMES_DATA].sort(() => 0.5 - Math.random());
             const gradients = ['from-blue-100/80 to-purple-100/80 dark:from-blue-900/40 dark:to-purple-900/40', 'from-purple-100/80 to-pink-100/80 dark:from-purple-900/30 dark:to-pink-900/20', 'from-cyan-100/80 to-blue-100/80 dark:from-cyan-900/40 dark:to-blue-900/30'];
 
-            container.innerHTML = shuffledGames.slice(0, 5).map(file => {
-                const title = getDisplayName(file);
-                const cat = categories[Math.floor(Math.random() * categories.length)];
+            container.innerHTML = shuffledGames.slice(0, 5).map(game => {
                 const bg = gradients[Math.floor(Math.random() * gradients.length)];
                 return `
-                    <div class="snap-start flex-none w-[300px] md:w-[380px] glass-panel rounded-2xl p-1 relative overflow-hidden cursor-pointer shadow-sm dark:shadow-none" onclick="openGame('${file}', '${title}')">
+                    <div class="snap-start flex-none w-[300px] md:w-[380px] glass-panel rounded-2xl p-1 relative overflow-hidden cursor-pointer shadow-sm dark:shadow-none" onclick="openApp('${game.file}', '${game.title}')">
                         <div class="absolute inset-0 bg-gradient-to-br ${bg} z-0 opacity-50 dark:opacity-100"></div>
                         <div class="relative z-10 p-5 flex flex-col h-full justify-between">
                             <div>
-                                <span class="text-[10px] font-bold px-3 py-1 rounded-full border border-gray-300 dark:border-white/20 text-gray-700 dark:text-white bg-white/50 dark:bg-white/5 shadow-sm">${cat}</span>
-                                <h4 class="text-2xl font-bold mt-12 mb-2 text-cyan-700 dark:text-cyan-400">${title}</h4>
+                                <span class="text-[10px] uppercase font-bold px-3 py-1 rounded-full border border-gray-300 dark:border-white/20 text-gray-700 dark:text-white bg-white/50 dark:bg-white/5 shadow-sm">${game.category}</span>
+                                <h4 class="text-2xl font-bold mt-12 mb-2 text-cyan-700 dark:text-cyan-400">${game.title}</h4>
                             </div>
                         </div>
                     </div>`;
@@ -779,12 +886,12 @@
         const gameIframe = document.getElementById('gameIframe');
         const gameLoader = document.getElementById('gameLoader');
 
-        function openGame(file, title) {
+        function openApp(file, title) {
             document.getElementById('activeGameTitle').innerText = title.toUpperCase() + '.EXE';
             gameOverlay.classList.remove('hidden');
             gameOverlay.classList.add('flex');
             gameLoader.style.display = 'flex';
-            // Assuming Games folder exists locally or relative path handling
+            // Assuming Games/Tools folder exists locally or relative path handling
             gameIframe.src = `Games/${file}`;
         }
 
@@ -795,7 +902,7 @@
             }
         });
 
-        function closeGame() {
+        function closeApp() {
             gameOverlay.classList.add('hidden');
             gameOverlay.classList.remove('flex');
             gameIframe.src = '';
@@ -807,7 +914,7 @@
             { id: 1, title: "Aakhiri Umeed", author: "Shailesh Singh", text: "सुलगते आँसुओं में आज कुछ अगर धुँधला है।\nअदालत है मगर इंसाफ़ का असर धुँधला है।\nबहुत उम्मीद में निकला है घर से ख़्वाब का क़ैदी,\nगरजते आँधियों में हाँ मगर सफ़र धुँधला है।" },
             { id: 2, title: "Waqt ki Awaaz", author: "Shailesh Singh", text: "वक्त की शाखों पे बैठे परिंदे उड़ गए,\nकुछ ख्वाब जो देखे थे, वो पीछे मुड़ गए।\nतलाश थी जिन रास्तों पे मंजिलों की हमें,\nवो रास्ते ही आज जाने किधर मुड़ गए।" },
             { id: 3, title: "Khamoshi", author: "Shailesh Singh", text: "खामोशियों में भी एक शोर छुपा होता है,\nहर हँसते हुए चेहरे में एक चोर छुपा होता है।\nयूँ तो सब कह देते हैं हाल-ए-दिल अपना,\nपर असली दर्द तो बातों के उस ओर छुपा होता है।" },
-            { id: 4, title: "Zindagi ka Khel", author: "Shailesh Singh", text: "ज़िंदगी के इस खेल में मात खा गए,\nहम जिनके लिए जिए, वो ही हमें रुला गए।\nसोचा था बाँट लेंगे दर्द-ए-दिल उनसे,\nपर वो तो मुस्कुरा कर broad करके ही आज़मा गए।" },
+            { id: 4, title: "Zindagi ka Khel", author: "Shailesh Singh", text: "ज़िंदगी के इस खेल में मात खा गए,\nहम जिनके लिए जिए, वो ही ব্যথা रुला गए।\nसोचा था बाँट लेंगे दर्द-ए-दिल उनसे,\nपर वो तो मुस्कुरा कर broad करके ही आज़मा गए।" },
             { id: 5, title: "Raat ka Safar", author: "Dev", text: "रात के अंधेरे में एक तारा चमकता है,\nदूर आसमान में वो किसी का ख्वाब बुनता है।\nहम तो खो गए हैं इन गलियों की भीड़ में,\nपर वो तारा आज भी मेरा रास्ता चुनता है।" }
         ];
 
@@ -1119,6 +1226,9 @@
                     } catch (e) {
                         if(this.sessionId === currentPlaybackId) {
                             this.audioCache[index] = 'error';
+                            if(e.message.includes("API Key Missing")) {
+                                showAudioStatus("API Key Error. Add key in code.", "fa-solid fa-triangle-exclamation", true);
+                            }
                             // Wake up the player to skip this chunk if it was waiting
                             if(this.waitingForIndex === index) {
                                 this.playIndex(index);
@@ -1147,7 +1257,8 @@
                 }
 
                 if(src === 'error') {
-                    showAudioStatus("AI is overloaded. Skipping...", "fa-solid fa-triangle-exclamation", true);
+                    if(index === 0) showAudioStatus("Missing API Key. Check Code.", "fa-solid fa-triangle-exclamation", true);
+                    else showAudioStatus("AI is overloaded. Skipping...", "fa-solid fa-triangle-exclamation", true);
                     this.playIndex(index + 1); 
                     return;
                 }
@@ -1487,11 +1598,16 @@
             const indicator = document.getElementById('typingIndicator');
             if(indicator) indicator.remove();
 
-            if (responseText && !responseText.startsWith("Error:")) {
+            if (responseText && !responseText.startsWith("Error:") && !responseText.startsWith("System Error:")) {
                 appendMessage(responseText, 'hero');
                 conversationHistory.push({ role: "model", parts: [{ text: responseText }] }); 
             } else {
-                appendMessage("I need a moment to gather my thoughts... (Network issue).", 'hero');
+                // If it returned the custom API key error message, show it explicitly
+                if(responseText.startsWith("System Error:")) {
+                    appendMessage("⚠️ " + responseText, 'hero');
+                } else {
+                    appendMessage("I need a moment to gather my thoughts... (Network issue).", 'hero');
+                }
                 conversationHistory.pop(); 
             }
 
@@ -1506,6 +1622,7 @@
 
         // Init
         renderGames(); 
+        renderTools();
         renderFeaturedGames(); 
         renderHomeHeroes();
         clearChat(); 

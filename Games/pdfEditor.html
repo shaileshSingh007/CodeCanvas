@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DocuCraft - PDF Merger & Editor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+    <style>
+        :root {
+            /* Used to counter-scale handles so they never get huge */
+            --current-zoom: 1; 
+        }
+
+        body {
+            background: linear-gradient(-45deg, #09090b, #18181b, #0f172a, #171717);
+            background-size: 400% 400%;
+            animation: gradient-bg 20s ease infinite;
+            color: #d4d4d4;
+            overscroll-behavior: none;
+        }
+        
+        @keyframes gradient-bg { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+        .golden-text {
+            background: linear-gradient(to right, #d4af37, #f3e5ab, #aa7c11, #d4af37);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: transparent;
+            animation: shine 5s linear infinite;
+        }
+        @keyframes shine { to { background-position: 200% center; } }
+        
+        .sortable-ghost { opacity: 0; }
+        .sortable-drag {
+            cursor: grabbing !important;
+            box-shadow: 0 25px 35px -5px rgba(0, 0, 0, 0.7);
+            opacity: 1 !important;
+            transform: scale(1.05) rotate(2deg);
+            z-index: 9999 !important;
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+        
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .loader {
+            border: 3px solid #262626; border-top: 3px solid #e5e5e5;
+            border-radius: 50%; width: 32px; height: 32px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Canvas & Layout */
+        .page-render { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+        
+        /* Edit Overlay Elements */
+        .edit-overlay-item {
+            position: absolute; z-index: 50;
+            border-radius: 6px;
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            touch-action: none; 
+        }
+        .edit-overlay-item.active-element {
+            outline: 2px dashed #3b82f6; outline-offset: 1px;
+        }
+        
+        /* Constant Sized Interaction Handles (Fix for Issue 1) */
+        .handle {
+            position: absolute; display: none; width: 32px; height: 32px; 
+            border-radius: 50%; border: 3px solid white; color: white;
+            align-items: center; justify-content: center; z-index: 60;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+            /* This line guarantees handles stay exactly the same size on screen regardless of zoom! */
+            transform: scale(calc(1 / var(--current-zoom))); 
+        }
+        .active-element .handle { display: flex; }
+        
+        .move-handle { top: -16px; left: -16px; background: #f59e0b; cursor: move; transform-origin: center; }
+        .delete-handle { top: -16px; right: -16px; background: #ef4444; cursor: pointer; transform-origin: center; }
+        .resize-handle { bottom: -16px; right: -16px; background: #3b82f6; cursor: se-resize; transform-origin: center; }
+        
+        .edit-rect { min-width: 30px; min-height: 30px; }
+        .edit-text-wrapper { min-width: 60px; min-height: 35px; background: rgba(255, 255, 255, 0.05); }
+        .edit-text-content {
+            width: 100%; height: 100%; outline: none; padding: 4px;
+            font-family: Helvetica, Arial, sans-serif; line-height: 1.2;
+            cursor: text; display: block; overflow: hidden; white-space: pre-wrap;
+        }
+        
+        /* Color Input */
+        input[type="color"] {
+            -webkit-appearance: none; border: none; width: 24px; height: 24px;
+            border-radius: 50%; overflow: hidden; cursor: pointer; padding: 0;
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type="color"]::-webkit-color-swatch { border: 2px solid #52525b; border-radius: 50%; }
+
+        .tool-btn { transition: all 0.2s; flex-shrink: 0; }
+        .tool-btn.active { background-color: #3b82f6; color: white; }
+    </style>
+</head>
+<body class="h-[100dvh] w-screen font-sans selection:bg-neutral-700 flex flex-col relative overflow-hidden">
+
+    <input type="file" id="file-input" class="hidden" accept=".pdf, image/png, image/jpeg, image/jpg" multiple>
+
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 z-40 px-6 py-4 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
+        <h1 class="text-xl font-black golden-text uppercase tracking-widest pointer-events-auto shadow-black drop-shadow-lg">DocuCraft</h1>
+        <button id="add-btn" class="w-12 h-12 bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 text-white rounded-xl flex items-center justify-center transition-all shadow-lg active:scale-90 cursor-pointer pointer-events-auto">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+        </button>
+    </header>
+
+    <!-- Export Button -->
+    <button id="generate-btn" class="fixed bottom-6 right-6 w-14 h-14 bg-white hover:bg-neutral-200 text-neutral-950 rounded-2xl flex items-center justify-center transition-all z-40 shadow-[0_0_30px_rgba(255,255,255,0.2)] active:scale-90 disabled:opacity-0 disabled:scale-75 disabled:pointer-events-none cursor-pointer" disabled>
+        <svg class="w-6 h-6 ml-0.5 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+    </button>
+
+    <!-- Workspace Grid -->
+    <main id="workspace" class="flex-1 w-full min-h-0 pt-24 px-6 pb-28 overflow-y-auto">
+        <div id="sequence-empty" class="absolute inset-0 flex flex-col items-center justify-center text-neutral-600 pointer-events-none transition-opacity">
+            <svg class="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            <p class="text-lg font-medium">Workspace is empty</p>
+            <p class="text-sm mt-1 text-neutral-500">Tap the + icon to forge documents</p>
+        </div>
+        <div id="sequence-list" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-5 pb-10">
+            <!-- Pages injected here -->
+        </div>
+    </main>
+
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="fixed inset-0 z-[100] hidden bg-[#0a0a0a] flex-col transition-opacity opacity-0">
+        
+        <!-- Toolbar -->
+        <div class="absolute top-4 left-1/2 -translate-x-1/2 bg-neutral-900/95 backdrop-blur-xl border border-neutral-700/50 rounded-full px-2 py-1.5 flex items-center gap-2 shadow-2xl z-50 w-auto max-w-[95vw] overflow-x-auto no-scrollbar">
+            
+            <button id="cancel-edit" class="p-1.5 text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-full transition-colors shrink-0" title="Discard Changes">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <div class="w-px h-6 bg-neutral-700 shrink-0"></div>
+            
+            <button id="tool-box" class="tool-btn p-2 rounded-full text-neutral-300 hover:bg-neutral-800 shrink-0" title="Add Box">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke-width="2"></rect></svg>
+            </button>
+            <button id="tool-text" class="tool-btn p-2 rounded-full text-neutral-300 hover:bg-neutral-800 shrink-0" title="Add Text">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7V4h16v3M9 20h6M12 4v16"></path></svg>
+            </button>
+            
+            <!-- Format Tools -->
+            <div id="format-tools" class="items-center gap-2 hidden ml-1 pl-2 border-l border-neutral-700 shrink-0">
+                <div class="flex items-center gap-1.5 shrink-0" title="Fill Color">
+                    <svg class="w-4 h-4 text-neutral-400" fill="currentColor" viewBox="0 0 24 24"><path d="M19.36 10.04C18.67 6.59 15.64 4 12 4 8.36 4 5.33 6.59 4.64 10.04 4.14 12.63 5 15.35 6.82 17.18 8.1 18.45 9.94 19.36 12 19.36s3.9-.91 5.18-2.18c1.82-1.83 2.68-4.55 2.18-7.14zm-7.36 7.32c-2.9 0-5.25-2.35-5.25-5.25S9.1 6.86 12 6.86s5.25 2.35 5.25 5.25-2.35 5.25-5.25 5.25z"/></svg>
+                    <input type="color" id="color-bg" value="#ffffff">
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0" title="Border / Text Color">
+                    <svg class="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                    <input type="color" id="color-border" value="#ef4444">
+                </div>
+                <button id="font-dec" class="tool-btn px-2 py-1 text-[13px] font-bold rounded text-neutral-300 hover:bg-neutral-700 hidden shrink-0">A-</button>
+                <button id="font-inc" class="tool-btn px-2 py-1 text-[15px] font-bold rounded text-neutral-300 hover:bg-neutral-700 hidden shrink-0">A+</button>
+                <button id="fmt-bold" class="tool-btn w-8 h-8 rounded flex items-center justify-center font-bold text-neutral-300 hover:bg-neutral-700 hidden shrink-0">B</button>
+                <button id="fmt-italic" class="tool-btn w-8 h-8 rounded flex items-center justify-center italic font-serif text-neutral-300 hover:bg-neutral-700 hidden shrink-0">I</button>
+                <button id="fmt-underline" class="tool-btn w-8 h-8 rounded flex items-center justify-center underline text-neutral-300 hover:bg-neutral-700 hidden shrink-0">U</button>
+            </div>
+
+            <div class="w-px h-6 bg-neutral-700 ml-1 shrink-0"></div>
+            <button id="save-edit" class="p-1.5 text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-full transition-colors shrink-0" title="Save & Close">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+            </button>
+        </div>
+
+        <!-- Floating Zoom Controls -->
+        <div class="absolute bottom-6 right-6 flex items-center gap-2 bg-neutral-900/90 backdrop-blur-md p-1.5 rounded-lg border border-neutral-700 shadow-xl z-50">
+            <button id="zoom-out" class="w-10 h-10 flex items-center justify-center text-white hover:bg-neutral-700 rounded-md transition-colors"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg></button>
+            <span id="zoom-text" class="text-sm font-medium text-neutral-300 w-14 text-center">100%</span>
+            <button id="zoom-in" class="w-10 h-10 flex items-center justify-center text-white hover:bg-neutral-700 rounded-md transition-colors"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg></button>
+        </div>
+
+        <!-- Stable Scalable Viewport -->
+        <div id="viewport" class="flex-1 w-full h-full overflow-auto bg-neutral-950 p-6 sm:p-12 flex justify-center items-start">
+            <div id="workspace-sizer" class="relative transition-all duration-200" style="transform-origin: top center;">
+                <div id="edit-workspace" class="absolute top-0 left-0 shadow-2xl bg-white" style="transform-origin: top left;">
+                    <!-- Page Render & Edits Go Here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 bg-[#0a0a0a]/90 backdrop-blur-sm hidden flex-col items-center justify-center z-[200]">
+        <div class="loader mb-4"></div>
+        <p id="loading-text" class="text-sm font-medium text-neutral-300">Processing...</p>
+    </div>
+
+    <script>
+        // ==== Global Gesture/Pinch Blocker ====
+        document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
+        document.addEventListener('gesturechange', function(e) { e.preventDefault(); });
+        document.addEventListener('gestureend', function(e) { e.preventDefault(); });
+        window.addEventListener('wheel', function(e) { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
+        window.addEventListener('touchmove', function(e) { 
+            if (e.touches.length > 1) { e.preventDefault(); }
+        }, { passive: false });
+
+        const filesMap = new Map(); 
+        const editsMap = new Map(); 
+        const fileColors = ['#3b82f6', '#f97316', '#10b981', '#8b5cf6', '#ec4899', '#eab308', '#06b6d4', '#ef4444'];
+        let colorIndex = 0;
+
+        const sequenceList = document.getElementById('sequence-list');
+        const fileInput = document.getElementById('file-input');
+        const generateBtn = document.getElementById('generate-btn');
+        const editModal = document.getElementById('edit-modal');
+        const editWorkspace = document.getElementById('edit-workspace');
+        const workspaceSizer = document.getElementById('workspace-sizer');
+        const viewport = document.getElementById('viewport');
+        const formatTools = document.getElementById('format-tools');
+        const zoomText = document.getElementById('zoom-text');
+        
+        let activeItemId = null;
+        let activeElement = null;
+        let baseWsW = 0, baseWsH = 0;
+        let currentZoom = 1;
+        
+        const bgInput = document.getElementById('color-bg');
+        const borderInput = document.getElementById('color-border');
+        const btnBold = document.getElementById('fmt-bold');
+        const btnItalic = document.getElementById('fmt-italic');
+        const btnUnderline = document.getElementById('fmt-underline');
+        const btnFontInc = document.getElementById('font-inc');
+        const btnFontDec = document.getElementById('font-dec');
+
+        // ==== 1. GRID DRAGGING ====
+        new Sortable(sequenceList, {
+            animation: 300,
+            easing: "cubic-bezier(0.25, 1, 0.5, 1)", 
+            ghostClass: 'sortable-ghost',
+            dragClass: 'sortable-drag',
+            forceFallback: true, fallbackOnBody: true, swapThreshold: 0.65,
+            onEnd: () => { generateBtn.disabled = sequenceList.children.length === 0; }
+        });
+
+        document.getElementById('add-btn').onclick = () => fileInput.click();
+        fileInput.onchange = (e) => { if (e.target.files.length) handleFiles(e.target.files); fileInput.value = ''; };
+
+        function showLoading(text="Working...") {
+            document.getElementById('loading-text').textContent = text;
+            document.getElementById('loading-overlay').classList.replace('hidden', 'flex');
+        }
+        function hideLoading() { document.getElementById('loading-overlay').classList.replace('flex', 'hidden'); }
+
+        // ==== 2. FILE PARSING (Fix for Blank Huge PDFs and Rotated EXIF Images) ====
+        
+        // Strip EXIF to bake orientation correctly
+        async function getNormalizedImageBlob(file) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width; canvas.height = img.height;
+                    canvas.getContext('2d').drawImage(img, 0, 0);
+                    canvas.toBlob(resolve, 'image/jpeg', 0.95);
+                };
+                img.onerror = reject;
+                img.src = URL.createObjectURL(file);
+            });
+        }
+
+        async function handleFiles(files) {
+            showLoading("Parsing files...");
+            for (const file of files) {
+                const fileId = Math.random().toString(36).substr(2, 9);
+                const color = fileColors[colorIndex++ % fileColors.length];
+
+                if (file.type === 'application/pdf') {
+                    filesMap.set(fileId, file);
+                    try {
+                        const arrayBuffer = await file.arrayBuffer();
+                        const pdfDoc = await pdfjsLib.getDocument(new Uint8Array(arrayBuffer)).promise;
+                        for (let i = 1; i <= pdfDoc.numPages; i++) {
+                            const canvas = document.createElement('canvas');
+                            const page = await pdfDoc.getPage(i);
+                            
+                            // Safe scaling logic for huge PDFs to prevent memory limits/blank screens
+                            const unscaledVp = page.getViewport({ scale: 1.0 });
+                            const maxDim = Math.max(unscaledVp.width, unscaledVp.height);
+                            // Cap max dimension to 2500 pixels
+                            const safeScale = maxDim > 2500 ? (2500 / maxDim) : 1.5;
+                            
+                            const vp = page.getViewport({ scale: safeScale });
+                            canvas.width = vp.width; canvas.height = vp.height;
+                            await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+                            sequenceList.appendChild(createGridItem(fileId, file.type, color, i-1, canvas));
+                        }
+                    } catch (e) { alert("Failed to parse PDF."); filesMap.delete(fileId); }
+                } else if (file.type.startsWith('image/')) {
+                    try {
+                        // Normalize EXIF rotation first
+                        const normalizedBlob = await getNormalizedImageBlob(file);
+                        const normalizedFile = new File([normalizedBlob], file.name, { type: 'image/jpeg' });
+                        filesMap.set(fileId, normalizedFile); // Use normalized file moving forward
+                        
+                        const img = document.createElement('img');
+                        img.src = URL.createObjectURL(normalizedFile);
+                        await new Promise(r => img.onload = r);
+                        sequenceList.appendChild(createGridItem(fileId, normalizedFile.type, color, null, img));
+                    } catch (e) { alert("Failed to process image."); }
+                }
+            }
+            hideLoading();
+            generateBtn.disabled = sequenceList.children.length === 0;
+            document.getElementById('sequence-empty').style.opacity = sequenceList.children.length ? '0' : '1';
+        }
+
+        function createGridItem(fileId, type, color, pageIndex, content) {
+            const itemId = Math.random().toString(36).substr(2, 9);
+            const div = document.createElement('div');
+            div.className = "relative aspect-[1/1.414] bg-white rounded-lg flex items-center justify-center overflow-hidden group border-[3px] transition-transform hover:shadow-xl hover:shadow-black/50 cursor-grab";
+            div.style.borderColor = color;
+            div.dataset.itemId = itemId; div.dataset.fileId = fileId; div.dataset.type = type;
+            if (pageIndex !== null) div.dataset.pageIndex = pageIndex;
+            
+            content.classList.add('page-render');
+            div.appendChild(content);
+
+            const overlay = document.createElement('div');
+            overlay.innerHTML = `
+                <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 z-20">
+                    <button class="edit-btn p-3 bg-blue-600 hover:bg-blue-500 rounded-full text-white shadow-lg transform hover:scale-110 transition" title="Edit Page"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
+                    <button class="del-btn p-3 bg-red-500/90 hover:bg-red-400 rounded-full text-white shadow-lg transform hover:scale-110 transition" title="Delete"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                </div>
+            `;
+            div.appendChild(overlay.firstElementChild);
+
+            div.querySelector('.del-btn').onclick = (e) => { e.stopPropagation(); div.remove(); editsMap.delete(itemId); generateBtn.disabled = sequenceList.children.length === 0; };
+            div.querySelector('.edit-btn').onclick = (e) => { e.stopPropagation(); openEditor(itemId, content); };
+            return div;
+        }
+
+        // ==== 3. EDITOR NATIVE ZOOM ENGINE ====
+        function setZoom(scale) {
+            currentZoom = Math.max(0.3, Math.min(scale, 4));
+            zoomText.textContent = Math.round(currentZoom * 100) + '%';
+            
+            // Fix for Issue 1: Apply inverse scale to CSS variable so handles stay constant size
+            document.documentElement.style.setProperty('--current-zoom', currentZoom);
+            
+            workspaceSizer.style.width = (baseWsW * currentZoom) + 'px';
+            workspaceSizer.style.height = (baseWsH * currentZoom) + 'px';
+            
+            editWorkspace.style.transform = `scale(${currentZoom})`;
+            editWorkspace.style.width = baseWsW + 'px';
+            editWorkspace.style.height = baseWsH + 'px';
+        }
+
+        document.getElementById('zoom-in').onclick = () => setZoom(currentZoom + 0.25);
+        document.getElementById('zoom-out').onclick = () => setZoom(currentZoom - 0.25);
+
+        function openEditor(itemId, sourceContent) {
+            activeItemId = itemId;
+            editWorkspace.innerHTML = '';
+            
+            const clone = sourceContent.cloneNode(true);
+            clone.className = 'select-none pointer-events-none block';
+            if(clone.tagName === 'CANVAS') clone.getContext('2d').drawImage(sourceContent, 0, 0);
+            
+            baseWsW = sourceContent.width || sourceContent.naturalWidth;
+            baseWsH = sourceContent.height || sourceContent.naturalHeight;
+            
+            editWorkspace.appendChild(clone);
+
+            const fitScale = Math.min((window.innerWidth - 60) / baseWsW, (window.innerHeight - 150) / baseWsH);
+            setZoom(fitScale);
+
+            const savedData = editsMap.get(itemId);
+            if (savedData && savedData.edits) savedData.edits.forEach(edit => createOverlayElement(edit));
+
+            editModal.classList.remove('hidden');
+            editModal.classList.add('flex');
+            setTimeout(() => editModal.style.opacity = '1', 10);
+            clearActiveElement();
+        }
+
+        document.getElementById('cancel-edit').onclick = () => closeEditor(false);
+        document.getElementById('save-edit').onclick = () => closeEditor(true);
+
+        function closeEditor(saveChanges) {
+            if (saveChanges) {
+                const elements = editWorkspace.querySelectorAll('.edit-overlay-item');
+                const edits = [];
+                elements.forEach(el => {
+                    const isText = el.classList.contains('edit-text-wrapper');
+                    const state = JSON.parse(el.dataset.state || '{}');
+                    
+                    const x = parseFloat(el.style.left) / 100;
+                    const y = parseFloat(el.style.top) / 100;
+                    const w = parseFloat(el.style.width) / 100;
+                    const h = parseFloat(el.style.height) / 100;
+
+                    if (isText) {
+                        const contentDiv = el.querySelector('.edit-text-content');
+                        if (contentDiv && contentDiv.innerText.trim()) {
+                            edits.push({ type: 'text', x, y, w, h, text: contentDiv.innerText, ...state });
+                        }
+                    } else {
+                        edits.push({ type: 'rect', x, y, w, h, ...state });
+                    }
+                });
+                editsMap.set(activeItemId, { edits, wsW: baseWsW, wsH: baseWsH });
+                updateThumbnail(activeItemId);
+            }
+            
+            editModal.style.opacity = '0';
+            setTimeout(() => { editModal.classList.add('hidden'); editModal.classList.remove('flex'); }, 300);
+        }
+        
+        function updateThumbnail(itemId) {
+            const item = document.querySelector(`[data-item-id="${itemId}"]`);
+            if (!item) return;
+
+            let svg = item.querySelector('.thumb-overlay-svg');
+            if (svg) svg.remove();
+
+            const savedData = editsMap.get(itemId);
+            if (!savedData || !savedData.edits || savedData.edits.length === 0) return;
+
+            svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('class', 'thumb-overlay-svg absolute inset-0 w-full h-full pointer-events-none z-10');
+            svg.setAttribute('viewBox', `0 0 ${savedData.wsW} ${savedData.wsH}`);
+            svg.setAttribute('preserveAspectRatio', 'xMidYMid meet'); 
+
+            savedData.edits.forEach(edit => {
+                if (edit.type === 'rect') {
+                    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    rect.setAttribute('x', edit.x * savedData.wsW);
+                    rect.setAttribute('y', edit.y * savedData.wsH);
+                    rect.setAttribute('width', edit.w * savedData.wsW);
+                    rect.setAttribute('height', edit.h * savedData.wsH);
+                    rect.setAttribute('fill', edit.bg);
+                    rect.setAttribute('stroke', edit.bc);
+                    rect.setAttribute('stroke-width', '4');
+                    rect.setAttribute('rx', '6'); // Match border radius
+                    svg.appendChild(rect);
+                } else if (edit.type === 'text') {
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', (edit.x * savedData.wsW) + 6);
+                    text.setAttribute('fill', edit.tc || '#ef4444');
+                    text.setAttribute('font-size', edit.fs);
+                    text.setAttribute('font-family', 'Helvetica, Arial, sans-serif');
+                    if (edit.b) text.setAttribute('font-weight', 'bold');
+                    if (edit.i) text.setAttribute('font-style', 'italic');
+                    if (edit.u) text.setAttribute('text-decoration', 'underline');
+
+                    const lines = edit.text.split('\n');
+                    lines.forEach((line, i) => {
+                        const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+                        tspan.setAttribute('x', (edit.x * savedData.wsW) + 6);
+                        tspan.setAttribute('y', (edit.y * savedData.wsH) + edit.fs + (i * edit.fs * 1.2));
+                        tspan.textContent = line;
+                        text.appendChild(tspan);
+                    });
+                    svg.appendChild(text);
+                }
+            });
+            item.insertBefore(svg, item.children[1]); 
+        }
+
+        // ==== 4. ELEMENT CREATION, DRAG & HANDLES ====
+        document.getElementById('tool-box').onclick = () => {
+            createOverlayElement({ type: 'rect', x: 0.35, y: 0.35, w: 0.2, h: 0.2, bg: '#ffffff', bc: '#ef4444' });
+        };
+        
+        document.getElementById('tool-text').onclick = () => {
+            createOverlayElement({ type: 'text', x: 0.3, y: 0.35, w: 0.3, h: 0.08, text: 'Edit Text', tc: '#ef4444', fs: 32, b: false, i: false, u: false });
+        };
+
+        function createOverlayElement(data) {
+            const el = document.createElement('div');
+            el.className = `edit-overlay-item ${data.type === 'rect' ? 'edit-rect' : 'edit-text-wrapper'}`;
+            el.style.left = (data.x * 100) + '%'; el.style.top = (data.y * 100) + '%';
+            el.style.width = (data.w * 100) + '%'; el.style.height = (data.h * 100) + '%';
+
+            const resizeH = document.createElement('div'); resizeH.className = 'handle resize-handle';
+            resizeH.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path></svg>';
+            
+            const moveH = document.createElement('div'); moveH.className = 'handle move-handle';
+            moveH.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 8h16M4 16h16"></path></svg>';
+            
+            const delH = document.createElement('div'); delH.className = 'handle delete-handle';
+            delH.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>';
+
+            el.appendChild(resizeH); el.appendChild(moveH); el.appendChild(delH);
+
+            if (data.type === 'rect') {
+                el.dataset.state = JSON.stringify({ bg: data.bg || '#ffffff', bc: data.bc || '#ef4444' });
+            } else {
+                const content = document.createElement('div');
+                content.className = 'edit-text-content';
+                content.contentEditable = true;
+                content.innerText = data.text || '';
+                el.appendChild(content);
+                el.dataset.state = JSON.stringify({ tc: data.tc || '#ef4444', fs: data.fs || 32, b: data.b||false, i: data.i||false, u: data.u||false });
+            }
+            
+            applyElementState(el);
+            editWorkspace.appendChild(el);
+            makeInteractive(el, moveH, resizeH, delH);
+            setActiveElement(el);
+        }
+
+        function applyElementState(el) {
+            const state = JSON.parse(el.dataset.state);
+            if (el.classList.contains('edit-rect')) {
+                el.style.backgroundColor = state.bg;
+                el.style.border = `3px solid ${state.bc}`;
+            } else {
+                const content = el.querySelector('.edit-text-content');
+                if(content) {
+                    content.style.color = state.tc;
+                    content.style.fontSize = state.fs + 'px';
+                    content.style.fontWeight = state.b ? 'bold' : 'normal';
+                    content.style.fontStyle = state.i ? 'italic' : 'normal';
+                    content.style.textDecoration = state.u ? 'underline' : 'none';
+                }
+            }
+        }
+
+        function makeInteractive(el, moveH, resizeH, delH) {
+            let isDragging = false, isResizing = false;
+            let startX, startY, startLeft, startTop, startW, startH;
+
+            delH.onpointerdown = (e) => { e.stopPropagation(); el.remove(); clearActiveElement(); };
+
+            moveH.onpointerdown = (e) => {
+                setActiveElement(el);
+                isDragging = true;
+                startX = e.clientX; startY = e.clientY;
+                startLeft = parseFloat(el.style.left) || 0; startTop = parseFloat(el.style.top) || 0;
+                moveH.setPointerCapture(e.pointerId);
+                e.stopPropagation();
+            };
+            
+            el.onpointerdown = (e) => {
+                if (e.target === moveH || e.target === resizeH || e.target === delH) return;
+                setActiveElement(el);
+                if (el.classList.contains('edit-rect')) {
+                    isDragging = true;
+                    startX = e.clientX; startY = e.clientY;
+                    startLeft = parseFloat(el.style.left) || 0; startTop = parseFloat(el.style.top) || 0;
+                    el.setPointerCapture(e.pointerId);
+                    e.stopPropagation();
+                }
+            };
+
+            resizeH.onpointerdown = (e) => {
+                setActiveElement(el);
+                isResizing = true;
+                startX = e.clientX; startY = e.clientY;
+                startW = parseFloat(el.style.width) || 0; startH = parseFloat(el.style.height) || 0;
+                resizeH.setPointerCapture(e.pointerId);
+                e.stopPropagation();
+            };
+
+            window.addEventListener('pointermove', (e) => {
+                if (isDragging) {
+                    const dx = (e.clientX - startX) / currentZoom;
+                    const dy = (e.clientY - startY) / currentZoom;
+                    el.style.left = startLeft + (dx / baseWsW * 100) + '%';
+                    el.style.top = startTop + (dy / baseWsH * 100) + '%';
+                } else if (isResizing) {
+                    const dx = (e.clientX - startX) / currentZoom;
+                    const dy = (e.clientY - startY) / currentZoom;
+                    el.style.width = (startW + (dx / baseWsW * 100)) + '%';
+                    el.style.height = (startH + (dy / baseWsH * 100)) + '%';
+                }
+            });
+
+            const stopAction = (e) => {
+                if (isDragging) { isDragging = false; if(e.target.releasePointerCapture) e.target.releasePointerCapture(e.pointerId); }
+                if (isResizing) { isResizing = false; if(e.target.releasePointerCapture) e.target.releasePointerCapture(e.pointerId); }
+            };
+            
+            el.addEventListener('pointerup', stopAction);
+            moveH.addEventListener('pointerup', stopAction);
+            resizeH.addEventListener('pointerup', stopAction);
+        }
+
+        // ==== 5. TOOLBAR UI ====
+        function setActiveElement(el) {
+            if (activeElement) activeElement.classList.remove('active-element');
+            activeElement = el;
+            if (el) {
+                el.classList.add('active-element');
+                formatTools.classList.remove('hidden'); formatTools.classList.add('flex');
+                
+                const state = JSON.parse(el.dataset.state);
+                if (el.classList.contains('edit-rect')) {
+                    bgInput.parentElement.style.display = 'flex'; borderInput.parentElement.style.display = 'flex';
+                    bgInput.value = state.bg; borderInput.value = state.bc;
+                    [btnBold, btnItalic, btnUnderline, btnFontInc, btnFontDec].forEach(b => b.classList.add('hidden'));
+                } else {
+                    bgInput.parentElement.style.display = 'none'; borderInput.parentElement.style.display = 'flex';
+                    borderInput.value = state.tc;
+                    [btnBold, btnItalic, btnUnderline, btnFontInc, btnFontDec].forEach(b => b.classList.remove('hidden'));
+                    btnBold.classList.toggle('active', state.b); btnItalic.classList.toggle('active', state.i); btnUnderline.classList.toggle('active', state.u);
+                }
+            }
+        }
+
+        function clearActiveElement() {
+            if (activeElement) activeElement.classList.remove('active-element');
+            activeElement = null;
+            formatTools.classList.add('hidden'); formatTools.classList.remove('flex');
+        }
+
+        function updateState(key, value) {
+            if (!activeElement) return;
+            const state = JSON.parse(activeElement.dataset.state);
+            state[key] = value;
+            activeElement.dataset.state = JSON.stringify(state);
+            applyElementState(activeElement);
+        }
+
+        bgInput.oninput = (e) => updateState('bg', e.target.value);
+        borderInput.oninput = (e) => { activeElement.classList.contains('edit-rect') ? updateState('bc', e.target.value) : updateState('tc', e.target.value); };
+        
+        btnBold.onclick = () => { const s = JSON.parse(activeElement.dataset.state); updateState('b', !s.b); btnBold.classList.toggle('active', !s.b); };
+        btnItalic.onclick = () => { const s = JSON.parse(activeElement.dataset.state); updateState('i', !s.i); btnItalic.classList.toggle('active', !s.i); };
+        btnUnderline.onclick = () => { const s = JSON.parse(activeElement.dataset.state); updateState('u', !s.u); btnUnderline.classList.toggle('active', !s.u); };
+        
+        btnFontInc.onclick = () => { const s = JSON.parse(activeElement.dataset.state); updateState('fs', (s.fs || 32) + 4); };
+        btnFontDec.onclick = () => { const s = JSON.parse(activeElement.dataset.state); updateState('fs', Math.max(12, (s.fs || 32) - 4)); };
+
+        viewport.addEventListener('pointerdown', (e) => {
+            if (e.target === viewport || e.target === workspaceSizer || e.target === editWorkspace || e.target.classList.contains('page-render')) {
+                clearActiveElement();
+            }
+        });
+
+        // ==== 6. PDF EXPORT (FORCE DOWNLOAD) ====
+        function hexToRgbObj(hex) { return { r: parseInt(hex.slice(1,3),16)/255, g: parseInt(hex.slice(3,5),16)/255, b: parseInt(hex.slice(5,7),16)/255 }; }
+
+        async function generateMergedPDF() {
+            const items = document.querySelectorAll('#sequence-list > div');
+            if (items.length === 0) return;
+            showLoading("Forging final document...");
+            
+            try {
+                const { PDFDocument, rgb, StandardFonts } = PDFLib;
+                const mergedPdf = await PDFDocument.create();
+                
+                const fonts = {
+                    normal: await mergedPdf.embedFont(StandardFonts.Helvetica),
+                    bold: await mergedPdf.embedFont(StandardFonts.HelveticaBold),
+                    italic: await mergedPdf.embedFont(StandardFonts.HelveticaOblique),
+                    boldItalic: await mergedPdf.embedFont(StandardFonts.HelveticaBoldOblique)
+                };
+                
+                const cache = new Map();
+                let lastDim = { w: 595.28, h: 841.89 }; 
+
+                for (const item of items) {
+                    const fId = item.dataset.fileId;
+                    const iId = item.dataset.itemId;
+                    const type = item.dataset.type;
+                    const file = filesMap.get(fId);
+                    const savedData = editsMap.get(iId);
+                    let page = null;
+                    
+                    let targetX = 0, targetY = 0, targetW = 0, targetH = 0;
+
+                    if (type === 'application/pdf') {
+                        if (!cache.has(fId)) cache.set(fId, await PDFDocument.load(await file.arrayBuffer()));
+                        const [cp] = await mergedPdf.copyPages(cache.get(fId), [parseInt(item.dataset.pageIndex)]);
+                        page = mergedPdf.addPage(cp);
+                        targetW = page.getWidth(); targetH = page.getHeight();
+                    } else {
+                        const img = type.includes('png') ? await mergedPdf.embedPng(await file.arrayBuffer()) : await mergedPdf.embedJpg(await file.arrayBuffer());
+                        page = mergedPdf.addPage([lastDim.w, lastDim.h]);
+                        const scaled = img.scaleToFit(lastDim.w, lastDim.h);
+                        targetX = (lastDim.w - scaled.width)/2; targetY = (lastDim.h - scaled.height)/2;
+                        targetW = scaled.width; targetH = scaled.height;
+                        page.drawImage(img, { x: targetX, y: targetY, width: targetW, height: targetH });
+                    }
+
+                    if (page && savedData && savedData.edits.length > 0) {
+                        const wsH = savedData.wsH;
+                        
+                        savedData.edits.forEach(edit => {
+                            const finalX = targetX + (edit.x * targetW);
+                            const finalY_top = targetY + targetH - (edit.y * targetH);
+                            
+                            if (edit.type === 'rect') {
+                                const bgRgb = hexToRgbObj(edit.bg); const bcRgb = hexToRgbObj(edit.bc);
+                                page.drawRectangle({
+                                    x: finalX, y: finalY_top - (edit.h * targetH),
+                                    width: edit.w * targetW, height: edit.h * targetH,
+                                    color: rgb(bgRgb.r, bgRgb.g, bgRgb.b),
+                                    borderColor: rgb(bcRgb.r, bcRgb.g, bcRgb.b), borderWidth: 2
+                                });
+                            } else if (edit.type === 'text') {
+                                const tc = hexToRgbObj(edit.tc);
+                                const fType = (edit.b && edit.i) ? fonts.boldItalic : edit.b ? fonts.bold : edit.i ? fonts.italic : fonts.normal;
+                                const pdfFontSize = edit.fs * (targetH / wsH); 
+                                
+                                const txtX = finalX + 4;
+                                const txtY = finalY_top - (pdfFontSize * 1.05); 
+                                
+                                const lines = edit.text.split('\n');
+                                lines.forEach((line, index) => {
+                                    const lineY = txtY - (index * pdfFontSize * 1.2);
+                                    page.drawText(line, { x: txtX, y: lineY, size: pdfFontSize, font: fType, color: rgb(tc.r, tc.g, tc.b) });
+                                    if(edit.u) {
+                                        const txtW = fType.widthOfTextAtSize(line, pdfFontSize);
+                                        page.drawLine({ start: { x: txtX, y: lineY - pdfFontSize*0.1 }, end: { x: txtX + txtW, y: lineY - pdfFontSize*0.1 }, thickness: pdfFontSize*0.05, color: rgb(tc.r, tc.g, tc.b) });
+                                    }
+                                });
+                            }
+                        });
+                    }
+                    if(page) lastDim = { w: page.getWidth(), h: page.getHeight() };
+                }
+
+                // Force Strict Download via application/octet-stream
+                const blob = new Blob([await mergedPdf.save()], { type: 'application/octet-stream' });
+                const a = document.createElement('a'); 
+                a.style.display = 'none';
+                a.href = URL.createObjectURL(blob);
+                a.download = `DocuCraft_${new Date().getTime()}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                
+                // Cleanup
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(a.href);
+                }, 100);
+
+            } catch (e) { alert("Error generating PDF."); console.error(e); }
+            finally { hideLoading(); }
+        }
+        
+        generateBtn.addEventListener('click', generateMergedPDF);
+    </script>
+</body>
+</html>

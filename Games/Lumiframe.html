@@ -84,8 +84,12 @@
         #main-canvas-container { position: relative; z-index: 10; }
         #main-canvas-container canvas { pointer-events: auto; touch-action: none; }
         
-        .floating-controls { position: absolute; right: 15px; top: 15px; display: flex; flex-direction: column; gap: 10px; z-index: 100; }
-        .floating-btn { width: 40px; height: 40px; background: rgba(30, 30, 30, 0.8); backdrop-filter: blur(5px); border: 1px solid var(--border-color); border-radius: 50%; font-size: 14px; }
+        /* --- FLOATING CONTROLS (EDIT DROPDOWN) --- */
+        .floating-controls { position: absolute; right: 15px; top: 15px; display: flex; flex-direction: column; align-items: center; z-index: 100; }
+        .floating-btn { width: 40px; height: 40px; background: rgba(30, 30, 30, 0.8); backdrop-filter: blur(5px); border: 1px solid var(--border-color); border-radius: 50%; font-size: 14px; transition: 0.2s; color: var(--text-main); }
+        .floating-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+        .floating-dropdown-menu { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; overflow: hidden; max-height: 0; opacity: 0; transition: max-height 0.3s ease, opacity 0.3s ease; }
+        .floating-dropdown-menu.open { max-height: 250px; opacity: 1; }
 
         /* --- TIMELINE --- */
         .timeline-bar {
@@ -218,9 +222,17 @@
             <canvas id="onion-next" class="canvas-layer" width="800" height="600"></canvas>
         </div>
         
+        <!-- SMOOTH FLOATING EDIT MENU -->
         <div class="floating-controls">
-            <button class="floating-btn" onclick="app.workspace.autoFit()" title="Fit to Screen"><i class="fa-solid fa-expand"></i></button>
-            <button class="floating-btn" onclick="app.ui.modals.open('modal-frame-options')" title="Frame Options"><i class="fa-solid fa-layer-group"></i></button>
+            <button class="floating-btn" id="btn-edit-menu" onclick="app.ui.toggleEditMenu()">
+                <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+            <div class="floating-dropdown-menu" id="edit-dropdown-menu">
+                <button class="floating-btn" onclick="app.workspace.autoFit(); app.ui.toggleEditMenu()" title="Fit Screen"><i class="fa-solid fa-expand"></i></button>
+                <button class="floating-btn" onclick="app.frames.duplicateFrame(); app.ui.toggleEditMenu()" title="Duplicate"><i class="fa-solid fa-copy"></i></button>
+                <button class="floating-btn" onclick="app.canvas.clear(); app.ui.toggleEditMenu()" title="Clear"><i class="fa-solid fa-eraser"></i></button>
+                <button class="floating-btn" style="color: var(--danger);" onclick="app.frames.deleteFrame(app.state.currentFrameIndex); app.ui.toggleEditMenu()" title="Delete"><i class="fa-solid fa-trash"></i></button>
+            </div>
         </div>
     </main>
 
@@ -324,18 +336,6 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="modal-frame-options" onclick="app.ui.modals.closeOnClickOutside(event, 'modal-frame-options')">
-        <div class="bottom-sheet">
-            <div class="sheet-handle"></div>
-            <div class="sheet-title">Frame Actions</div>
-            <div class="btn-list">
-                <button class="btn-list-item" onclick="app.frames.duplicateFrame(); app.ui.modals.close('modal-frame-options')"><i class="fa-solid fa-copy"></i> Duplicate Frame</button>
-                <button class="btn-list-item" onclick="app.canvas.clear(); app.ui.modals.close('modal-frame-options')"><i class="fa-solid fa-eraser"></i> Clear Canvas</button>
-                <button class="btn-list-item" style="color: var(--danger);" onclick="app.frames.deleteFrame(app.state.currentFrameIndex); app.ui.modals.close('modal-frame-options')"><i class="fa-solid fa-trash"></i> Delete Frame</button>
-            </div>
-        </div>
-    </div>
-
     <div class="modal-overlay" id="modal-new-project">
         <div class="modal-center">
             <h3 style="margin-bottom: 20px;">New Project</h3>
@@ -411,7 +411,6 @@
                 this.canvas.freeDrawingBrush = new fabric.PencilBrush(this.canvas);
                 this.tools.updateBrush();
 
-                // 1. ADDED: Update thumbnails safely when moving/modifying objects.
                 this.canvas.on('object:added', () => { 
                     if(!this.state.isPlaying) { this.history.saveState(); this.frames.updateThumbnailAsync(); } 
                 });
@@ -484,10 +483,14 @@
             
             workspace: {
                 autoFit: function() {
-                    const ws = document.getElementById('workspace'); const pad = 40;
-                    const wScale = (ws.clientWidth - pad) / app.state.width; const hScale = (ws.clientHeight - pad) / app.state.height;
-                    app.state.workspace.scale = Math.min(wScale, hScale);
-                    app.state.workspace.panX = 0; app.state.workspace.panY = 0; this.applyTransform();
+                    const ws = document.getElementById('workspace');
+                    const wScale = ws.clientWidth / app.state.width; 
+                    const hScale = ws.clientHeight / app.state.height;
+                    // Fits perfectly to whichever boundary is hit first, leaving a small safe 5% margin
+                    app.state.workspace.scale = Math.min(wScale, hScale) * 0.95; 
+                    app.state.workspace.panX = 0; 
+                    app.state.workspace.panY = 0; 
+                    this.applyTransform();
                 },
                 applyTransform: function() {
                     document.getElementById('canvas-wrapper').style.transform = `translate(${app.state.workspace.panX}px, ${app.state.workspace.panY}px) scale(${app.state.workspace.scale})`;
@@ -644,16 +647,12 @@
                     if (app.state.frames.length === 0 || app.state.isPlaying) return;
                     app.state.frames[app.state.currentFrameIndex].data = JSON.stringify(app.canvas.toJSON(['id']));
                     
-                    // 1. ADDED: Synchronous strict thumbnail update to ensure onion skins 
-                    // never fail when navigating away from a frame after dragging objects.
                     const dataUrl = app.canvas.toDataURL({ format: 'png', multiplier: 0.2 });
                     app.state.frames[app.state.currentFrameIndex].thumb = dataUrl;
                     const thumbImg = document.getElementById(`thumb-img-${app.state.currentFrameIndex}`);
                     if(thumbImg) thumbImg.src = dataUrl;
                 },
                 
-                // 2. ADDED: Safe `skipSave` flag so destructively deleting or copying 
-                // frames doesn't overwrite data into the wrong frame index.
                 loadFrame: function(index, skipSave = false) {
                     if (index < 0 || index >= app.state.frames.length) return;
                     
@@ -701,7 +700,7 @@
                     app.state.frames.splice(index, 1);
                     if (app.state.currentFrameIndex >= index) app.state.currentFrameIndex = Math.max(0, app.state.currentFrameIndex - 1);
                     
-                    this.loadFrame(app.state.currentFrameIndex, true); // Safely load without triggering overwrite
+                    this.loadFrame(app.state.currentFrameIndex, true);
                 },
                 updateThumbnailAsync: function() {
                     setTimeout(() => {
@@ -886,6 +885,18 @@
                         if (idx === app.state.currentFrameIndex) { el.classList.add('active'); el.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' }); } 
                         else el.classList.remove('active');
                     });
+                },
+                toggleEditMenu: function() {
+                    const menu = document.getElementById('edit-dropdown-menu');
+                    const btn = document.getElementById('btn-edit-menu');
+                    menu.classList.toggle('open');
+                    if (menu.classList.contains('open')) {
+                        btn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                        btn.classList.add('active');
+                    } else {
+                        btn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
+                        btn.classList.remove('active');
+                    }
                 },
                 showTextToast: function(obj) {
                     const toast = document.getElementById('text-edit-toast');

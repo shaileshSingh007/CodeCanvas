@@ -74,8 +74,7 @@
             overflow: hidden !important; display: flex; align-items: center; justify-content: center; touch-action: none;
         }
         .canvas-wrapper {
-            position: relative; box-shadow: 0 4px 30px rgba(0,0,0,0.5); overflow: hidden;
-            flex-shrink: 0; /* CRITICAL FIX: Stops mobile flex layout from crushing/cutting the square aspect ratio */
+            position: relative; box-shadow: 0 4px 30px rgba(0,0,0,0.5); overflow: hidden; flex-shrink: 0; 
             background-image: linear-gradient(45deg, #222 25%, transparent 25%), linear-gradient(135deg, #222 25%, transparent 25%),
                               linear-gradient(45deg, transparent 75%, #222 75%), linear-gradient(135deg, transparent 75%, #222 75%);
             background-size: 20px 20px; background-position: 0 0, 10px 0, 10px -10px, 0px 10px; background-color: #1a1a1a;
@@ -85,6 +84,14 @@
         #main-canvas-container { position: relative; z-index: 10; }
         #main-canvas-container canvas { pointer-events: auto; touch-action: none; }
         
+        /* Alignment Snap Guides */
+        .snap-guide {
+            position: absolute; background: var(--accent); display: none; pointer-events: none;
+            z-index: 999; box-shadow: 0 0 6px var(--accent);
+        }
+        #guide-v { top: 0; left: 50%; width: 2px; height: 100%; transform: translateX(-50%); }
+        #guide-h { top: 50%; left: 0; width: 100%; height: 2px; transform: translateY(-50%); }
+
         /* --- FLOATING CONTROLS (EDIT DROPDOWN) --- */
         .floating-controls { position: absolute; right: 15px; top: 15px; display: flex; flex-direction: column; align-items: center; z-index: 100; }
         .floating-btn { width: 40px; height: 40px; background: rgba(30, 30, 30, 0.8); backdrop-filter: blur(5px); border: 1px solid var(--border-color); border-radius: 50%; font-size: 14px; transition: 0.2s; color: var(--text-main); }
@@ -219,6 +226,9 @@
             <canvas id="onion-prev" class="canvas-layer" width="1080" height="1920"></canvas>
             <div id="main-canvas-container" class="canvas-layer">
                 <canvas id="main-canvas" width="1080" height="1920"></canvas>
+                <!-- Alignment Snap Guidelines -->
+                <div id="guide-v" class="snap-guide"></div>
+                <div id="guide-h" class="snap-guide"></div>
             </div>
             <canvas id="onion-next" class="canvas-layer" width="1080" height="1920"></canvas>
         </div>
@@ -378,6 +388,9 @@
         window.addEventListener('resize', enforceScrollLock);
         document.addEventListener('focusin', enforceScrollLock);
         
+        fabric.filterBackend = new fabric.Canvas2dFilterBackend();
+        fabric.devicePixelRatio = 1; 
+
         const app = {
             state: {
                 width: 1080, height: 1920, fps: 12, frames: [], currentFrameIndex: 0, isPlaying: false, isLooping: true,
@@ -419,6 +432,45 @@
                     if(!this.state.isPlaying) { this.history.saveState(); this.frames.updateThumbnailAsync(); } 
                 });
                 
+                // --- ALIGNMENT SNAP LOGIC ---
+                this.canvas.on('object:moving', (e) => {
+                    const obj = e.target;
+                    // Dynamically calculate threshold so it feels the same regardless of zoom scale
+                    const threshold = 15 / app.state.workspace.scale;
+                    const centerX = app.state.width / 2;
+                    const centerY = app.state.height / 2;
+                    const objCenter = obj.getCenterPoint();
+
+                    let snappedX = false;
+                    let snappedY = false;
+
+                    // Horizontal Centering
+                    if (Math.abs(objCenter.x - centerX) < threshold) {
+                        obj.setPositionByOrigin(new fabric.Point(centerX, objCenter.y), 'center', 'center');
+                        snappedX = true;
+                    }
+
+                    // Recalculate center after potential X-shift
+                    const newObjCenter = obj.getCenterPoint();
+
+                    // Vertical Centering
+                    if (Math.abs(newObjCenter.y - centerY) < threshold) {
+                        obj.setPositionByOrigin(new fabric.Point(newObjCenter.x, centerY), 'center', 'center');
+                        snappedY = true;
+                    }
+
+                    // Toggle glowing guide lines
+                    document.getElementById('guide-v').style.display = snappedX ? 'block' : 'none';
+                    document.getElementById('guide-h').style.display = snappedY ? 'block' : 'none';
+                });
+
+                // Clear snap guidelines when mouse is released
+                this.canvas.on('mouse:up', () => {
+                    document.getElementById('guide-v').style.display = 'none';
+                    document.getElementById('guide-h').style.display = 'none';
+                });
+                // -----------------------------
+
                 this.canvas.on('path:created', (e) => {
                     if (this.state.workspace.isDragging || this.state.workspace.resumeDrawing) { this.canvas.remove(e.path); return; }
                     this.frames.updateThumbnailAsync();

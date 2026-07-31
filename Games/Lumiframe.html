@@ -75,6 +75,7 @@
         }
         .canvas-wrapper {
             position: relative; box-shadow: 0 4px 30px rgba(0,0,0,0.5); overflow: hidden;
+            flex-shrink: 0; /* CRITICAL FIX: Stops mobile flex layout from crushing/cutting the square aspect ratio */
             background-image: linear-gradient(45deg, #222 25%, transparent 25%), linear-gradient(135deg, #222 25%, transparent 25%),
                               linear-gradient(45deg, transparent 75%, #222 75%), linear-gradient(135deg, transparent 75%, #222 75%);
             background-size: 20px 20px; background-position: 0 0, 10px 0, 10px -10px, 0px 10px; background-color: #1a1a1a;
@@ -214,12 +215,12 @@
 
     <!-- CENTER WORKSPACE -->
     <main class="workspace" id="workspace">
-        <div class="canvas-wrapper" id="canvas-wrapper" style="width: 800px; height: 600px;">
-            <canvas id="onion-prev" class="canvas-layer" width="800" height="600"></canvas>
+        <div class="canvas-wrapper" id="canvas-wrapper" style="width: 1080px; height: 1920px;">
+            <canvas id="onion-prev" class="canvas-layer" width="1080" height="1920"></canvas>
             <div id="main-canvas-container" class="canvas-layer">
-                <canvas id="main-canvas" width="800" height="600"></canvas>
+                <canvas id="main-canvas" width="1080" height="1920"></canvas>
             </div>
-            <canvas id="onion-next" class="canvas-layer" width="800" height="600"></canvas>
+            <canvas id="onion-next" class="canvas-layer" width="1080" height="1920"></canvas>
         </div>
         
         <!-- SMOOTH FLOATING EDIT MENU -->
@@ -229,9 +230,9 @@
             </button>
             <div class="floating-dropdown-menu" id="edit-dropdown-menu">
                 <button class="floating-btn" onclick="app.workspace.autoFit(); app.ui.toggleEditMenu()" title="Fit Screen"><i class="fa-solid fa-expand"></i></button>
-                <button class="floating-btn" onclick="app.frames.duplicateFrame(); app.ui.toggleEditMenu()" title="Duplicate"><i class="fa-solid fa-copy"></i></button>
-                <button class="floating-btn" onclick="app.canvas.clear(); app.ui.toggleEditMenu()" title="Clear"><i class="fa-solid fa-eraser"></i></button>
-                <button class="floating-btn" style="color: var(--danger);" onclick="app.frames.deleteFrame(app.state.currentFrameIndex); app.ui.toggleEditMenu()" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                <button class="floating-btn" onclick="app.frames.duplicateFrame(); app.ui.toggleEditMenu()" title="Duplicate Frame"><i class="fa-solid fa-copy"></i></button>
+                <button class="floating-btn" onclick="app.canvas.clear(); app.ui.toggleEditMenu()" title="Clear Canvas"><i class="fa-solid fa-eraser"></i></button>
+                <button class="floating-btn" style="color: var(--danger);" onclick="app.frames.deleteFrame(app.state.currentFrameIndex); app.ui.toggleEditMenu()" title="Delete Frame"><i class="fa-solid fa-trash"></i></button>
             </div>
         </div>
     </main>
@@ -486,7 +487,6 @@
                     const ws = document.getElementById('workspace');
                     const wScale = ws.clientWidth / app.state.width; 
                     const hScale = ws.clientHeight / app.state.height;
-                    // Fits perfectly to whichever boundary is hit first, leaving a small safe 5% margin
                     app.state.workspace.scale = Math.min(wScale, hScale) * 0.95; 
                     app.state.workspace.panX = 0; 
                     app.state.workspace.panY = 0; 

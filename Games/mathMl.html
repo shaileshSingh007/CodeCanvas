@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Omni MathML Converter - Minimal Gold Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbars for Dark Golden Theme */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #856529; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #d4af37; 
+        }
+
+        /* Gold Gradient Utilities */
+        .gold-text-gradient {
+            background: linear-gradient(to right, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .gold-border-gradient {
+            position: relative;
+            background: #0a0a0a;
+            background-clip: padding-box;
+            border: 1px solid transparent;
+            border-radius: 0.75rem;
+        }
+        .gold-border-gradient::before {
+            content: '';
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            z-index: -1;
+            margin: -1px;
+            border-radius: inherit;
+            background: linear-gradient(to right, #bf953f, #fcf6ba, #b38728);
+        }
+
+        .gold-btn {
+            background: linear-gradient(135deg, #b38728 0%, #fcf6ba 50%, #bf953f 100%);
+            background-size: 200% auto;
+            color: #111;
+            transition: 0.5s;
+        }
+        .gold-btn:hover {
+            background-position: right center;
+            color: #000;
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+        }
+
+        body {
+            background-color: #050505;
+            background-image: radial-gradient(circle at 50% 0%, #15120a 0%, #050505 60%);
+        }
+    </style>
+</head>
+<body class="min-h-screen text-gray-200 font-sans p-4 sm:p-6 lg:p-8 flex flex-col items-center">
+
+    <!-- Main Container -->
+    <div class="w-full max-w-6xl flex flex-col gap-6">
+        
+        <!-- Minimalistic Header -->
+        <header class="text-center py-4 sm:py-6">
+            <h1 class="text-xl sm:text-2xl font-light tracking-widest text-yellow-600/80 uppercase">
+                MathML <span class="font-bold gold-text-gradient">Converter</span>
+            </h1>
+        </header>
+
+        <!-- App Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
+            
+            <!-- LEFT COLUMN: Input & Controls -->
+            <div class="flex flex-col gap-6">
+                
+                <!-- MathML Input -->
+                <div class="gold-border-gradient flex flex-col h-full shadow-2xl shadow-yellow-900/10">
+                    <div class="px-5 py-3 border-b border-yellow-700/30 flex justify-between items-center bg-black/40 rounded-t-xl">
+                        <label class="text-xs font-semibold tracking-widest text-yellow-500 uppercase">Input MathML</label>
+                    </div>
+                    <textarea 
+                        id="mathml-input" 
+                        class="w-full flex-grow min-h-[250px] p-5 bg-transparent focus:outline-none focus:ring-0 font-mono text-sm text-yellow-100/90 resize-y rounded-b-xl leading-relaxed"
+                        placeholder="<math>...</math>"
+                    ><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+  <mi>x</mi>
+  <mo>=</mo>
+  <mfrac>
+    <mrow>
+      <mo>&#x2212;</mo>
+      <mi>b</mi>
+      <mo>&#xB1;</mo>
+      <msqrt>
+        <msup>
+          <mi>b</mi>
+          <mn>2</mn>
+        </msup>
+        <mo>&#x2212;</mo>
+        <mn>4</mn>
+        <mi>a</mi>
+        <mi>c</mi>
+      </msqrt>
+    </mrow>
+    <mrow>
+      <mn>2</mn>
+      <mi>a</mi>
+    </mrow>
+  </mfrac>
+</math></textarea>
+                </div>
+
+                <!-- Custom Dropdown & Convert Button -->
+                <div class="flex flex-col sm:flex-row gap-4 relative z-50">
+                    
+                    <!-- Custom Dropdown -->
+                    <div class="relative w-full sm:w-1/2" id="dropdown-container">
+                        <button 
+                            id="dropdown-btn" 
+                            class="w-full flex justify-between items-center px-5 py-3.5 gold-border-gradient bg-[#0a0a0a] rounded-xl text-yellow-400 focus:outline-none transition-shadow hover:shadow-[0_0_10px_rgba(212,175,55,0.2)]"
+                        >
+                            <span id="dropdown-selected" class="font-medium tracking-wide text-sm">Select Format</span>
+                            <svg class="w-4 h-4 text-yellow-500 transition-transform duration-300" id="dropdown-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        
+                        <!-- Dropdown Menu -->
+                        <ul id="dropdown-menu" class="hidden absolute left-0 right-0 top-full mt-2 gold-border-gradient p-1.5 rounded-xl shadow-2xl overflow-hidden max-h-64 overflow-y-auto transform origin-top transition-all duration-200 opacity-0 scale-95 z-50">
+                            <!-- Options injected by JS -->
+                        </ul>
+                    </div>
+
+                    <!-- Action Button -->
+                    <button 
+                        id="convert-btn"
+                        class="w-full sm:w-1/2 gold-btn text-black font-bold uppercase tracking-widest text-sm py-3.5 px-6 rounded-xl shadow-lg flex items-center justify-center gap-2 border-none"
+                    >
+                        <span>Convert</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: Output -->
+            <div class="flex flex-col gap-6 h-full relative">
+                
+                <!-- 1. Visual Preview Container -->
+                <div class="gold-border-gradient flex flex-col shadow-2xl shadow-yellow-900/10 relative overflow-hidden h-[240px]">
+                    <div class="px-5 py-3 border-b border-yellow-700/30 bg-black/40 rounded-t-xl flex justify-between items-center z-10">
+                        <label class="text-xs font-semibold tracking-widest text-yellow-500 uppercase">Visual Preview</label>
+                        <button id="download-btn" class="hidden text-xs font-bold text-yellow-900 bg-yellow-500 hover:bg-yellow-400 px-3 py-1 rounded transition-colors uppercase tracking-wider">
+                            Download
+                        </button>
+                    </div>
+                    <div class="flex-grow relative bg-[#050505] rounded-b-xl flex items-center justify-center p-5 bg-[radial-gradient(#222_1px,transparent_1px)] [background-size:16px_16px]">
+                        <img id="output-img" src="" alt="Rendered Math" class="max-w-full max-h-full drop-shadow-[0_0_8px_rgba(212,175,55,0.3)] transition-transform hover:scale-105 hidden" />
+                        <div id="preview-empty" class="text-yellow-700/40 flex flex-col items-center">
+                            <svg class="w-8 h-8 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            <p class="font-medium tracking-wide text-xs">Preview</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Code Output Container -->
+                <div class="gold-border-gradient flex flex-col flex-grow shadow-2xl shadow-yellow-900/10 relative overflow-hidden min-h-[240px]">
+                    <div class="px-5 py-3 border-b border-yellow-700/30 bg-black/40 rounded-t-xl flex justify-between items-center z-10">
+                        <label id="code-label" class="text-xs font-semibold tracking-widest text-yellow-500 uppercase">Code Output</label>
+                        <button id="copy-btn" class="hidden text-xs font-bold text-yellow-900 bg-yellow-500 hover:bg-yellow-400 px-3 py-1 rounded transition-colors uppercase tracking-wider">
+                            Copy Code
+                        </button>
+                    </div>
+                    <div class="flex-grow relative bg-[#050505] rounded-b-xl overflow-hidden">
+                        <textarea id="output-text" class="absolute inset-0 w-full h-full p-5 bg-transparent font-mono text-sm text-yellow-200/80 resize-none focus:outline-none hidden leading-relaxed" readonly></textarea>
+                        <div id="code-empty" class="absolute inset-0 flex flex-col items-center justify-center text-yellow-700/40">
+                            <svg class="w-8 h-8 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                            <p class="font-medium tracking-wide text-xs">Code snippet</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Toast Notification -->
+                <div id="toast" class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black px-4 py-2 rounded-lg text-sm font-bold shadow-lg transition-all duration-300 opacity-0 translate-y-4 pointer-events-none z-50 tracking-wide">
+                    Copied to clipboard!
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. UI Setup & Dropdown Logic ---
+        const formats = [
+            'LaTeX', 'SVG', 'PNG', 'HTML', 'MathJax', 
+            'KaTeX', 'OMML', 'AsciiMath', 'OpenMath', 'SymPy'
+        ];
+        
+        let currentFormat = 'LaTeX';
+        const dropdownBtn = document.getElementById('dropdown-btn');
+        const dropdownMenu = document.getElementById('dropdown-menu');
+        const dropdownSelected = document.getElementById('dropdown-selected');
+        const dropdownArrow = document.getElementById('dropdown-arrow');
+        
+        // Populate Dropdown
+        formats.forEach(format => {
+            const li = document.createElement('li');
+            // Styled without background color, only golden text and border
+            li.className = 'px-4 py-2.5 mb-1.5 cursor-pointer text-yellow-600/80 border border-yellow-700/30 rounded-lg hover:border-yellow-400 hover:text-yellow-400 transition-all text-sm font-medium tracking-wide last:mb-0 bg-transparent';
+            li.textContent = format;
+            li.addEventListener('click', () => selectFormat(format));
+            dropdownMenu.appendChild(li);
+        });
+
+        // Initialize Selected
+        dropdownSelected.textContent = currentFormat;
+
+        // Toggle Dropdown
+        dropdownBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isHidden = dropdownMenu.classList.contains('hidden');
+            if (isHidden) {
+                dropdownMenu.classList.remove('hidden');
+                setTimeout(() => {
+                    dropdownMenu.classList.remove('opacity-0', 'scale-95');
+                    dropdownArrow.classList.add('rotate-180');
+                }, 10);
+            } else {
+                closeDropdown();
+            }
+        });
+
+        // Close on outside click
+        document.addEventListener('click', closeDropdown);
+
+        function closeDropdown() {
+            dropdownMenu.classList.add('opacity-0', 'scale-95');
+            dropdownArrow.classList.remove('rotate-180');
+            setTimeout(() => {
+                dropdownMenu.classList.add('hidden');
+            }, 200);
+        }
+
+        function selectFormat(format) {
+            currentFormat = format;
+            dropdownSelected.textContent = format;
+            closeDropdown();
+            
+            // Clear the output area and wait for Convert button click
+            document.getElementById('preview-empty').classList.remove('hidden');
+            document.getElementById('output-img').classList.add('hidden');
+            document.getElementById('download-btn').classList.add('hidden');
+            
+            document.getElementById('code-empty').classList.remove('hidden');
+            document.getElementById('output-text').classList.add('hidden');
+            document.getElementById('copy-btn').classList.add('hidden');
+            
+            document.getElementById('code-label').textContent = 'Code Output';
+            
+            // Clean up old object URLs to prevent memory leaks
+            if (currentObjectUrl) {
+                URL.revokeObjectURL(currentObjectUrl);
+                currentObjectUrl = null;
+            }
+        }
+
+        // --- 2. Notification System ---
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.remove('opacity-0', 'translate-y-4');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-4');
+            }, 2500);
+        }
+
+        // --- 3. Core Conversion Logic (AST Walker) ---
+        function parseMathMLNode(node, format) {
+            if (node.nodeType === Node.TEXT_NODE) {
+                let text = node.textContent.trim();
+                if (text === '−' || text === '\u2212') text = '-';
+                if (text === '±' || text === '\u00B1') text = (format === 'LaTeX' || format === 'KaTeX' || format === 'MathJax') ? '\\pm' : '+-';
+                return text;
+            }
+            
+            const children = Array.from(node.childNodes).filter(n => n.nodeType === Node.ELEMENT_NODE || n.textContent.trim() !== '');
+            const parse = (n) => parseMathMLNode(n, format);
+            
+            const tag = node.tagName ? node.tagName.toLowerCase() : '';
+            
+            switch (format) {
+                case 'LaTeX':
+                case 'MathJax':
+                case 'KaTeX':
+                    switch (tag) {
+                        case 'math': return children.map(parse).join(' ');
+                        case 'mrow': return children.map(parse).join(' ');
+                        case 'mfrac': return `\\frac{${parse(children[0] || '')}}{${parse(children[1] || '')}}`;
+                        case 'msup': return `{${parse(children[0] || '')}}^{${parse(children[1] || '')}}`;
+                        case 'msub': return `{${parse(children[0] || '')}}_{${parse(children[1] || '')}}`;
+                        case 'msubsup': return `{${parse(children[0] || '')}}_{${parse(children[1] || '')}}^{${parse(children[2] || '')}}`;
+                        case 'msqrt': return `\\sqrt{${parse(children[0] || '')}}`;
+                        case 'mroot': return `\\sqrt[${parse(children[1] || '')}]{${parse(children[0] || '')}}`;
+                        case 'mi': 
+                        case 'mn': 
+                        case 'mo': return parse(node.childNodes[0]);
+                        default: return children.map(parse).join(' ');
+                    }
+
+                case 'AsciiMath':
+                    switch (tag) {
+                        case 'math': 
+                        case 'mrow': return children.map(parse).join(' ');
+                        case 'mfrac': return `(${parse(children[0] || '')})/(${parse(children[1] || '')})`;
+                        case 'msup': return `${parse(children[0] || '')}^${parse(children[1] || '')}`;
+                        case 'msub': return `${parse(children[0] || '')}_${parse(children[1] || '')}`;
+                        case 'msqrt': return `sqrt(${parse(children[0] || '')})`;
+                        case 'mi': 
+                        case 'mn': 
+                        case 'mo': return parse(node.childNodes[0]);
+                        default: return children.map(parse).join(' ');
+                    }
+
+                case 'SymPy':
+                    switch (tag) {
+                        case 'math': 
+                        case 'mrow': return children.map(parse).join(' * ').replace(/\* \+ \*/g, '+').replace(/\* \- \*/g, '-').replace(/\* \= \*/g, '=='); 
+                        case 'mfrac': return `(${parse(children[0] || '')})/(${parse(children[1] || '')})`;
+                        case 'msup': return `${parse(children[0] || '')}**${parse(children[1] || '')}`;
+                        case 'msqrt': return `sqrt(${parse(children[0] || '')})`;
+                        case 'mi': 
+                        case 'mn': 
+                        case 'mo': return parse(node.childNodes[0]);
+                        default: return children.map(parse).join('');
+                    }
+
+                case 'OpenMath':
+                    switch (tag) {
+                        case 'math': return `<OMOBJ xmlns="http://www.openmath.org/OpenMath">${children.map(parse).join('')}</OMOBJ>`;
+                        case 'mi': return `<OMV name="${parse(node.childNodes[0])}"/>`;
+                        case 'mn': return `<OMI>${parse(node.childNodes[0])}</OMI>`;
+                        case 'mo': return `<OMS cd="arith1" name="${parse(node.childNodes[0]) === '+' ? 'plus' : parse(node.childNodes[0]) === '-' ? 'minus' : parse(node.childNodes[0]) === '=' ? 'eq' : 'times'}"/>`;
+                        case 'mfrac': return `<OMA><OMS cd="arith1" name="divide"/>${parse(children[0] || '')}${parse(children[1] || '')}</OMA>`;
+                        case 'msup': return `<OMA><OMS cd="arith1" name="power"/>${parse(children[0] || '')}${parse(children[1] || '')}</OMA>`;
+                        default: return children.map(parse).join('');
+                    }
+
+                case 'OMML':
+                    switch (tag) {
+                        case 'math': return `<m:oMathPara xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><m:oMath>${children.map(parse).join('')}</m:oMath></m:oMathPara>`;
+                        case 'mi': return `<m:r><m:t>${parse(node.childNodes[0])}</m:t></m:r>`;
+                        case 'mn': return `<m:r><m:t>${parse(node.childNodes[0])}</m:t></m:r>`;
+                        case 'mo': return `<m:r><m:t>${parse(node.childNodes[0])}</m:t></m:r>`;
+                        case 'mfrac': return `<m:f><m:num>${parse(children[0] || '')}</m:num><m:den>${parse(children[1] || '')}</m:den></m:f>`;
+                        case 'msup': return `<m:sSup><m:e>${parse(children[0] || '')}</m:e><m:sup>${parse(children[1] || '')}</m:sup></m:sSup>`;
+                        case 'msqrt': return `<m:rad><m:deg/><m:e>${parse(children[0] || '')}</m:e></m:rad>`;
+                        default: return children.map(parse).join('');
+                    }
+                default:
+                    return "";
+            }
+        }
+
+        function convertToCode(mathmlStr, format) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(mathmlStr, "application/xml");
+            
+            if (doc.querySelector("parsererror")) {
+                throw new Error("Invalid MathML/XML structure.");
+            }
+            
+            const mathNode = doc.querySelector('math');
+            if(!mathNode) throw new Error("No <math> tag found in input.");
+
+            let result = parseMathMLNode(mathNode, format);
+
+            if (format === 'LaTeX') {
+                return `$$ \n${result.trim()} \n$$`;
+            } 
+            if (format === 'HTML') {
+                return `<!-- Embed in your HTML page -->\n<div class="math-container">\n  ${mathmlStr.split('\n').map(l=>'  '+l.trim()).join('\n')}\n</div>`;
+            }
+            if (format === 'MathJax') {
+                return `<!-- MathJax Config -->\n<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"><\/script>\n<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"><\/script>\n\n<!-- MathJax Container -->\n${mathmlStr}`;
+            }
+            if (format === 'KaTeX') {
+                return `<!-- KaTeX Headers -->\n<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">\n<script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"><\/script>\n\n<!-- Container -->\n<div id="katex-math"></div>\n<script>\n  katex.render(String.raw\`${result.trim()}\`, document.getElementById('katex-math'), {\n    throwOnError: false,\n    displayMode: true\n  });\n<\/script>`;
+            }
+            if(format === 'SymPy') {
+                result = result.replace(/\s+/g, '');
+                return `# Python SymPy format\nfrom sympy import symbols, sqrt\n\n# Assuming variables:\na, b, c, x = symbols('a b c x')\n\nexpression = ${result}`;
+            }
+            if (format === 'OMML') {
+                return `<?xml version="1.0" encoding="UTF-8"?>\n${result}`;
+            }
+            if (format === 'OpenMath') {
+                return `<?xml version="1.0" encoding="UTF-8"?>\n${result}`;
+            }
+
+            return result.trim();
+        }
+
+        // --- 4. Image Generation (Canvas rendering) ---
+        async function convertToImage(mathMLString, format) {
+            return new Promise((resolve, reject) => {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = mathMLString;
+                
+                const mathTags = tempDiv.querySelectorAll('math');
+                mathTags.forEach(math => {
+                    if (!math.hasAttribute('xmlns')) math.setAttribute('xmlns', 'http://www.w3.org/1998/Math/MathML');
+                    math.setAttribute('display', 'block'); 
+                });
+
+                const xmlSerializer = new XMLSerializer();
+                const strictXMLMathML = Array.from(tempDiv.childNodes).map(n => xmlSerializer.serializeToString(n)).join('');
+
+                const measureDiv = document.createElement('div');
+                measureDiv.style.position = 'absolute';
+                measureDiv.style.visibility = 'hidden';
+                measureDiv.style.fontSize = '48px'; 
+                measureDiv.style.color = '#d4af37'; 
+                measureDiv.style.display = 'inline-block';
+                measureDiv.innerHTML = strictXMLMathML;
+                document.body.appendChild(measureDiv);
+
+                const rect = measureDiv.getBoundingClientRect();
+                const padding = 30;
+                const width = Math.ceil(rect.width) + (padding * 2);
+                const height = Math.ceil(rect.height) + (padding * 2);
+                document.body.removeChild(measureDiv);
+
+                if (width <= padding * 2) return reject(new Error("Empty render dimensions."));
+
+                const svgString = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
+                        <rect width="100%" height="100%" fill="transparent"/>
+                        <foreignObject x="${padding}" y="${padding}" width="${width - padding * 2}" height="${height - padding * 2}">
+                            <div xmlns="http://www.w3.org/1999/xhtml" style="font-size: 48px; color: #d4af37; margin: 0; padding: 0; display: inline-block; font-family: math, serif;">
+                                ${strictXMLMathML}
+                            </div>
+                        </foreignObject>
+                    </svg>`;
+
+                if (format === 'SVG') {
+                    const blob = new Blob([svgString], {type: 'image/svg+xml;charset=utf-8'});
+                    resolve({ objectUrl: URL.createObjectURL(blob), code: svgString.trim() });
+                    return;
+                }
+
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width; canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    try {
+                        const dataUrl = canvas.toDataURL('image/png');
+                        canvas.toBlob(blob => resolve({ objectUrl: URL.createObjectURL(blob), code: dataUrl }), 'image/png');
+                    } catch (e) {
+                        reject(new Error("Canvas Export Blocked."));
+                    }
+                };
+                img.onerror = () => reject(new Error("Failed to load SVG into context."));
+                img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString)));
+            });
+        }
+
+        // --- 5. Action Handlers ---
+        let currentObjectUrl = null;
+
+        async function handleConversion() {
+            const input = document.getElementById('mathml-input').value.trim();
+            const btn = document.getElementById('convert-btn');
+            
+            const outImg = document.getElementById('output-img');
+            const previewEmpty = document.getElementById('preview-empty');
+            const downloadBtn = document.getElementById('download-btn');
+            
+            const outText = document.getElementById('output-text');
+            const codeEmpty = document.getElementById('code-empty');
+            const codeLabel = document.getElementById('code-label');
+            const copyBtn = document.getElementById('copy-btn');
+
+            if (!input) return showToast("Please input MathML first.");
+
+            // Reset UI
+            previewEmpty.classList.add('hidden');
+            outImg.classList.add('hidden');
+            downloadBtn.classList.add('hidden');
+            
+            codeEmpty.classList.add('hidden');
+            outText.classList.add('hidden');
+            copyBtn.classList.add('hidden');
+            
+            if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
+
+            codeLabel.textContent = `${currentFormat} Code`;
+            btn.innerHTML = `<svg class="animate-spin h-4 w-4 mr-2 text-black" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processing...`;
+
+            try {
+                // 1. Generate Visual Preview
+                const imageFormat = currentFormat === 'SVG' ? 'SVG' : 'PNG';
+                const imageResult = await convertToImage(input, imageFormat);
+                currentObjectUrl = imageResult.objectUrl;
+                
+                outImg.src = currentObjectUrl;
+                outImg.classList.remove('hidden');
+                
+                downloadBtn.textContent = `Download ${imageFormat}`;
+                downloadBtn.onclick = () => {
+                    const a = document.createElement('a');
+                    a.href = currentObjectUrl;
+                    a.download = `equation.${imageFormat.toLowerCase()}`;
+                    a.click();
+                };
+                downloadBtn.classList.remove('hidden');
+
+                // 2. Generate Code Output
+                let code = "";
+                if (currentFormat === 'PNG' || currentFormat === 'SVG') {
+                    code = imageResult.code; // Base64 data for PNG, raw code for SVG
+                } else {
+                    code = convertToCode(input, currentFormat);
+                }
+                
+                outText.value = code;
+                outText.classList.remove('hidden');
+
+                copyBtn.onclick = () => {
+                    navigator.clipboard.writeText(code).then(() => showToast('Copied to clipboard!'));
+                };
+                copyBtn.classList.remove('hidden');
+
+            } catch (err) {
+                console.error(err);
+                outText.value = `Error generating format:\n${err.message}`;
+                outText.classList.remove('hidden');
+            } finally {
+                btn.innerHTML = `<span>Convert</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>`;
+            }
+        }
+
+        document.getElementById('convert-btn').addEventListener('click', handleConversion);
+
+    </script>
+</body>
+</html>
